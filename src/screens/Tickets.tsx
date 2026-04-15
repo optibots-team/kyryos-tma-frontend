@@ -1,5 +1,5 @@
 import { useMyTickets } from '../hooks/useMyTickets';
-import { TicketCard }   from '../components/TicketCard';
+import TicketCard from '../components/TicketCard';
 import type { Screen }  from '../App';
 
 interface Props {
