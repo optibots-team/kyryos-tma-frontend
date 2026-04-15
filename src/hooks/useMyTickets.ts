@@ -1,6 +1,6 @@
 // Хук для получения билетов текущего пользователя
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 export interface FullTicket {
   ticket_id:         string
