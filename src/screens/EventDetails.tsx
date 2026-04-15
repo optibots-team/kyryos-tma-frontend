@@ -1,7 +1,10 @@
 import { ArrowLeft, Calendar, Clock, MapPin, Play } from 'lucide-react';
 import { Screen } from '../App';
+import { usePurchaseTicket } from '../hooks/usePurchaseTicket';
 
 export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+  const { purchaseTicket, loading, error } = usePurchaseTicket();
+
   return (
     <>
       <header className="w-full sticky top-0 z-50 bg-slate-50/80 backdrop-blur-xl flex items-center justify-between px-6 py-4">
@@ -127,14 +130,23 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
         </div>
       </main>
 
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 flex flex-col gap-2">
+        {error && (
+          <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg">
+            {error}
+          </div>
+        )}
         <div className="glass-card rounded-full p-2 pl-6 flex items-center justify-between shadow-lg border border-white/20">
           <div className="flex flex-col">
             <span className="text-[10px] font-label uppercase text-secondary font-bold tracking-widest">Entry from</span>
             <span className="font-headline font-extrabold text-lg">200 PLN</span>
           </div>
-          <button className="px-8 py-3.5 bg-[#D4AF37] text-black font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-transform">
-            BUY TICKET
+          <button 
+            onClick={() => purchaseTicket('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb1a')}
+            disabled={loading}
+            className="px-8 py-3.5 bg-[#D4AF37] text-black font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'OPENING...' : 'BUY TICKET'}
           </button>
         </div>
       </div>
