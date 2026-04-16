@@ -61,7 +61,7 @@ export default function TicketCard({ ticket }: { ticket: any }) {
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="p-4 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
             {isPaid ? (
-              <QRCode value={String(ticket.id)} size={180} bgColor="#ffffff" fgColor="#0f0f0f" level="H" />
+              <QRCode value={ticket.ticket_code ?? ticket.id} size={180} bgColor="#ffffff" fgColor="#0f0f0f" level="H" />
             ) : isUsed ? (
               <UsedOverlay />
             ) : (
