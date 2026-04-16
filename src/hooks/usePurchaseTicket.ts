@@ -48,18 +48,9 @@ export function usePurchaseTicket() {
       // Бэкенд может вернуть ссылку как checkout_url или просто url
       const finalUrl = data.checkout_url || data.url;
 
-      if (finalUrl) {
-        // Если мы внутри телеграма - открываем через его метод, иначе через обычный браузер
-        if (tg && typeof tg.openLink === 'function') {
-          tg.openLink(finalUrl);
-        } else {
-          window.location.href = finalUrl;
-        }
-      } else {
-        throw new Error('Сервер не вернул ссылку на оплату Stripe');
-      }
-
-    } catch (err: any) {
+     if (finalUrl) {
+        window.location.href = finalUrl; // Жестко открываем ссылку в этом же окне
+      }catch (err: any) {
       // Специально перехватываем TypeError, чтобы показать понятную причину
       if (err.name === 'TypeError') {
         setError(`Блокировка браузера (CORS) или неверный API-ключ: ${err.message}`);
