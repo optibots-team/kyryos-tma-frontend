@@ -7,15 +7,14 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Html5QrcodeScanner, Html5QrcodeScanType }  from 'html5-qrcode'
-import { supabase }                                  from '@/lib/supabaseClient'
-import type { UserRole, ScanResult }                 from '@/types/tickets'
+import { supabase }                                 from '@/lib/supabaseClient'
+import type { UserRole, ScanResult }                from '@/types/tickets'
 
 interface AdminScannerProps {
   userRole: UserRole
 }
 
-// UUID v4 regex — rejects obviously invalid QR payloads immediately
-// Этот regex пропускает и новые коды KYR-XXXXXXXX, и старые UUID
+// Підтримує і нові коди KYR-XXXXXXXX, і старі UUID
 const CODE_REGEX = /^(KYR-[A-Z0-9]{8}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 
 const SCAN_DEBOUNCE_MS = 2000   // prevent accidental double-scans
@@ -42,15 +41,16 @@ function ScannerView() {
   const isProcessingRef = useRef(false)
 
   // ── Ticket verification logic ─────────────────────────────
-  const verifyTicket = useCallback(async (uuid: string) => {
+  const verifyTicket = useCallback(async (scannedCode: string) => {
     setScanResult({ state: 'loading' })
 
     try {
       // Step 1: Fetch the current ticket state
+      // Шукаємо співпадіння або по id, або по ticket_code
       const { data: ticket, error: fetchError } = await supabase
         .from('tickets')
         .select('id, status')
-        .eq('id', uuid)
+        .or(`id.eq.${scannedCode},ticket_code.eq.${scannedCode}`)
         .single()
 
       if (fetchError || !ticket) {
@@ -84,13 +84,11 @@ function ScannerView() {
       }
 
       // Step 3: Status is 'paid' — attempt to mark as 'used'.
-      // The RLS hostess policy enforces: paid → used only.
-      // The .eq('status', 'paid') guard prevents race conditions
-      // where two scanners hit the same ticket simultaneously.
+      // Використовуємо ticket.id, отриманий з бази, бо scannedCode може бути формату KYR-...
       const { data: updated, error: updateError } = await supabase
         .from('tickets')
         .update({ status: 'used' })
-        .eq('id', uuid)
+        .eq('id', ticket.id)      // atomic guard
         .eq('status', 'paid')     // atomic guard against double-scan race
         .select('id')
         .single()
@@ -127,8 +125,8 @@ function ScannerView() {
     // Prevent concurrent processing
     if (isProcessingRef.current) return
 
-    // Validate UUID format before hitting the DB
-    if (!UUID_REGEX.test(decodedText.trim())) {
+    // Validate UUID/Code format before hitting the DB
+    if (!CODE_REGEX.test(decodedText.trim())) {
       setScanResult({
         state:   'error',
         message: 'Invalid QR code — not a ticket',
