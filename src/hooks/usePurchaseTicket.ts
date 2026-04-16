@@ -1,62 +1,64 @@
 import { useState } from 'react'
 
 const SUPABASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co'
-// 🚨 ВАЖНО: Вставь сюда свой реальный ключ из настроек Supabase (Settings -> API -> anon public)
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eGd0cHpmeHltaHlla2V1cnlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDI5MjQsImV4cCI6MjA5MTM3ODkyNH0.c0czFMKIDWoQfAMHA4TWclWfIAXvNt3nucf9wT_aJG8' 
 
 const CHECKOUT_URL = `${SUPABASE_URL}/functions/v1/smart-function`
 
+function getTelegramId(): number | null {
+  const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  return user?.id ?? null;
+}
+
 export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
+  // ДОБАВЛЕНО: quantity
   const purchaseTicket = async (tierId: string, quantity: number = 1) => {
     setLoading(true)
     setError(null)
 
+    const telegramId = getTelegramId()
+
+    if (!telegramId) {
+      setError('Open this app inside Telegram')
+      setLoading(false)
+      return
+    }
+
     try {
-      // Безопасное обращение к объекту Telegram
-      const tg = (window as any).Telegram?.WebApp;
-      const telegramId = tg?.initDataUnsafe?.user?.id;
-
-      if (!telegramId) {
-        setError('Нет связи с Telegram. Откройте приложение внутри мессенджера.');
-        setLoading(false);
-        return;
-      }
-
       const response = await fetch(CHECKOUT_URL, {
-        method: 'POST',
+        method:  'POST',
         headers: { 
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
+        // ДОБАВЛЕНО: передача quantity на бэкенд
         body: JSON.stringify({
           telegram_id: telegramId,
-          tier_id: tierId,
-          quantity: quantity,
+          tier_id:     tierId,
+          quantity:    quantity
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Ошибка со стороны сервера при создании чекаута');
+        throw new Error(data.error ?? 'Payment initialization failed')
       }
 
-      // Бэкенд может вернуть ссылку как checkout_url или просто url
-      const finalUrl = data.checkout_url || data.url;
-
-     if (finalUrl) {
-        window.location.href = finalUrl; // Жестко открываем ссылку в этом же окне
-      }catch (err: any) {
-      // Специально перехватываем TypeError, чтобы показать понятную причину
-      if (err.name === 'TypeError') {
-        setError(`Блокировка браузера (CORS) или неверный API-ключ: ${err.message}`);
+      if (data.checkout_url) {
+        // ИСПРАВЛЕНО: Открываем внутри Mini App, а не в браузере
+        window.location.href = data.checkout_url;
       } else {
-        setError(`Ошибка: ${err.message}`);
+        throw new Error('No checkout URL received')
       }
+
+    } catch (err: any) {
+      console.error('Purchase error:', err)
+      setError(err.message || 'Unknown error')
     } finally {
       setLoading(false)
     }
