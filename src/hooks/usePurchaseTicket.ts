@@ -1,19 +1,20 @@
 import { useState } from 'react'
 
+// Твой URL и ключ (убедись, что SUPABASE_ANON_KEY актуален в твоем проекте)
 const SUPABASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eGd0cHpmeHltaHlla2V1cnlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDI5MjQsImV4cCI6MjA5MTM3ODkyNH0.c0czFMKIDWoQfAMHA4TWclWfIAXvNt3nucf9wT_aJG8' 
+const SUPABASE_ANON_KEY = 'ТВОЙ_ANON_KEY_ИЗ_НАСТРОЕК_API' 
 
 const CHECKOUT_URL = `${SUPABASE_URL}/functions/v1/smart-function`
 
 function getTelegramId(): number | null {
-  const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  return user?.id ?? null;
+  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? null
 }
 
 export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
+  // Добавляем quantity (по умолчанию 1)
   const purchaseTicket = async (tierId: string, quantity: number = 1) => {
     setLoading(true)
     setError(null)
@@ -28,7 +29,7 @@ export function usePurchaseTicket() {
 
     try {
       const response = await fetch(CHECKOUT_URL, {
-        method:  'POST',
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
@@ -36,26 +37,21 @@ export function usePurchaseTicket() {
         },
         body: JSON.stringify({
           telegram_id: telegramId,
-          tier_id:     tierId,
-          quantity:    quantity
+          tier_id: tierId,
+          quantity: quantity, // Передаем количество на бэкенд
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'Payment initialization failed')
+        throw new Error(data.error ?? 'Payment failed')
       }
 
       if (data.checkout_url) {
-        // Используем window.location.href для оплаты внутри Mini App
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error('No checkout URL received')
+        window.Telegram?.WebApp?.openLink(data.checkout_url)
       }
-
     } catch (err: any) {
-      console.error('Purchase error:', err)
       setError(err.message || 'Unknown error')
     } finally {
       setLoading(false)
