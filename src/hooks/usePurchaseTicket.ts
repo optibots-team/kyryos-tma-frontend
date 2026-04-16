@@ -14,7 +14,6 @@ export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
 
-  // ДОБАВЛЕНО: quantity
   const purchaseTicket = async (tierId: string, quantity: number = 1) => {
     setLoading(true)
     setError(null)
@@ -35,7 +34,6 @@ export function usePurchaseTicket() {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
-        // ДОБАВЛЕНО: передача quantity на бэкенд
         body: JSON.stringify({
           telegram_id: telegramId,
           tier_id:     tierId,
@@ -50,7 +48,7 @@ export function usePurchaseTicket() {
       }
 
       if (data.checkout_url) {
-        // ИСПРАВЛЕНО: Открываем внутри Mini App, а не в браузере
+        // Оставляем пользователя строго внутри Mini App
         window.location.href = data.checkout_url;
       } else {
         throw new Error('No checkout URL received')
