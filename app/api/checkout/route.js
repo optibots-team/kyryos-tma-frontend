@@ -1,13 +1,14 @@
+// app/api/checkout/route.js
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(req) {
-  const { eventId, quantity } = await req.json();
+  // Добавлен userId, так как webhook тоже ожидает его в metadata
+  const { userId, eventId, quantity } = await req.json();
 
-  // Имитация получения цены из базы данных (никогда не берите цену с фронтенда!)
-  const unitAmount = 150 * 100; // 150 PLN в грошах (Stripe считает в минимальных единицах)
+  const unitAmount = 150 * 100;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -21,10 +22,16 @@ export async function POST(req) {
             },
             unit_amount: unitAmount,
           },
-          quantity: quantity, // Stripe сам умножит unit_amount на quantity
+          quantity: quantity, 
         },
       ],
       mode: 'payment',
+      // ДОБАВЛЕНО: передаем данные для вебхука
+      metadata: {
+        userId: userId,
+        eventId: eventId,
+        quantity: quantity.toString(), // Stripe требует, чтобы значения metadata были строками
+      },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cancel`,
     });
