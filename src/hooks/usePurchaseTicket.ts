@@ -1,33 +1,30 @@
 import { useState } from 'react'
 
-// Твой URL и ключ (убедись, что SUPABASE_ANON_KEY актуален в твоем проекте)
 const SUPABASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co'
-const SUPABASE_ANON_KEY = 'ТВОЙ_ANON_KEY_ИЗ_НАСТРОЕК_API' 
+// 🚨 ВАЖНО: Вставь сюда свой реальный ключ из настроек Supabase (Settings -> API -> anon public)
+const SUPABASE_ANON_KEY = 'ТВОЙ_РЕАЛЬНЫЙ_ANON_KEY' 
 
 const CHECKOUT_URL = `${SUPABASE_URL}/functions/v1/smart-function`
-
-function getTelegramId(): number | null {
-  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? null
-}
 
 export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Добавляем quantity (по умолчанию 1)
   const purchaseTicket = async (tierId: string, quantity: number = 1) => {
     setLoading(true)
     setError(null)
 
-    const telegramId = getTelegramId()
-
-    if (!telegramId) {
-      setError('Open this app inside Telegram')
-      setLoading(false)
-      return
-    }
-
     try {
+      // Безопасное обращение к объекту Telegram
+      const tg = (window as any).Telegram?.WebApp;
+      const telegramId = tg?.initDataUnsafe?.user?.id;
+
+      if (!telegramId) {
+        setError('Нет связи с Telegram. Откройте приложение внутри мессенджера.');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(CHECKOUT_URL, {
         method: 'POST',
         headers: { 
@@ -38,21 +35,37 @@ export function usePurchaseTicket() {
         body: JSON.stringify({
           telegram_id: telegramId,
           tier_id: tierId,
-          quantity: quantity, // Передаем количество на бэкенд
+          quantity: quantity,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'Payment failed')
+        throw new Error(data.error || 'Ошибка со стороны сервера при создании чекаута');
       }
 
-      if (data.checkout_url) {
-        window.Telegram?.WebApp?.openLink(data.checkout_url)
+      // Бэкенд может вернуть ссылку как checkout_url или просто url
+      const finalUrl = data.checkout_url || data.url;
+
+      if (finalUrl) {
+        // Если мы внутри телеграма - открываем через его метод, иначе через обычный браузер
+        if (tg && typeof tg.openLink === 'function') {
+          tg.openLink(finalUrl);
+        } else {
+          window.location.href = finalUrl;
+        }
+      } else {
+        throw new Error('Сервер не вернул ссылку на оплату Stripe');
       }
+
     } catch (err: any) {
-      setError(err.message || 'Unknown error')
+      // Специально перехватываем TypeError, чтобы показать понятную причину
+      if (err.name === 'TypeError') {
+        setError(`Блокировка браузера (CORS) или неверный API-ключ: ${err.message}`);
+      } else {
+        setError(`Ошибка: ${err.message}`);
+      }
     } finally {
       setLoading(false)
     }
