@@ -1,9 +1,11 @@
 // Хук для получения билетов текущего пользователя
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 export interface FullTicket {
   ticket_id:         string
+  ticket_code:       string | null  // <-- ДОДАНО ДЛЯ QR
+  order_id:          string | null  // <-- ДОДАНО ДЛЯ КОШИКА
   user_id:           number
   status:            'pending' | 'paid' | 'used'
   created_at:        string
@@ -23,24 +25,27 @@ export function useMyTickets(telegramId: number | null) {
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState<string | null>(null)
 
-  useEffect(() => {
+  // Винесли функцію назовні, щоб її можна було повертати у refresh
+  const fetchTickets = useCallback(async () => {
     if (!telegramId) return
 
-    const fetchTickets = async () => {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('tickets_full')
-        .select('*')
-        .eq('user_id', telegramId)
-        .order('created_at', { ascending: false })
+    setLoading(true)
+    const { data, error: fetchError } = await supabase
+      .from('tickets_full')
+      .select('*')
+      .eq('user_id', telegramId)
+      .order('created_at', { ascending: false })
 
-      if (error) {
-        setError(error.message)
-      } else {
-        setTickets(data ?? [])
-      }
-      setLoading(false)
+    if (fetchError) {
+      setError(fetchError.message)
+    } else {
+      setTickets(data ?? [])
     }
+    setLoading(false)
+  }, [telegramId])
+
+  useEffect(() => {
+    if (!telegramId) return
 
     fetchTickets()
 
@@ -58,7 +63,7 @@ export function useMyTickets(telegramId: number | null) {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [telegramId])
+  }, [telegramId, fetchTickets])
 
- return { tickets, loading, error, refresh: fetchTickets };
+  return { tickets, loading, error, refresh: fetchTickets }
 }
