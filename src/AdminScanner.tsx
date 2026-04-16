@@ -15,8 +15,8 @@ interface AdminScannerProps {
 }
 
 // UUID v4 regex — rejects obviously invalid QR payloads immediately
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+// Этот regex пропускает и новые коды KYR-XXXXXXXX, и старые UUID
+const CODE_REGEX = /^(KYR-[A-Z0-9]{8}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 
 const SCAN_DEBOUNCE_MS = 2000   // prevent accidental double-scans
 const SCANNER_ELEMENT_ID = 'admin-qr-scanner'
