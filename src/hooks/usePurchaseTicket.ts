@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const SUPABASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co'
 // 🚨 ВАЖНО: Вставь сюда свой реальный ключ из настроек Supabase (Settings -> API -> anon public)
-const SUPABASE_ANON_KEY = 'ТВОЙ_РЕАЛЬНЫЙ_ANON_KEY' 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eGd0cHpmeHltaHlla2V1cnlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDI5MjQsImV4cCI6MjA5MTM3ODkyNH0.c0czFMKIDWoQfAMHA4TWclWfIAXvNt3nucf9wT_aJG8' 
 
 const CHECKOUT_URL = `${SUPABASE_URL}/functions/v1/smart-function`
 
