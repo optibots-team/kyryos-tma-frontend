@@ -5,9 +5,10 @@ import { useMyTickets } from '../hooks/useMyTickets';
 import TicketCard from '../components/TicketCard';
 
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+  // ВОТ ЗДЕСЬ ДОБАВЛЕНО СЛОВО refresh, НА КОТОРОЕ РУГАЛСЯ КОМПИЛЯТОР
   const { tickets, loading, refresh } = useMyTickets();
 
-  // Polling: проверяем базу каждые 3 секунды, чтобы узнать, прошла ли оплата в стороннем окне
+  // Polling: проверяем базу каждые 3 секунды, чтобы узнать, прошла ли оплата
   useEffect(() => {
     const interval = setInterval(() => {
       if (refresh) refresh();
@@ -16,7 +17,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     return () => clearInterval(interval);
   }, [refresh]);
 
-  // Защита: гарантируем, что tickets это всегда массив (спасает от белого экрана)
+  // Защита от белого экрана: гарантируем, что tickets - это всегда массив
   const safeTickets = Array.isArray(tickets) ? tickets : [];
 
   return (
@@ -33,21 +34,21 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
       </header>
 
       <main className="px-6 py-8">
-        {/* Загрузка */}
+        {/* Состояние загрузки */}
         {loading && safeTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
             <p className="text-white/60 text-sm font-medium">Checking tickets...</p>
           </div>
         ) : safeTickets.length === 0 ? (
-          /* Если билетов нет */
+          /* Если билетов нет в базе */
           <div className="text-center py-20 space-y-4">
             <div className="text-6xl">🎟️</div>
             <h3 className="font-headline font-bold text-xl text-white">No tickets yet</h3>
             <p className="text-white/60 text-sm px-10">If you just paid, please wait a few seconds...</p>
           </div>
         ) : (
-          /* Список билетов с QR-кодами */
+          /* Успешный рендер билетов */
           <div className="grid gap-6">
             {safeTickets.map((ticket: any) => (
               <TicketCard key={ticket.id} ticket={ticket} />
