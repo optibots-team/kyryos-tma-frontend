@@ -60,5 +60,5 @@ export function useMyTickets(telegramId: number | null) {
     return () => { supabase.removeChannel(channel) }
   }, [telegramId])
 
-  return { tickets, loading, error }
+ return { tickets, loading, error, refresh: fetchTickets };
 }
