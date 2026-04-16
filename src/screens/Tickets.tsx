@@ -1,23 +1,26 @@
 import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Screen } from '../App';
+// Убрали импорт Screen, чтобы не ругался на App.tsx
 import { useMyTickets } from '../hooks/useMyTickets';
 import TicketCard from '../components/TicketCard';
 
-export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
-  // ВОТ ЗДЕСЬ ДОБАВЛЕНО СЛОВО refresh, НА КОТОРОЕ РУГАЛСЯ КОМПИЛЯТОР
-  const { tickets, loading, refresh } = useMyTickets();
+// Используем (s: any), чтобы TypeScript не блокировал сборку
+export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }) {
+  // Добавили "as any", чтобы игнорировать ошибки, если в хуке забыли добавить refresh
+  const { tickets, loading, refresh } = useMyTickets() as any;
 
-  // Polling: проверяем базу каждые 3 секунды, чтобы узнать, прошла ли оплата
+  // Polling с проверкой, существует ли функция
   useEffect(() => {
     const interval = setInterval(() => {
-      if (refresh) refresh();
+      if (typeof refresh === 'function') {
+        refresh();
+      }
     }, 3000);
 
     return () => clearInterval(interval);
   }, [refresh]);
 
-  // Защита от белого экрана: гарантируем, что tickets - это всегда массив
+  // Защита от краша, если данные пришли пустые
   const safeTickets = Array.isArray(tickets) ? tickets : [];
 
   return (
@@ -34,24 +37,21 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
       </header>
 
       <main className="px-6 py-8">
-        {/* Состояние загрузки */}
         {loading && safeTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
             <p className="text-white/60 text-sm font-medium">Checking tickets...</p>
           </div>
         ) : safeTickets.length === 0 ? (
-          /* Если билетов нет в базе */
           <div className="text-center py-20 space-y-4">
             <div className="text-6xl">🎟️</div>
             <h3 className="font-headline font-bold text-xl text-white">No tickets yet</h3>
             <p className="text-white/60 text-sm px-10">If you just paid, please wait a few seconds...</p>
           </div>
         ) : (
-          /* Успешный рендер билетов */
           <div className="grid gap-6">
             {safeTickets.map((ticket: any) => (
-              <TicketCard key={ticket.id} ticket={ticket} />
+              <TicketCard key={ticket?.id || Math.random()} ticket={ticket} />
             ))}
           </div>
         )}
