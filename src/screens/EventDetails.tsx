@@ -6,7 +6,6 @@ import { usePurchaseTicket } from '../hooks/usePurchaseTicket';
 export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { purchaseTicket, loading, error } = usePurchaseTicket();
   
-  // ДОБАВЛЕНО: Состояния для модалки и количества
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const TICKET_PRICE = 200;
@@ -75,7 +74,6 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
             <div className="space-y-3">
               <h3 className="font-headline font-bold text-lg tracking-tight px-0">ARTISTS & MEDIA</h3>
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
-                {/* Оставил одного артиста для сокращения, добавь остальных если нужно */}
                 <div className="flex-shrink-0 relative w-48 h-20 rounded-xl overflow-hidden bg-zinc-800">
                   <img className="w-full h-full object-cover opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwkiYy-6rHUHaenBMgMhSBEAZxcGi5PF90ETgPzsgHCS06fd38hWFg1VpfW4EwFgqeJb0ZT4lUvFU04FZfQz6uqu0CghcHrd1fmLxHI340mIrPFQzDrFb0Sv50c083_yEc50R6ZQ9cLMQ1pt-gexdMJa7VylE8okyinDBSX3of3dkbA2MgpmXTYtsWgerOUvbBAiLLk_OD8h6SkyfaoXfHYUVtmCockfIxJ_7rBiF2_dZ_P3glfDMg1iXyW2EMtnULpQ6BM5tyyV3Y" alt="Video" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -110,7 +108,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
         </div>
       </div>
 
-      {/* ДОБАВЛЕНО: Модальное окно выбора билетов */}
+      {/* Модальное окно */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
@@ -139,9 +137,16 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
             <button 
               onClick={() => purchaseTicket('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb1a', quantity)}
               disabled={loading}
-              className="w-full py-4 bg-[#D4AF37] text-black font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#D4AF37] text-black font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? 'PROCESSING...' : 'PROCEED TO PAYMENT'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                  <span>PROCESSING...</span>
+                </>
+              ) : (
+                'PROCEED TO PAYMENT'
+              )}
             </button>
           </div>
         </div>
