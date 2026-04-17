@@ -4,11 +4,10 @@ import EventDetails from './screens/EventDetails';
 import Profile from './screens/Profile';
 import Tickets from './screens/Tickets';
 import Gallery from './screens/Gallery';
-import { AdminScanner } from './AdminScanner'; // Импортируем сканер
+import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-// Добавляем 'admin' в список экранов
 export type Screen = 'events' | 'event-details' | 'tickets' | 'gallery' | 'profile' | 'admin';
 
 export default function App() {
@@ -18,15 +17,20 @@ export default function App() {
   useEffect(() => {
     async function fetchUserRole() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      
       if (tgUser?.id) {
+        // Обновлено: используем колонку user_id вместо telegram_id
         const { data, error } = await supabase
           .from('users')
           .select('role')
-          .eq('telegram_id', tgUser.id)
+          .eq('user_id', tgUser.id) 
           .single();
         
         if (!error && data) {
           setUserRole(data.role);
+          console.log('User role loaded:', data.role);
+        } else if (error) {
+          console.error('Error fetching role:', error.message);
         }
       }
     }
@@ -47,14 +51,13 @@ export default function App() {
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       {currentScreen === 'profile' && <Profile onNavigate={setCurrentScreen} />}
       
-      {/* Рендерим сканер, если выбран экран admin */}
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
       
       {currentScreen !== 'event-details' && (
         <BottomNav 
           currentScreen={currentScreen} 
           onNavigate={setCurrentScreen} 
-          userRole={userRole} // Передаем роль в навигацию
+          userRole={userRole} 
         />
       )}
     </div>
