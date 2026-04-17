@@ -6,8 +6,9 @@
 // ============================================================
 
 import { useState, useCallback, useEffect } from 'react'
-import { supabase } from '../lib/supabaseClient'
-import type { UserRole, ScanResult } from '../types/tickets' // Убедись в правильности пути
+import { supabase } from './lib/supabaseClient'
+import type { UserRole, ScanResult } from './types/tickets' 
+// Если Vite настроен с алиасами, пути могут быть '@/lib/supabaseClient' и '@/types/tickets'
 
 interface AdminScannerProps {
   userRole: UserRole
