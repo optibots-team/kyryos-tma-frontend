@@ -8,6 +8,7 @@ interface BottomNavProps {
 }
 
 export default function BottomNav({ currentScreen, onNavigate, userRole }: BottomNavProps) {
+  // Базовые пункты меню
   const navItems = [
     { id: 'events', label: 'Events', icon: Home },
     { id: 'tickets', label: 'Tickets', icon: Ticket },
@@ -15,7 +16,7 @@ export default function BottomNav({ currentScreen, onNavigate, userRole }: Botto
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  // Добавляем сканер только если роль соответствует
+  // Если роль admin или hostess — добавляем кнопку сканера в меню
   if (userRole === 'admin' || userRole === 'hostess') {
     navItems.push({ id: 'admin', label: 'Scanner', icon: ScanLine });
   }
@@ -32,7 +33,7 @@ export default function BottomNav({ currentScreen, onNavigate, userRole }: Botto
               key={item.id}
               onClick={() => onNavigate(item.id as Screen)}
               className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-                isActive ? 'text-zinc-900 scale-110' : 'text-zinc-400 hover:text-zinc-600'
+                isActive ? 'text-zinc-900 scale-110' : 'text-zinc-400'
               }`}
             >
               <div className={`p-2 rounded-2xl transition-all duration-300 ${
