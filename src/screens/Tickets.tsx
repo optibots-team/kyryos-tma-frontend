@@ -6,7 +6,6 @@ import QRCode from 'react-qr-code';
 // 1. Встроенный хук с ТИХОЙ перезагрузкой
 function useSafeTickets() {
   const [tickets, setTickets] = useState<any[]>([]);
-  // Изначально показываем загрузку только при первом входе
   const [loading, setLoading] = useState(true); 
 
   const fetchTickets = useCallback(async (isSilent = false) => {
@@ -17,7 +16,6 @@ function useSafeTickets() {
         return;
       }
       
-      // Включаем лоадер только если это НЕ тихий фоновый запрос
       if (!isSilent) setLoading(true);
 
       const { data, error } = await supabase
@@ -37,7 +35,7 @@ function useSafeTickets() {
   }, []);
 
   useEffect(() => {
-    fetchTickets(); // Первый запуск с крутилкой
+    fetchTickets();
   }, [fetchTickets]);
 
   return { tickets, loading, refresh: fetchTickets };
@@ -47,7 +45,6 @@ function useSafeTickets() {
 function SafeTicketCard({ ticket }: { ticket: any }) {
   if (!ticket || !ticket.id) return null;
 
-  // Если Supabase вернул массив — берем первый элемент, если объект — берем его
   let tier = ticket?.price_tiers;
   if (Array.isArray(tier)) tier = tier[0];
   tier = tier || {};
@@ -56,13 +53,14 @@ function SafeTicketCard({ ticket }: { ticket: any }) {
   if (Array.isArray(event)) event = event[0];
   event = event || {};
 
-  // Извлекаем конкретные текстовые значения
   const title = event?.title && typeof event.title === 'string' ? event.title : 'UNITIS FEST';
   const location = event?.location && typeof event.location === 'string' ? event.location : 'Warsaw';
   const tierName = tier?.name && typeof tier.name === 'string' ? tier.name : 'Standard Ticket';
+  
   const isPaid = ticket.status === 'paid';
+  const isUsed = ticket.status === 'used';
+  const showQR = isPaid || isUsed;
 
-  // Красиво обрезаем ID, чтобы он поместился (как ... в середине)
   const shortId = ticket.id ? `${String(ticket.id).slice(0, 8)}...${String(ticket.id).slice(-4)}` : '';
 
   return (
@@ -71,7 +69,9 @@ function SafeTicketCard({ ticket }: { ticket: any }) {
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-white font-bold text-xl">{title}</h2>
           <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${
-            isPaid ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+            isPaid ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 
+            isUsed ? 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' : 
+            'bg-amber-500/20 text-amber-400 border-amber-500/30'
           }`}>
             {ticket.status || 'pending'}
           </span>
@@ -80,9 +80,20 @@ function SafeTicketCard({ ticket }: { ticket: any }) {
         <p className="text-white/60 text-sm">🎟 {tierName}</p>
       </div>
 
-      <div className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl mb-4 min-h-[180px]">
-        {isPaid ? (
-          <QRCode value={String(ticket.id)} size={160} />
+      <div className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl mb-4 min-h-[180px] relative overflow-hidden">
+        {showQR ? (
+          <>
+            <div className={isUsed ? 'opacity-20 blur-[2px] transition-all' : ''}>
+              <QRCode value={String(ticket.id)} size={160} />
+            </div>
+            {isUsed && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-black/80 text-white font-black text-2xl tracking-widest px-6 py-2 rounded-xl -rotate-12 border-2 border-white/20 backdrop-blur-sm">
+                  USED
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-zinc-500 text-sm font-medium">Awaiting payment...</div>
         )}
@@ -96,7 +107,6 @@ function SafeTicketCard({ ticket }: { ticket: any }) {
 export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }) {
   const { tickets, loading, refresh } = useSafeTickets();
 
-  // Polling каждые 3 секунды в ТИХОМ РЕЖИМЕ (true) - больше не будет дергаться экран
   useEffect(() => {
     const interval = setInterval(() => {
       if (typeof refresh === 'function') refresh(true);
