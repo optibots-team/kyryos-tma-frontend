@@ -4,7 +4,7 @@ import { Screen } from '../App';
 interface BottomNavProps {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
-  userRole?: string | null; // Добавляем проп роли
+  userRole?: string | null;
 }
 
 export default function BottomNav({ currentScreen, onNavigate, userRole }: BottomNavProps) {
@@ -15,7 +15,7 @@ export default function BottomNav({ currentScreen, onNavigate, userRole }: Botto
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  // Если пользователь админ или хостес, добавляем кнопку сканера в начало или конец
+  // Добавляем сканер только если роль соответствует
   if (userRole === 'admin' || userRole === 'hostess') {
     navItems.push({ id: 'admin', label: 'Scanner', icon: ScanLine });
   }
