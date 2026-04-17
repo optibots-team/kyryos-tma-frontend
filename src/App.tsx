@@ -16,22 +16,27 @@ export default function App() {
 
   useEffect(() => {
     async function fetchUserRole() {
+      // 1. Получаем ID пользователя из Telegram
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       
       if (tgUser?.id) {
-        // Обновлено: используем колонку user_id вместо telegram_id
+        console.log('Checking role for Telegram ID:', tgUser.id);
+        
+        // 2. Ищем роль в таблице users по колонке telegram_id
         const { data, error } = await supabase
           .from('users')
           .select('role')
-          .eq('user_id', tgUser.id) 
+          .eq('telegram_id', tgUser.id) 
           .single();
         
         if (!error && data) {
+          console.log('Role found:', data.role);
           setUserRole(data.role);
-          console.log('User role loaded:', data.role);
         } else if (error) {
-          console.error('Error fetching role:', error.message);
+          console.error('Supabase error fetching role:', error.message);
         }
+      } else {
+        console.warn('Telegram WebApp user data not found');
       }
     }
     fetchUserRole();
@@ -44,20 +49,21 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background font-body text-on-surface selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-background font-body text-on-surface">
       {currentScreen === 'events' && <Events onNavigate={setCurrentScreen} />}
       {currentScreen === 'event-details' && <EventDetails onNavigate={setCurrentScreen} />}
       {currentScreen === 'tickets' && <Tickets onNavigate={setCurrentScreen} />}
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       {currentScreen === 'profile' && <Profile onNavigate={setCurrentScreen} />}
       
+      {/* Экран сканера отображается только если выбрана вкладка admin */}
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
       
       {currentScreen !== 'event-details' && (
         <BottomNav 
           currentScreen={currentScreen} 
           onNavigate={setCurrentScreen} 
-          userRole={userRole} 
+          userRole={userRole} // Передаем роль сюда для отрисовки кнопки
         />
       )}
     </div>
