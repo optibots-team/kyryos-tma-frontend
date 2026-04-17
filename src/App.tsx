@@ -4,18 +4,36 @@ import EventDetails from './screens/EventDetails';
 import Profile from './screens/Profile';
 import Tickets from './screens/Tickets';
 import Gallery from './screens/Gallery';
+import { AdminScanner } from './AdminScanner'; // Импортируем сканер
 import BottomNav from './components/BottomNav';
+import { supabase } from './lib/supabaseClient';
 
-export type Screen = 'events' | 'event-details' | 'tickets' | 'gallery' | 'profile';
+// Добавляем 'admin' в список экранов
+export type Screen = 'events' | 'event-details' | 'tickets' | 'gallery' | 'profile' | 'admin';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Перехватываем возврат из Stripe
+    async function fetchUserRole() {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser?.id) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('telegram_id', tgUser.id)
+          .single();
+        
+        if (!error && data) {
+          setUserRole(data.role);
+        }
+      }
+    }
+    fetchUserRole();
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
-      // Очищаем URL, чтобы при перезагрузке не кидало снова сюда
       window.history.replaceState({}, '', window.location.pathname);
       setCurrentScreen('tickets');
     }
@@ -29,8 +47,15 @@ export default function App() {
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       {currentScreen === 'profile' && <Profile onNavigate={setCurrentScreen} />}
       
+      {/* Рендерим сканер, если выбран экран admin */}
+      {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
+      
       {currentScreen !== 'event-details' && (
-        <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+        <BottomNav 
+          currentScreen={currentScreen} 
+          onNavigate={setCurrentScreen} 
+          userRole={userRole} // Передаем роль в навигацию
+        />
       )}
     </div>
   );
