@@ -36,11 +36,11 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* ГЛОБАЛЬНАЯ ШТОРКА (Увеличенный отступ pt-14 для челки iPhone) */}
-      <header className="w-full sticky top-0 z-50 bg-slate-50/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
-        <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
-          Kyrios Event Agency
-        </h1>
-      </header>
+     <header className="w-full sticky top-0 z-50 bg-zinc-100/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
+  <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
+    Kyrios Event Agency
+  </h1>
+</header>
 
       <main className="px-6 py-8 space-y-8">
         {/* Main Event Card */}
