@@ -4,11 +4,11 @@ import { Screen } from '../App';
 export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      <header className="w-full sticky top-0 z-50 bg-slate-50/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
-        <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
-          Kyrios Event Agency
-        </h1>
-      </header>
+     <header className="w-full sticky top-0 z-50 bg-zinc-200/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
+  <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
+    Kyrios Event Agency
+  </h1>
+</header>
 
       <main className="pt-8 pb-32 px-6 max-w-5xl mx-auto">
         <div className="mb-12 text-center">
