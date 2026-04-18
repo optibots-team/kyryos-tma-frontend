@@ -13,33 +13,40 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* HEADER: Центрирование, отступ сверху (pt-16) и загрузка фото */}
-      <header className="px-6 pt-16 pb-10 flex flex-col items-center justify-center text-center">
-        {photoUrl ? (
-          <img 
-            src={photoUrl} 
-            alt={user?.first_name || 'Profile'} 
-            className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4"
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-[#D4AF37] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
-            {user?.first_name?.charAt(0) || <User size={40} />}
-          </div>
-        )}
-        
-        <h1 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight">
-          {user?.first_name || 'Guest'} {user?.last_name || ''}
+      {/* ГЛОБАЛЬНАЯ ШТОРКА */}
+      <header className="w-full sticky top-0 z-50 bg-slate-50/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
+        <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
+          Kyrios Event Agency
         </h1>
-        <p className="text-zinc-500 text-sm font-medium mt-1">
-          @{user?.username || 'unknown'}
-        </p>
       </header>
 
       <main className="px-6 space-y-8">
+        {/* ПРОФИЛЬ: Центрирование, отступ сверху и загрузка фото */}
+        <div className="pt-10 pb-2 flex flex-col items-center justify-center text-center">
+          {photoUrl ? (
+            <img 
+              src={photoUrl} 
+              alt={user?.first_name || 'Profile'} 
+              className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-[#D4AF37] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
+              {user?.first_name?.charAt(0) || <User size={40} />}
+            </div>
+          )}
+          
+          <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight">
+            {user?.first_name || 'Guest'} {user?.last_name || ''}
+          </h2>
+          <p className="text-zinc-500 text-sm font-medium mt-1">
+            @{user?.username || 'unknown'}
+          </p>
+        </div>
+
         {/* АДМИН-ПАНЕЛЬ: Видна только админам и хостес */}
         {(userRole === 'admin' || userRole === 'hostess') && (
           <section className="space-y-4">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h2>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h3>
             <button 
               onClick={() => onNavigate('admin')}
               className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm"
@@ -62,7 +69,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
         {/* НАСТРОЙКИ */}
         <section className="space-y-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Settings</h2>
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Settings</h3>
           <div className="bg-white rounded-[2rem] overflow-hidden border border-zinc-100 shadow-sm">
             <button className="w-full p-5 flex items-center justify-between border-b border-zinc-50 active:bg-zinc-50 transition-colors">
               <div className="flex items-center gap-4 text-zinc-900">
