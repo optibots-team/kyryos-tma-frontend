@@ -36,11 +36,11 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* ГЛОБАЛЬНАЯ ШТОРКА (Увеличенный отступ pt-14 для челки iPhone) */}
- <header className="w-full sticky top-0 z-50 bg-zinc-250/70 backdrop-blur-xl flex items-center justify-center px-6 pt-11 pb-2 border-b border-zinc-400/30">
+<header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-8 pb-2 border-b border-zinc-400/30">
   <img 
     src="/logo.png" 
     alt="Kyrios Logo" 
-    className="h-[70px] w-auto object-contain" 
+    className="h-[46px] w-auto object-contain" 
   />
 </header>
 
