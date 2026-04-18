@@ -31,8 +31,10 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
   return (
     <>
-     <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center px-6 py-4 border-b border-white/10">
-  <h1 className="font-headline font-bold tracking-tight text-white text-base">Event Details</h1>
+     <header className="w-full sticky top-0 z-50 bg-zinc-100/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
+  <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
+    Kyrios Event Agency
+  </h1>
 </header>
 
       <main className="pb-32 bg-black min-h-screen">
