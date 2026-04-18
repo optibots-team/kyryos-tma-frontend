@@ -32,9 +32,6 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
   return (
     <>
       <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-between px-6 py-4">
-        <button onClick={() => onNavigate('events')} className="flex items-center justify-center w-10 h-10 rounded-full active:scale-95 duration-200 transition-all cursor-pointer bg-white/10 border border-white/20">
-          <ArrowLeft className="text-white w-5 h-5" />
-        </button>
         <h1 className="font-headline font-bold tracking-tight text-white text-base">Event Details</h1>
         <div className="w-10"></div>
       </header>
