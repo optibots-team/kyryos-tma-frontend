@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import QRCode from 'react-qr-code';
 
@@ -118,11 +117,9 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }
 
   return (
     <div className="min-h-screen bg-black pb-32">
-      <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-between px-6 py-4">
-          className="flex items-center justify-center w-10 h-10 rounded-full active:scale-95 duration-200 transition-all cursor-pointer"
-        >
+      {/* Исправленный хедер без остатков старой кнопки */}
+      <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center px-6 py-4 border-b border-white/10">
         <h1 className="font-headline font-bold tracking-tight text-white text-base">My Tickets</h1>
-        <div className="w-10"></div>
       </header>
 
       <main className="px-6 py-8">
