@@ -31,11 +31,11 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
   return (
     <>
-    <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-400/30">
+   <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
   <img 
-    src="/logo.png.png" 
+    src="/logo.png" 
     alt="Kyrios Logo" 
-    className="h-5 w-auto object-contain" 
+    className="h-[55px] w-auto object-contain" 
   />
 </header>
 
