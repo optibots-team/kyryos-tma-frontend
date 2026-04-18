@@ -7,59 +7,73 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, userRole }: ProfileProps) {
+  // Получаем данные пользователя из Telegram
   const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const photoUrl = user?.photo_url;
 
   return (
-    <div className="min-h-screen bg-black pb-32">
-      <header className="px-6 pt-12 pb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-[#D4AF37] flex items-center justify-center text-black text-2xl font-bold border-4 border-white/10">
-            {user?.first_name?.charAt(0) || <User />}
+    <div className="min-h-screen bg-slate-50 pb-32">
+      {/* HEADER: Центрирование, отступ сверху (pt-16) и загрузка фото */}
+      <header className="px-6 pt-16 pb-10 flex flex-col items-center justify-center text-center">
+        {photoUrl ? (
+          <img 
+            src={photoUrl} 
+            alt={user?.first_name || 'Profile'} 
+            className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-[#D4AF37] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
+            {user?.first_name?.charAt(0) || <User size={40} />}
           </div>
-          <div>
-            <h1 className="text-white font-bold text-2xl">{user?.first_name || 'Guest'}</h1>
-            <p className="text-white/40 text-sm">@{user?.username || 'unknown'}</p>
-          </div>
-        </div>
+        )}
+        
+        <h1 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight">
+          {user?.first_name || 'Guest'} {user?.last_name || ''}
+        </h1>
+        <p className="text-zinc-500 text-sm font-medium mt-1">
+          @{user?.username || 'unknown'}
+        </p>
       </header>
 
-      <main className="px-6 space-y-6">
+      <main className="px-6 space-y-8">
         {/* АДМИН-ПАНЕЛЬ: Видна только админам и хостес */}
         {(userRole === 'admin' || userRole === 'hostess') && (
-          <section className="space-y-3">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] ml-2">Admin Panel</h2>
+          <section className="space-y-4">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h2>
             <button 
               onClick={() => onNavigate('admin')}
-              className="w-full bg-white/5 border border-[#D4AF37]/30 p-4 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-all"
+              className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
-                  <QrCode size={20} />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-900 border border-zinc-100">
+                  <QrCode size={24} />
                 </div>
                 <div className="text-left">
-                  <p className="text-white font-bold text-sm">Ticket Scanner</p>
-                  <p className="text-white/40 text-xs">Verify guest QR codes</p>
+                  <p className="text-zinc-900 font-bold text-base tracking-tight">Ticket Scanner</p>
+                  <p className="text-zinc-400 text-xs font-medium mt-0.5">Verify guest QR codes</p>
                 </div>
               </div>
-              <ShieldCheck className="text-[#D4AF37]" size={20} />
+              <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center">
+                <ShieldCheck className="text-zinc-900 w-5 h-5" />
+              </div>
             </button>
           </section>
         )}
 
-        {/* Остальные настройки профиля */}
-        <section className="space-y-3">
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-2">Settings</h2>
-          <div className="bg-white/5 rounded-3xl overflow-hidden border border-white/5">
-            <button className="w-full p-4 flex items-center justify-between border-b border-white/5 active:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3 text-white">
-                <Settings size={18} className="text-white/60" />
-                <span className="text-sm font-medium">Notification Settings</span>
+        {/* НАСТРОЙКИ */}
+        <section className="space-y-4">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Settings</h2>
+          <div className="bg-white rounded-[2rem] overflow-hidden border border-zinc-100 shadow-sm">
+            <button className="w-full p-5 flex items-center justify-between border-b border-zinc-50 active:bg-zinc-50 transition-colors">
+              <div className="flex items-center gap-4 text-zinc-900">
+                <Settings size={20} className="text-zinc-400" />
+                <span className="text-sm font-bold tracking-tight">Notification Settings</span>
               </div>
             </button>
-            <button className="w-full p-4 flex items-center justify-between active:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3 text-white">
-                <User size={18} className="text-white/60" />
-                <span className="text-sm font-medium">Edit Profile</span>
+            <button className="w-full p-5 flex items-center justify-between active:bg-zinc-50 transition-colors">
+              <div className="flex items-center gap-4 text-zinc-900">
+                <User size={20} className="text-zinc-400" />
+                <span className="text-sm font-bold tracking-tight">Edit Profile</span>
               </div>
             </button>
           </div>
