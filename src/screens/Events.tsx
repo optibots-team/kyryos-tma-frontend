@@ -4,19 +4,6 @@ import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void }) {
-  // ... (весь текущий код стейтов остается без изменений) ...
-
-  return (
-    <div className="min-h-screen bg-slate-50 pb-32">
-      <header className="w-full sticky top-0 z-50 bg-slate-50/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
-        <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
-          Kyrios Event Agency
-        </h1>
-      </header>
-      {/* ... (остальной контент) ... */}
-    </div>
-  );
-}
   const [soldCount, setSoldCount] = useState(0);
   const [hasTicket, setHasTicket] = useState(false);
   const MAX_CAPACITY = 300;
@@ -48,8 +35,11 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      <header className="w-full sticky top-0 z-50 bg-slate-50/80 backdrop-blur-xl flex items-center justify-center px-6 py-4 border-b border-zinc-100">
-        <h1 className="font-headline font-bold tracking-tight text-zinc-900 text-base uppercase tracking-[0.2em]">Kyrios</h1>
+      {/* ГЛОБАЛЬНАЯ ШТОРКА (Увеличенный отступ pt-14 для челки iPhone) */}
+      <header className="w-full sticky top-0 z-50 bg-slate-50/90 backdrop-blur-xl flex items-center justify-center px-6 pt-14 pb-6 border-b border-zinc-200">
+        <h1 className="font-headline font-bold text-zinc-900 text-[10px] uppercase tracking-[0.3em] text-center">
+          Kyrios Event Agency
+        </h1>
       </header>
 
       <main className="px-6 py-8 space-y-8">
@@ -89,11 +79,11 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           </div>
         </section>
 
-        {/* Quick Check-in (Original Style) */}
+        {/* Quick Check-in */}
         {hasTicket && (
           <section 
             onClick={() => onNavigate('tickets')}
-            className="w-full bg-emerald-50 rounded-3xl p-6 flex items-center justify-between cursor-pointer border border-emerald-100 transition-all active:scale-[0.98]"
+            className="w-full bg-emerald-50 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 transition-all active:scale-[0.98] shadow-sm"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
@@ -110,17 +100,16 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           </section>
         )}
 
-        {/* ABOUT KYRYOS (Original Private Sessions Style) */}
+        {/* ABOUT KYRYOS */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">About Agency</h3>
           </div>
           <div 
-            className="glass-card rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-white"
-            style={{ background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)' }}
+            className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm"
           >
             <div className="absolute top-0 right-0 p-8">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-white shadow-xl shadow-zinc-200">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-900">
                 <Info className="w-6 h-6" />
               </div>
             </div>
@@ -131,12 +120,12 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           </div>
         </section>
 
-        {/* UPCOMING EVENT (Original Silver Linings Style) */}
+        {/* UPCOMING EVENT */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Next Experience</h3>
           </div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex items-center justify-between group cursor-pointer transition-all active:scale-[0.98]">
+          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-zinc-100 flex items-center justify-between group cursor-pointer transition-all active:scale-[0.98]">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center border border-zinc-100">
                 <Calendar className="text-zinc-900 w-6 h-6" />
@@ -157,15 +146,15 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Past Events</h3>
           </div>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
-            <div className="flex-shrink-0 w-72 h-44 rounded-3xl overflow-hidden relative shadow-lg shadow-zinc-200/50">
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
+            <div className="flex-shrink-0 w-72 h-44 rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50">
               <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1574096079513-d8259312b785?auto=format&fit=crop&w=800&q=80" alt="Neon Nights" />
               <div className="absolute inset-0 bg-black/20"></div>
               <div className="absolute bottom-0 left-0 p-5">
                 <span className="text-white font-bold text-sm">Neon Nights</span>
               </div>
             </div>
-            <div className="flex-shrink-0 w-72 h-44 rounded-3xl overflow-hidden relative shadow-lg shadow-zinc-200/50">
+            <div className="flex-shrink-0 w-72 h-44 rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50">
               <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80" alt="Warehouse" />
               <div className="absolute inset-0 bg-black/20"></div>
               <div className="absolute bottom-0 left-0 p-5">
