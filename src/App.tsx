@@ -14,6 +14,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  // Получение роли
   useEffect(() => {
     async function fetchUserRole() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -39,6 +40,34 @@ export default function App() {
     }
   }, []);
 
+  // Управление системной кнопкой "Назад" от Telegram
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg || !tg.BackButton) return;
+
+    // Логика возврата
+    const handleBackClick = () => {
+      if (currentScreen === 'admin') {
+        setCurrentScreen('profile'); // Из админки возвращаемся в профиль
+      } else {
+        setCurrentScreen('events');  // Со всех остальных вкладок - на главную
+      }
+    };
+
+    if (currentScreen === 'events') {
+      tg.BackButton.hide();
+    } else {
+      tg.BackButton.show();
+    }
+
+    tg.BackButton.onClick(handleBackClick);
+
+    // Очистка слушателя при размонтировании или смене экрана
+    return () => {
+      tg.BackButton.offClick(handleBackClick);
+    };
+  }, [currentScreen]);
+
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
       {currentScreen === 'events' && <Events onNavigate={setCurrentScreen} />}
@@ -46,7 +75,6 @@ export default function App() {
       {currentScreen === 'tickets' && <Tickets onNavigate={setCurrentScreen} />}
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       
-      {/* Передаем роль и функцию смены экрана в профиль */}
       {currentScreen === 'profile' && (
         <Profile 
           onNavigate={setCurrentScreen} 
