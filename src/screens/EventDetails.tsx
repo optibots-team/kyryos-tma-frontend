@@ -31,10 +31,9 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
   return (
     <>
-      <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center px-6 py-4">
-        <h1 className="font-headline font-bold tracking-tight text-white text-base">Event Details</h1>
-        <div className="w-10"></div>
-      </header>
+     <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center px-6 py-4 border-b border-white/10">
+  <h1 className="font-headline font-bold tracking-tight text-white text-base">Event Details</h1>
+</header>
 
       <main className="pb-32 bg-black min-h-screen">
         <section className="relative w-full h-[397px] overflow-hidden">
