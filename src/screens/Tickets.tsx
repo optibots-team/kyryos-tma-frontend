@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import QRCode from 'react-qr-code';
 
