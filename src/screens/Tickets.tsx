@@ -40,7 +40,6 @@ function useSafeTickets() {
   return { tickets, loading, refresh: fetchTickets };
 }
 
-// 2. Бронебойная карточка с "распаковкой" массивов Supabase
 function SafeTicketCard({ ticket }: { ticket: any }) {
   if (!ticket || !ticket.id) return null;
 
@@ -102,7 +101,6 @@ function SafeTicketCard({ ticket }: { ticket: any }) {
   );
 }
 
-// 3. Главный экран
 export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }) {
   const { tickets, loading, refresh } = useSafeTickets();
 
@@ -117,7 +115,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }
 
   return (
     <div className="min-h-screen bg-black pb-32">
-      {/* Исправленный хедер без остатков старой кнопки */}
+      {/* ЧИСТЫЙ ХЕДЕР БЕЗ КНОПОК И ТЕКСТА */}
       <header className="w-full sticky top-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center px-6 py-4 border-b border-white/10">
         <h1 className="font-headline font-bold tracking-tight text-white text-base">My Tickets</h1>
       </header>
