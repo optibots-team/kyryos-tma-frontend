@@ -6,9 +6,6 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
     <>
       <header className="fixed top-0 w-full z-50 bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-xl flex justify-between items-center px-6 py-4">
         <div className="flex items-center gap-4">
-          <button className="text-neutral-950 dark:text-neutral-50 active:scale-95 duration-200 transition-opacity hover:opacity-70">
-            <Menu className="w-6 h-6" />
-          </button>
         </div>
         <h1 className="text-lg font-black tracking-[0.2em] text-neutral-950 dark:text-neutral-50 font-headline uppercase">WARSAW</h1>
         <div className="flex items-center gap-4">
