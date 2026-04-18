@@ -1,18 +1,11 @@
-import { Menu, ShoppingBag, Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import { Screen } from '../App';
 
 export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   return (
     <>
-      <header className="fixed top-0 w-full z-50 bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-xl flex justify-between items-center px-6 py-4">
-        <div className="flex items-center gap-4">
-        </div>
+      <header className="fixed top-0 w-full z-50 bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-xl flex justify-center items-center px-6 py-4">
         <h1 className="text-lg font-black tracking-[0.2em] text-neutral-950 dark:text-neutral-50 font-headline uppercase">WARSAW</h1>
-        <div className="flex items-center gap-4">
-          <button className="text-neutral-950 dark:text-neutral-50 active:scale-95 duration-200 transition-opacity hover:opacity-70">
-            <ShoppingBag className="w-6 h-6" />
-          </button>
-        </div>
       </header>
 
       <main className="pt-24 pb-32 px-6 max-w-5xl mx-auto">
