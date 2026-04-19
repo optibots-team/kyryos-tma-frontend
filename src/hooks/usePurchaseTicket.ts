@@ -5,11 +5,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const CHECKOUT_URL = `${SUPABASE_URL}/functions/v1/smart-function`
 
-function getTelegramId(): number | null {
-  const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  return user?.id ?? null;
-}
-
 export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
@@ -18,9 +13,10 @@ export function usePurchaseTicket() {
     setLoading(true)
     setError(null)
 
-    const telegramId = getTelegramId()
+    // Получаем сразу ВЕСЬ объект юзера из ТГ
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
-    if (!telegramId) {
+    if (!user || !user.id) {
       setError('Open this app inside Telegram')
       setLoading(false)
       return
@@ -35,9 +31,15 @@ export function usePurchaseTicket() {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
-          telegram_id: telegramId,
+          telegram_id: user.id,
           tier_id:     tierId,
-          quantity:    quantity
+          quantity:    quantity,
+          // Передаем данные на бэкенд, чтобы он мог красиво записать их в базу при Upsert-е
+          user_data: {
+            username: user.username || '',
+            first_name: user.first_name || '',
+            last_name: user.last_name || ''
+          }
         }),
       })
 
