@@ -34,7 +34,7 @@ export function usePurchaseTicket() {
           telegram_id: user.id,
           tier_id:     tierId,
           quantity:    quantity,
-          // Передаем данные на бэкенд, чтобы он мог красиво записать их в базу при Upsert-е
+          // Передаем полные данные для Upsert на бэкенде
           user_data: {
             username: user.username || '',
             first_name: user.first_name || '',
