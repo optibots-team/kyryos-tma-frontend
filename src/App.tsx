@@ -14,24 +14,41 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  // Получение роли
+  // Синхронизация и авто-регистрация пользователя
   useEffect(() => {
-    async function fetchUserRole() {
+    async function syncUser() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       
       if (tgUser?.id) {
+        // Проверяем, есть ли юзер в базе
         const { data, error } = await supabase
           .from('users')
           .select('role')
           .eq('telegram_id', tgUser.id)
           .single();
         
-        if (!error && data) {
+        if (error && error.code === 'PGRST116') {
+          // Юзер не найден (код PGRST116) — создаем запись
+          const { data: newUser } = await supabase
+            .from('users')
+            .insert([{
+              telegram_id: tgUser.id,
+              username: tgUser.username || '',
+              first_name: tgUser.first_name || '',
+              last_name: tgUser.last_name || '',
+              role: 'user'
+            }])
+            .select('role')
+            .single();
+            
+          if (newUser) setUserRole(newUser.role);
+        } else if (data) {
+          // Юзер есть, просто ставим роль
           setUserRole(data.role);
         }
       }
     }
-    fetchUserRole();
+    syncUser();
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
@@ -45,12 +62,11 @@ export default function App() {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
 
-    // Логика возврата
     const handleBackClick = () => {
       if (currentScreen === 'admin') {
-        setCurrentScreen('profile'); // Из админки возвращаемся в профиль
+        setCurrentScreen('profile');
       } else {
-        setCurrentScreen('events');  // Со всех остальных вкладок - на главную
+        setCurrentScreen('events');
       }
     };
 
@@ -62,7 +78,6 @@ export default function App() {
 
     tg.BackButton.onClick(handleBackClick);
 
-    // Очистка слушателя при размонтировании или смене экрана
     return () => {
       tg.BackButton.offClick(handleBackClick);
     };
