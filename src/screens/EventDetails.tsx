@@ -88,14 +88,14 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   </div>
                 </div>
                 
-                {/* КНОПКА GOOGLE MAPS (Добавлена) */}
+                {/* КНОПКА GOOGLE MAPS */}
                 <a 
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-[52px] inline-flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-[10px] font-bold uppercase tracking-wider text-zinc-600 active:scale-95 transition-all shadow-sm"
                 >
-                  Location address -> check Google maps
+                  Location address → check Google maps
                   <ExternalLink size={12} className="text-[#D4AF37]" />
                 </a>
               </div>
