@@ -30,18 +30,18 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
   const fillPercentage = Math.min(100, (placesLeft / MAX_CAPACITY) * 100);
 
   // Ссылка на локацию в Google Maps
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=Techno+Forest+Warsaw`;
+  const googleMapsUrl = `https://maps.google.com/?q=Techno+Forest,+Warsaw`;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-40">
       {/* ГЛОБАЛЬНАЯ ШТОРКА */}
-     <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
-  <img 
-    src="/logo.png" 
-    alt="Kyrios Logo" 
-    className="h-[55px] w-auto object-contain" 
-  />
-</header>
+      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
+        <img 
+          src="/logo.png" 
+          alt="Kyrios Logo" 
+          className="h-[55px] w-auto object-contain" 
+        />
+      </header>
 
       <main>
         {/* Анимированный баннер */}
