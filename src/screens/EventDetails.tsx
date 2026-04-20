@@ -30,7 +30,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
   const fillPercentage = Math.min(100, (placesLeft / MAX_CAPACITY) * 100);
 
   // Ссылка на локацию в Google Maps
-  const googleMapsUrl = `https://maps.google.com/?q=Techno+Forest,+Warsaw`;
+  const googleMapsUrl = `https://maps.app.goo.gl/YCnMzfJxYW4ncYceA`;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-40">
