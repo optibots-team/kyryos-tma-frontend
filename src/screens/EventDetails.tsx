@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { Screen } from '../App';
 import { usePurchaseTicket } from '../hooks/usePurchaseTicket';
 import { supabase } from '../lib/supabaseClient';
@@ -26,13 +26,16 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
     fetchCapacity();
   }, []);
 
-  // Шкала теперь показывает ОСТАТОК мест (тает)
   const placesLeft = Math.max(0, MAX_CAPACITY - soldCount);
   const fillPercentage = Math.min(100, (placesLeft / MAX_CAPACITY) * 100);
 
+  // Ссылка на локацию в Google Maps
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=Techno+Forest+Warsaw`;
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
+    <div className="min-h-screen bg-slate-50 pb-40">
+      {/* ГЛОБАЛЬНАЯ ШТОРКА */}
+     <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
   <img 
     src="/logo.png" 
     alt="Kyrios Logo" 
@@ -40,16 +43,19 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
   />
 </header>
 
-      <main className="pb-32">
-        <section className="relative w-full h-[397px] overflow-hidden">
+      <main>
+        {/* Анимированный баннер */}
+        <section className="relative w-full h-[397px] overflow-hidden animate-fade-up">
           <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80" alt="ROAR Party" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent"></div>
         </section>
 
         <div className="px-6 -mt-12 relative z-10 space-y-8">
-          <div className="space-y-4">
+          {/* Заголовок и инфо-блоки */}
+          <div className="space-y-4 animate-fade-up delay-100">
             <h2 className="font-headline font-extrabold text-4xl tracking-tighter text-zinc-900">ROAR Party</h2>
-            <div className="space-y-3">
+            
+            <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 flex items-center justify-center rounded-[1rem] bg-white border border-zinc-200 text-zinc-500 shadow-sm">
                   <Calendar className="w-5 h-5" />
@@ -59,6 +65,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   <p className="text-sm font-bold text-zinc-900">Saturday, 24 August 2024</p>
                 </div>
               </div>
+
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 flex items-center justify-center rounded-[1rem] bg-white border border-zinc-200 text-zinc-500 shadow-sm">
                   <Clock className="w-5 h-5" />
@@ -68,19 +75,34 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   <p className="text-sm font-bold text-zinc-900">14:00 - 06:00 (+1 Day)</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-[1rem] bg-white border border-zinc-200 text-zinc-500 shadow-sm">
-                  <MapPin className="w-5 h-5" />
+
+              {/* ЛОКАЦИЯ С КНОПКОЙ GOOGLE MAPS */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-[1rem] bg-white border border-zinc-200 text-zinc-500 shadow-sm">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-label uppercase tracking-widest text-zinc-400 font-semibold">Location</p>
+                    <p className="text-sm font-bold text-zinc-900">Techno Forest, Warsaw</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-label uppercase tracking-widest text-zinc-400 font-semibold">Location</p>
-                  <p className="text-sm font-bold text-zinc-900">Techno Forest, Warsaw</p>
-                </div>
+                
+                <a 
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-[52px] inline-flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-[10px] font-bold uppercase tracking-wider text-zinc-600 active:scale-95 transition-all shadow-sm"
+                >
+                  Location address -> check Google maps
+                  <ExternalLink size={12} className="text-[#D4AF37]" />
+                </a>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-3 shadow-sm">
+          {/* CAPACITY SLIDER */}
+          <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-3 shadow-sm animate-fade-up delay-200">
             <div className="flex justify-between items-end">
               <span className="text-xs font-label uppercase tracking-wider text-zinc-400 font-bold">Capacity</span>
               <span className="text-sm font-bold text-zinc-900">{placesLeft}/{MAX_CAPACITY} <span className="text-zinc-400 font-normal">places left</span></span>
@@ -93,16 +115,18 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-900">ABOUT</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed tracking-wide">Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.</p>
-            </div>
+          {/* ABOUT */}
+          <div className="space-y-3 animate-fade-up delay-300">
+            <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-900">ABOUT</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed tracking-wide">
+              Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.
+            </p>
           </div>
         </div>
       </main>
 
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 flex flex-col gap-2">
+      {/* КНОПКА BUY TICKET */}
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 flex flex-col gap-2 animate-fade-up delay-400">
         {error && (
           <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50">
             {error}
@@ -122,6 +146,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
         </div>
       </div>
 
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
