@@ -31,6 +31,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
   // Ссылка на локацию в Google Maps
   const googleMapsUrl = `https://maps.app.goo.gl/YCnMzfJxYW4ncYceA`;
+
   return (
     <div className="min-h-screen bg-slate-50 pb-40">
       {/* ГЛОБАЛЬНАЯ ШТОРКА */}
@@ -87,6 +88,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   </div>
                 </div>
                 
+                {/* КНОПКА GOOGLE MAPS (Добавлена) */}
                 <a 
                   href={googleMapsUrl}
                   target="_blank"
