@@ -38,13 +38,13 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* ГЛОБАЛЬНАЯ ШТОРКА */}
-      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-8 pb-2 border-b border-zinc-400/30">
-        <img 
-          src="/logo.png" 
-          alt="Kyrios Logo" 
-          className="h-[46px] w-auto object-contain" 
-        />
-      </header>
+     <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
+  <img 
+    src="/logo.png" 
+    alt="Kyrios Logo" 
+    className="h-[55px] w-auto object-contain" 
+  />
+</header>
 
       <main className="px-6 py-8 space-y-8">
         {/* Main Event Card */}
