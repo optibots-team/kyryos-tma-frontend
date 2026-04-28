@@ -52,7 +52,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     if (!tgUser?.id) return;
 
     const BOT_USERNAME = "roar_party_bot"; 
-    const inviteLink = `https://t.me/${kyrios_events_bot}?start=ref_${tgUser.id}`;
+    const inviteLink = `https://t.me/kyrios_events_bot?start=ref_${tgUser.id}`;
     
     const shareText = `Join the best underground parties in Warsaw! Get exclusive tickets and rewards. 🚀`;
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
