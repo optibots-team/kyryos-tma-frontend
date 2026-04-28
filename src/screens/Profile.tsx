@@ -1,33 +1,37 @@
 import { useEffect, useState } from 'react';
-import { Share2, Zap, QrCode, Trophy, User } from 'lucide-react';
+import { Share2, Zap, QrCode, Trophy, User, ShieldCheck } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
-export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Screen) => void, userRole: string | null }) {
+interface ProfileProps {
+  onNavigate: (screen: Screen) => void;
+  userRole: string | null;
+}
+
+export default function Profile({ onNavigate, userRole }: ProfileProps) {
+  // Получаем данные пользователя напрямую из Telegram (чтобы фото работало моментально)
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const photoUrl = tgUser?.photo_url;
+
+  // Состояние только для поинтов из базы данных
   const [points, setPoints] = useState(0);
-  const [profileData, setProfileData] = useState<any>(null);
 
   useEffect(() => {
-    async function fetchUserData() {
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    async function fetchPoints() {
       if (tgUser?.id) {
-        // Подтягиваем поинты и данные из базы
         const { data } = await supabase
           .from('users')
-          .select('points, first_name, last_name, username')
+          .select('points')
           .eq('telegram_id', tgUser.id)
           .single();
         
         if (data) {
           setPoints(data.points || 0);
-          setProfileData({ ...tgUser, ...data });
-        } else {
-          setProfileData(tgUser);
         }
       }
     }
-    fetchUserData();
-  }, []);
+    fetchPoints();
+  }, [tgUser?.id]);
 
   // Логика уровней (1000 points = 1 level)
   const POINTS_PER_LEVEL = 1000;
@@ -36,7 +40,6 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
   const progressPercentage = Math.min(100, (pointsInCurrentLevel / POINTS_PER_LEVEL) * 100);
   const pointsToNextLevel = POINTS_PER_LEVEL - pointsInCurrentLevel;
 
-  // Названия рангов для атмосферы
   const getRankName = (lvl: number) => {
     if (lvl === 1) return "Raver";
     if (lvl === 2) return "Insider";
@@ -46,12 +49,10 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
   };
 
   const handleInvite = () => {
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser?.id) return;
 
-    // ВАЖНО: Замени на юзернейм своего бота
     const BOT_USERNAME = "roar_party_bot"; 
-    const inviteLink = `https://t.me/${kyrios_events_bot}?start=ref_${tgUser.id}`;
+    const inviteLink = `https://t.me/${BOT_USERNAME}?start=ref_${tgUser.id}`;
     
     const shareText = `Join the best underground parties in Warsaw! Get exclusive tickets and rewards. 🚀`;
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
@@ -70,31 +71,33 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
         />
       </header>
 
-      <main className="px-6 py-8 space-y-8">
-        {/* Хедер профиля */}
-        <section className="flex items-center gap-4 animate-fade-up">
-          <div className="w-16 h-16 rounded-full bg-zinc-200 overflow-hidden shadow-inner border-2 border-white flex-shrink-0">
-            {profileData?.photo_url ? (
-              <img src={profileData.photo_url} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-[#D4AF37]">
-                <User size={32} />
-              </div>
-            )}
-          </div>
-          <div>
-            <h2 className="font-headline font-extrabold text-2xl text-zinc-900 tracking-tight">
-              {profileData?.first_name || 'Guest'} {profileData?.last_name || ''}
-            </h2>
-            <p className="text-zinc-500 font-medium text-sm">
-              @{profileData?.username || 'username'}
-            </p>
-          </div>
-        </section>
+      <main className="px-6 py-4 space-y-8 overflow-x-hidden">
+        
+        {/* ПРОФИЛЬ: Центрирование, отступ сверху и загрузка фото */}
+        <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
+          {photoUrl ? (
+            <img 
+              src={photoUrl} 
+              alt={tgUser?.first_name || 'Profile'} 
+              className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-[#D4AF37] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
+              {tgUser?.first_name?.charAt(0) || <User size={40} />}
+            </div>
+          )}
+          
+          <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight">
+            {tgUser?.first_name || 'Guest'} {tgUser?.last_name || ''}
+          </h2>
+          <p className="text-zinc-500 text-sm font-medium mt-1">
+            @{tgUser?.username || 'unknown'}
+          </p>
+        </div>
 
         {/* ШКАЛА УРОВНЯ (Gamification Card) */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
-          <div className="absolute top-0 right-0 p-6 opacity-10">
+          <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
             <Trophy size={100} className="text-[#D4AF37]" />
           </div>
           
@@ -154,7 +157,7 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
               </button>
             </div>
 
-            {/* Attend Event Card (Info only) */}
+            {/* Attend Event Card */}
             <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
@@ -170,7 +173,7 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
               </div>
             </div>
 
-            {/* Early Bird Card (Info only) */}
+            {/* Early Bird Card */}
             <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center border border-purple-100">
@@ -188,14 +191,26 @@ export default function Profile({ onNavigate, userRole }: { onNavigate: (s: Scre
           </div>
         </section>
 
-        {/* ADMIN PANEL BUTTON (Показываем только если роль admin/scanner) */}
-        {(userRole === 'admin' || userRole === 'scanner') && (
-          <section className="pt-4 animate-fade-up delay-300">
+        {/* АДМИН-ПАНЕЛЬ: Видна только админам и хостес */}
+        {(userRole === 'admin' || userRole === 'hostess' || userRole === 'scanner') && (
+          <section className="space-y-4 animate-fade-up delay-300">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h3>
             <button 
               onClick={() => onNavigate('admin')}
-              className="w-full py-4 bg-zinc-900 text-white font-headline font-bold text-sm rounded-xl shadow-lg active:scale-95 transition-all border border-zinc-800"
+              className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm"
             >
-              OPEN SCANNER PANEL
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-900 border border-zinc-100">
+                  <QrCode size={24} />
+                </div>
+                <div className="text-left">
+                  <p className="text-zinc-900 font-bold text-base tracking-tight">Ticket Scanner</p>
+                  <p className="text-zinc-400 text-xs font-medium mt-0.5">Verify guest QR codes</p>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center">
+                <ShieldCheck className="text-zinc-900 w-5 h-5" />
+              </div>
             </button>
           </section>
         )}
