@@ -158,7 +158,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
           </div>
           <button 
             onClick={() => setShowModal(true)}
-            className="px-8 py-3.5 bg-[#FFD700] text-black font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
+            className="px-8 py-3.5 bg-[#DFFF00] text-black font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
           >
             BUY TICKET
           </button>
@@ -188,7 +188,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
             <button 
               onClick={() => purchaseTicket('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb1a', quantity)}
               disabled={loading}
-              className="w-full py-4 bg-[#FFD700] text-black font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#DFFF00] text-black font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'PROCESSING...' : `PROCEED TO PAYMENT — ${currentPrice * quantity} PLN`}
             </button>
