@@ -97,7 +97,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   className="ml-[52px] inline-flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-[10px] font-bold uppercase tracking-wider text-zinc-600 active:scale-95 transition-all shadow-sm"
                 >
                   Location address → check Google maps
-                  <ExternalLink size={12} className="text-[#65000B]" />
+                  <ExternalLink size={12} className="text-[#A50021]" />
                 </a>
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
             <div className="relative w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
               <div 
-                className="absolute left-0 top-0 h-full bg-[#65000B] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)] transition-all duration-1000 ease-out"
+                className="absolute left-0 top-0 h-full bg-[#A50021] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)] transition-all duration-1000 ease-out"
                 style={{ width: `${fillPercentage}%` }}
               ></div>
               
@@ -158,7 +158,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
           </div>
           <button 
             onClick={() => setShowModal(true)}
-            className="px-8 py-3.5 bg-[#65000B] text-white font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
+            className="px-8 py-3.5 bg-[#A50021] text-white font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
           >
             BUY TICKET
           </button>
@@ -188,7 +188,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
             <button 
               onClick={() => purchaseTicket('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb1a', quantity)}
               disabled={loading}
-              className="w-full py-4 bg-[#65000B] text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'PROCESSING...' : `PROCEED TO PAYMENT — ${currentPrice * quantity} PLN`}
             </button>
