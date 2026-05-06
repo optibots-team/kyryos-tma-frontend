@@ -97,7 +97,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
                   className="ml-[52px] inline-flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-[10px] font-bold uppercase tracking-wider text-zinc-600 active:scale-95 transition-all shadow-sm"
                 >
                   Location address → check Google maps
-                  <ExternalLink size={12} className="text-[#EE204E]" />
+                  <ExternalLink size={12} className="text-[#DFFF00]" />
                 </a>
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function EventDetails({ onNavigate }: { onNavigate: (s: Screen) =
 
             <div className="relative w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
               <div 
-                className="absolute left-0 top-0 h-full bg-[#FFD700] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)] transition-all duration-1000 ease-out"
+                className="absolute left-0 top-0 h-full bg-[#DFFF00] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)] transition-all duration-1000 ease-out"
                 style={{ width: `${fillPercentage}%` }}
               ></div>
               
