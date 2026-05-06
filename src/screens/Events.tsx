@@ -91,7 +91,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
               {/* Динамическая тающая шкала */}
               <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#D4AF37] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] transition-all duration-1000 ease-out"
+                  className="h-full bg-[#E52B50] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] transition-all duration-1000 ease-out"
                   style={{ width: `${fillPercentage}%` }}
                 ></div>
               </div>
