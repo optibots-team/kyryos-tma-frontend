@@ -82,7 +82,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
                     e.stopPropagation(); // Чтобы клик по кнопке не дублировал клик по карточке
                     onNavigate('event-details');
                   }}
-                  className="px-5 py-2.5 bg-[#D4AF37] text-black font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
+                  className="px-5 py-2.5 bg-[#FF004F] text-black font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
                 >
                   BUY TICKET
                 </button>
