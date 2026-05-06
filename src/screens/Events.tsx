@@ -82,7 +82,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
                     e.stopPropagation(); // Чтобы клик по кнопке не дублировал клик по карточке
                     onNavigate('event-details');
                   }}
-                  className="px-5 py-2.5 bg-[#DFFF00] text-black font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
+                  className="px-5 py-2.5 bg-[#FF004F] text-black font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
                 >
                   BUY TICKET
                 </button>
@@ -91,7 +91,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
               {/* Динамическая тающая шкала */}
               <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#DFFF00] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] transition-all duration-1000 ease-out"
+                  className="h-full bg-[#FF004F] rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] transition-all duration-1000 ease-out"
                   style={{ width: `${fillPercentage}%` }}
                 ></div>
               </div>
