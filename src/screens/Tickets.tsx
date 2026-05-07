@@ -6,6 +6,10 @@ import { supabase } from '../lib/supabaseClient';
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Состояния для полноэкранного QR-кода и свайпа
+  const [expandedQr, setExpandedQr] = useState<string | null>(null);
+  const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
 
   // Получаем и форматируем имя гостя из Telegram
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -28,7 +32,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
       }
 
       try {
-        // Делаем запрос к новому View (tickets_full), где уже есть все данные ивента
         const { data, error } = await supabase
           .from('tickets_full')
           .select('*')
@@ -47,6 +50,24 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
 
     fetchTickets();
   }, [tgUser?.id]);
+
+  // Логика определения свайпа для закрытия QR
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    const dx = touchEnd.x - touchStart.x;
+    const dy = touchEnd.y - touchStart.y;
+    
+    // Если палец сдвинулся больше чем на 50px по X или Y — считаем это свайпом
+    if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+      setExpandedQr(null);
+    }
+    setTouchStart(null);
+  };
 
   if (loading) {
     return (
@@ -89,10 +110,10 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
         ) : (
           <div className="space-y-6">
             {tickets.map((ticket, index) => {
-              // Форматируем дату из базы
               const eventDate = new Date(ticket.event_date);
               const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
               const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+              const isUsed = ticket.status === 'used';
 
               return (
                 <div 
@@ -100,26 +121,53 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                   className="bg-white rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 border border-zinc-100 animate-fade-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  {/* Верхняя часть билета (QR и Имя) */}
-                  <div className="bg-zinc-900 p-8 text-center relative overflow-hidden">
-                    {/* Декоративный фон */}
-                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#A50021] rounded-full mix-blend-screen filter blur-[80px] opacity-50 pointer-events-none"></div>
-                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen filter blur-[80px] opacity-30 pointer-events-none"></div>
+                  {/* Верхняя часть билета (Фон из БД + QR) */}
+                  <div className="relative p-8 text-center bg-zinc-900 overflow-hidden">
+                    
+                    {/* Динамический фон (Афиша ивента) */}
+                    {ticket.event_image_url && (
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center opacity-40 blur-md scale-110"
+                        style={{ backgroundImage: `url(${ticket.event_image_url})` }}
+                      ></div>
+                    )}
+                    {/* Градиент поверх картинки, чтобы текст читался */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-zinc-900/95 pointer-events-none"></div>
                     
                     <div className="relative z-10 flex flex-col items-center">
-                      <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Scan at entrance</p>
+                      <p className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest mb-4">
+                        {isUsed ? 'Ticket successfully verified' : 'Tap QR to expand & scan'}
+                      </p>
                       
-                      {/* QR Код (заглушка/генерация) */}
-                      <div className="w-48 h-48 bg-white rounded-3xl p-4 shadow-2xl mb-6">
+                      {/* Контейнер QR-кода */}
+                      <div 
+                        onClick={() => !isUsed && setExpandedQr(ticket.ticket_code)}
+                        className={`relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all ${
+                          isUsed 
+                            ? 'opacity-40 grayscale pointer-events-none' 
+                            : 'shadow-[0_0_30px_rgba(255,255,255,0.15)] cursor-pointer active:scale-95'
+                        }`}
+                      >
                         <img 
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}&color=000000&bgcolor=ffffff`}
                           alt="QR Code" 
-                          className="w-full h-full object-contain mix-blend-multiply"
+                          className={`w-full h-full object-contain ${isUsed ? 'blur-[2px]' : 'mix-blend-multiply'}`}
                         />
+                        
+                        {/* Штамп SCANNED и крест */}
+                        {isUsed && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-3xl overflow-hidden">
+                            <div className="absolute w-[140%] h-1.5 bg-red-600 transform -rotate-45 shadow-sm"></div>
+                            <div className="absolute w-[140%] h-1.5 bg-red-600 transform rotate-45 shadow-sm"></div>
+                            <div className="z-10 transform -rotate-12 bg-white/95 px-5 py-2 rounded-xl border-4 border-red-600 text-red-600 font-black text-2xl tracking-widest shadow-xl backdrop-blur-sm">
+                              SCANNED
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
-                      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1 font-bold">Ticket ID</p>
-                      <p className="text-white font-mono text-sm opacity-80">{ticket.ticket_code}</p>
+                      <p className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 font-bold">Ticket ID</p>
+                      <p className="text-white font-mono text-sm opacity-90">{ticket.ticket_code}</p>
                     </div>
                   </div>
 
@@ -130,9 +178,8 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                     <div className="w-6 h-6 rounded-full bg-slate-50 border border-zinc-100 absolute -right-3"></div>
                   </div>
 
-                  {/* Инфо часть билета (Динамическая) */}
-                  <div className="p-8 pt-10 space-y-6">
-                    {/* Блок гостя */}
+                  {/* Инфо часть билета */}
+                  <div className="p-8 pt-10 space-y-6 relative bg-white">
                     <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                       <div className="w-10 h-10 bg-zinc-200 rounded-xl flex items-center justify-center text-zinc-500">
                         <User className="w-5 h-5" />
@@ -182,21 +229,54 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                       </p>
                     </div>
 
-                    {/* Статус билета */}
+                    {/* Статус билета внизу */}
                     <div className="pt-4 border-t border-zinc-100 flex justify-between items-center">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Status</span>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        ticket.status === 'used' 
+                        isUsed 
                           ? 'bg-zinc-100 text-zinc-500' 
                           : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                       }`}>
-                        {ticket.status === 'used' ? 'SCANNED' : 'VALID ENTRY'}
+                        {isUsed ? 'SCANNED' : 'VALID ENTRY'}
                       </span>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ПОЛНОЭКРАННЫЙ QR КОД */}
+        {expandedQr && (
+          <div 
+            className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs mb-8 text-center">
+                Show this code at entrance<br/>(Swipe to close)
+              </p>
+              
+              <div className="w-full max-w-sm aspect-square bg-white rounded-3xl p-4">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${expandedQr}&color=000000&bgcolor=ffffff`}
+                  alt="Expanded QR Code" 
+                  className="w-full h-full object-contain mix-blend-multiply"
+                />
+              </div>
+            </div>
+            
+            {/* Кнопка НАЗАД */}
+            <div className="w-full p-6 pb-12 bg-white">
+              <button 
+                onClick={() => setExpandedQr(null)}
+                className="w-full py-4 bg-[#A50021] text-white font-headline font-black text-lg rounded-2xl shadow-[0_8px_30px_rgba(165,0,33,0.3)] active:scale-95 transition-all"
+              >
+                BACK
+              </button>
+            </div>
           </div>
         )}
       </main>
