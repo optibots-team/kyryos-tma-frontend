@@ -1,148 +1,202 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Ticket as TicketIcon, MapPin, Calendar, Clock, User } from 'lucide-react';
+import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
-import QRCode from 'react-qr-code';
 
-// 1. Встроенный хук с ТИХОЙ перезагрузкой
-function useSafeTickets() {
+export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
-  const fetchTickets = useCallback(async (isSilent = false) => {
-    try {
-      const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (!user?.id) {
+  // Получаем и форматируем имя гостя из Telegram
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  let guestName = "Guest";
+  if (tgUser) {
+    if (tgUser.first_name && tgUser.last_name) {
+      guestName = `${tgUser.first_name} ${tgUser.last_name}`;
+    } else if (tgUser.first_name) {
+      guestName = tgUser.first_name;
+    } else if (tgUser.username) {
+      guestName = `@${tgUser.username}`;
+    }
+  }
+
+  useEffect(() => {
+    async function fetchTickets() {
+      if (!tgUser?.id) {
         setLoading(false);
         return;
       }
-      
-      if (!isSilent) setLoading(true);
 
-      const { data, error } = await supabase
-        .from('tickets')
-        .select('*, price_tiers(*, events(*))')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        // Делаем запрос к новому View (tickets_full), где уже есть все данные ивента
+        const { data, error } = await supabase
+          .from('tickets_full')
+          .select('*')
+          .eq('user_id', tgUser.id)
+          .in('status', ['paid', 'used'])
+          .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setTickets(data);
+        if (error) throw error;
+        if (data) setTickets(data);
+      } catch (err) {
+        console.error("Error fetching tickets:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      if (!isSilent) setLoading(false);
     }
-  }, []);
 
-  useEffect(() => {
     fetchTickets();
-  }, [fetchTickets]);
+  }, [tgUser?.id]);
 
-  return { tickets, loading, refresh: fetchTickets };
-}
-
-// 2. Бронебойная карточка, адаптированная под светлую тему
-function SafeTicketCard({ ticket }: { ticket: any }) {
-  if (!ticket || !ticket.id) return null;
-
-  let tier = ticket?.price_tiers;
-  if (Array.isArray(tier)) tier = tier[0];
-  tier = tier || {};
-
-  let event = tier?.events;
-  if (Array.isArray(event)) event = event[0];
-  event = event || {};
-
-  const title = event?.title && typeof event.title === 'string' ? event.title : 'UNITIS FEST';
-  const location = event?.location && typeof event.location === 'string' ? event.location : 'Warsaw';
-  const tierName = tier?.name && typeof tier.name === 'string' ? tier.name : 'Standard Ticket';
-  
-  const isPaid = ticket.status === 'paid';
-  const isUsed = ticket.status === 'used';
-  const showQR = isPaid || isUsed;
-
-  const shortId = ticket.id ? `${String(ticket.id).slice(0, 8)}...${String(ticket.id).slice(-4)}` : '';
-
-  return (
-    <div className="bg-white border border-zinc-100 rounded-[2rem] p-6 shadow-xl shadow-zinc-200/50 w-full max-w-sm mx-auto">
-      <div className="mb-4">
-        <div className="flex justify-between items-start mb-2">
-          <h2 className="text-zinc-900 font-headline font-bold text-xl tracking-tight">{title}</h2>
-          <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${
-            isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 
-            isUsed ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 
-            'bg-amber-50 text-amber-600 border-amber-200'
-          }`}>
-            {ticket.status || 'pending'}
-          </span>
-        </div>
-        <p className="text-zinc-500 text-sm font-medium">📍 {location}</p>
-        <p className="text-zinc-500 text-sm font-medium">🎟 {tierName}</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        {/* Темно-красный спиннер загрузки */}
+        <div className="w-8 h-8 border-4 border-[#A50021]/20 border-t-[#A50021] rounded-full animate-spin"></div>
+        <p className="text-zinc-500 font-medium text-sm animate-pulse">Loading your tickets...</p>
       </div>
-
-      <div className="flex flex-col items-center justify-center bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4 min-h-[180px] relative overflow-hidden">
-        {showQR ? (
-          <>
-            <div className={isUsed ? 'opacity-30 blur-[2px] transition-all' : ''}>
-              <QRCode value={String(ticket.id)} size={160} />
-            </div>
-            {isUsed && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="bg-zinc-900/90 text-white font-black text-2xl tracking-widest px-6 py-2 rounded-xl -rotate-12 border-2 border-white/20 backdrop-blur-sm shadow-xl">
-                  USED
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-zinc-400 text-sm font-medium">Awaiting payment...</div>
-        )}
-      </div>
-      <p className="text-zinc-400 text-[10px] font-mono text-center tracking-widest">{shortId}</p>
-    </div>
-  );
-}
-
-// 3. Главный экран
-export default function Tickets({ onNavigate }: { onNavigate: (s: any) => void }) {
-  const { tickets, loading, refresh } = useSafeTickets();
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (typeof refresh === 'function') refresh(true);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [refresh]);
-
-  const safeTickets = Array.isArray(tickets) ? tickets : [];
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* ГЛОБАЛЬНАЯ ШТОРКА */}
-    <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
-  <img 
-    src="/logo.png" 
-    alt="Kyrios Logo" 
-    className="h-[55px] w-auto object-contain" 
-  />
-</header>
+      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
+        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
+      </header>
 
-      <main className="px-6 py-8">
-        {loading && safeTickets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-zinc-500 text-sm font-medium">Loading tickets...</p>
+      <main className="px-6 py-8 space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-headline font-extrabold text-3xl tracking-tight text-zinc-900">My Tickets</h2>
+          <div className="w-10 h-10 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm">
+            <TicketIcon className="w-5 h-5" />
           </div>
-        ) : safeTickets.length === 0 ? (
-          <div className="text-center py-20 space-y-4">
-            <div className="text-6xl drop-shadow-md">🎟️</div>
-            <h3 className="font-headline font-bold text-xl text-zinc-900 tracking-tight">No tickets yet</h3>
-            <p className="text-zinc-500 text-sm px-10">If you just paid, please wait a few seconds...</p>
+        </div>
+
+        {tickets.length === 0 ? (
+          <div className="bg-white rounded-[2rem] p-8 text-center border border-zinc-100 shadow-sm animate-fade-up">
+            <div className="w-16 h-16 mx-auto bg-zinc-50 rounded-2xl flex items-center justify-center mb-4">
+              <TicketIcon className="w-8 h-8 text-zinc-300" />
+            </div>
+            <h3 className="font-headline font-bold text-xl text-zinc-900 mb-2">No tickets yet</h3>
+            <p className="text-zinc-500 text-sm mb-6">Looks like you haven't purchased any tickets for upcoming events.</p>
+            <button 
+              onClick={() => onNavigate('events')}
+              className="px-6 py-3 bg-zinc-900 text-white font-bold text-sm rounded-xl active:scale-95 transition-all shadow-lg shadow-zinc-900/20"
+            >
+              Browse Events
+            </button>
           </div>
         ) : (
-          <div className="grid gap-6">
-            {safeTickets.map((ticket: any) => (
-              <SafeTicketCard key={ticket?.id || Math.random()} ticket={ticket} />
-            ))}
+          <div className="space-y-6">
+            {tickets.map((ticket, index) => {
+              // Форматируем дату из базы
+              const eventDate = new Date(ticket.event_date);
+              const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+              const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+              return (
+                <div 
+                  key={ticket.id}
+                  className="bg-white rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 border border-zinc-100 animate-fade-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Верхняя часть билета (QR и Имя) */}
+                  <div className="bg-zinc-900 p-8 text-center relative overflow-hidden">
+                    {/* Декоративный фон */}
+                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#A50021] rounded-full mix-blend-screen filter blur-[80px] opacity-50 pointer-events-none"></div>
+                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen filter blur-[80px] opacity-30 pointer-events-none"></div>
+                    
+                    <div className="relative z-10 flex flex-col items-center">
+                      <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Scan at entrance</p>
+                      
+                      {/* QR Код (заглушка/генерация) */}
+                      <div className="w-48 h-48 bg-white rounded-3xl p-4 shadow-2xl mb-6">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}&color=000000&bgcolor=ffffff`}
+                          alt="QR Code" 
+                          className="w-full h-full object-contain mix-blend-multiply"
+                        />
+                      </div>
+                      
+                      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1 font-bold">Ticket ID</p>
+                      <p className="text-white font-mono text-sm opacity-80">{ticket.ticket_code}</p>
+                    </div>
+                  </div>
+
+                  {/* Линия отрыва */}
+                  <div className="relative h-8 flex items-center justify-between px-4 -my-4 z-20">
+                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-zinc-100 absolute -left-3"></div>
+                    <div className="w-full border-t-2 border-dashed border-zinc-200"></div>
+                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-zinc-100 absolute -right-3"></div>
+                  </div>
+
+                  {/* Инфо часть билета (Динамическая) */}
+                  <div className="p-8 pt-10 space-y-6">
+                    {/* Блок гостя */}
+                    <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                      <div className="w-10 h-10 bg-zinc-200 rounded-xl flex items-center justify-center text-zinc-500">
+                        <User className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Guest Name</p>
+                        <p className="font-bold text-zinc-900 text-base">{guestName}</p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-zinc-100"></div>
+
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Event</p>
+                      <h3 className="font-headline font-black text-2xl tracking-tight text-zinc-900">
+                        {ticket.event_title || 'Kyrios Event'}
+                      </h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-zinc-400">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Date</span>
+                        </div>
+                        <p className="font-bold text-zinc-900 text-sm leading-tight">{dateString}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-zinc-400">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Time</span>
+                        </div>
+                        <p className="font-bold text-zinc-900 text-sm leading-tight">{timeString} onwards</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-zinc-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Location</span>
+                      </div>
+                      <p className="font-bold text-zinc-900 text-base leading-tight">
+                        {ticket.event_location_name || 'Secret Location'}
+                      </p>
+                      <p className="text-zinc-500 text-sm font-medium">
+                        {ticket.event_location_address || 'To be announced'}
+                      </p>
+                    </div>
+
+                    {/* Статус билета */}
+                    <div className="pt-4 border-t border-zinc-100 flex justify-between items-center">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Status</span>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        ticket.status === 'used' 
+                          ? 'bg-zinc-100 text-zinc-500' 
+                          : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                      }`}>
+                        {ticket.status === 'used' ? 'SCANNED' : 'VALID ENTRY'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
