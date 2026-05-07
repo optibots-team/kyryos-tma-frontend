@@ -34,7 +34,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
   const placesLeft = Math.max(0, MAX_CAPACITY - soldCount);
   const fillPercentage = Math.min(100, (placesLeft / MAX_CAPACITY) * 100);
 
-  // Массив будущих ивентов для карусели
+ // Массив будущих ивентов для карусели
   const upcomingEvents = [
     { 
       id: 'event-details2', 
@@ -46,7 +46,8 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
       id: 'event-details3', 
       title: 'Sonic Sanctuary', 
       date: 'Sat, 28 Sep 2024', 
-      image: 'https://images.unsplash.com/photo-1540039155732-d674d0e8c8b1?auto=format&fit=crop&w=800&q=80' 
+      // 👇 НОВАЯ РАБОЧАЯ ССЫЛКА ЗДЕСЬ 👇
+      image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=800&q=80' 
     },
     { 
       id: 'event-details4', 
