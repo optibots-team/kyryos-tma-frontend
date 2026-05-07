@@ -8,7 +8,7 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-export type Screen = 'events' | 'event-details' | 'tickets' | 'gallery' | 'profile' | 'admin';
+export type Screen = 'events' | 'event-details' | 'event-details2' | 'event-details3' | 'event-details4' | 'about' | 'tickets' | 'profile' | 'admin';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
