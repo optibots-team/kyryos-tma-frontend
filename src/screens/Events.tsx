@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Ticket as TicketIcon, Info, Calendar } from 'lucide-react';
+import { ChevronRight, Ticket as TicketIcon, Info } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
@@ -31,26 +31,47 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
     fetchStats();
   }, []);
 
-  // Считаем остаток мест и процент заполненности (тает по мере продаж)
   const placesLeft = Math.max(0, MAX_CAPACITY - soldCount);
   const fillPercentage = Math.min(100, (placesLeft / MAX_CAPACITY) * 100);
+
+  // Массив будущих ивентов для карусели
+  const upcomingEvents = [
+    { 
+      id: 'event-details2', 
+      title: 'Midnight Mirage', 
+      date: 'Fri, 13 Sep 2024', 
+      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' 
+    },
+    { 
+      id: 'event-details3', 
+      title: 'Sonic Sanctuary', 
+      date: 'Sat, 28 Sep 2024', 
+      image: 'https://images.unsplash.com/photo-1540039155732-d674d0e8c8b1?auto=format&fit=crop&w=800&q=80' 
+    },
+    { 
+      id: 'event-details4', 
+      title: 'Eclipse Gathering', 
+      date: 'Sat, 12 Oct 2024', 
+      image: 'https://images.unsplash.com/photo-1558317751-bc3ed6f85f72?auto=format&fit=crop&w=800&q=80' 
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* ГЛОБАЛЬНАЯ ШТОРКА */}
-     <header className="w-full sticky top-0 z-50 bg-zinc-280/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6.5 pb-2 border-b border-zinc-400/30">
-  <img 
-    src="/logo.png" 
-    alt="Kyrios Logo" 
-    className="h-[55px] w-auto object-contain" 
-  />
-</header>
+      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
+        <img 
+          src="/logo.png" 
+          alt="Kyrios Logo" 
+          className="h-[55px] w-auto object-contain" 
+        />
+      </header>
 
       <main className="px-6 py-8 space-y-8">
         {/* Main Event Card */}
         <section 
           onClick={() => onNavigate('event-details')}
-          className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50"
+          className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 animate-fade-up"
         >
           <img 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -103,7 +124,7 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
         {hasTicket && (
           <section 
             onClick={() => onNavigate('tickets')}
-            className="w-full bg-emerald-50 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 transition-all active:scale-[0.98] shadow-sm"
+            className="w-full bg-emerald-50 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 transition-all active:scale-[0.98] shadow-sm animate-fade-up delay-100"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
@@ -120,12 +141,43 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           </section>
         )}
 
-        {/* ABOUT KYRYOS */}
-        <section className="space-y-4">
+        {/* UPCOMING EVENTS CAROUSEL */}
+        <section className="space-y-4 animate-fade-up delay-200">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Upcoming Events</h3>
+          </div>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
+            {upcomingEvents.map((event) => (
+              <div 
+                key={event.id}
+                // Передаем id ивента в навигацию (нужно будет добавить в Screen тип)
+                onClick={() => onNavigate(event.id as Screen)}
+                className="flex-shrink-0 w-60 aspect-[4/5] rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50 cursor-pointer group active:scale-[0.98] transition-all"
+              >
+                <img 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  src={event.image} 
+                  alt={event.title} 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-6">
+                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-1.5">{event.date}</p>
+                  <h4 className="text-white font-headline font-bold text-xl tracking-tight leading-tight">{event.title}</h4>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ABOUT KYRIOS */}
+        <section className="space-y-4 animate-fade-up delay-300">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">About Agency</h3>
           </div>
-          <div className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm">
+          <div 
+            onClick={() => onNavigate('about')}
+            className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm active:scale-[0.98] transition-all"
+          >
             <div className="absolute top-0 right-0 p-8">
               <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-900">
                 <Info className="w-6 h-6" />
@@ -138,49 +190,6 @@ export default function Events({ onNavigate }: { onNavigate: (s: Screen) => void
           </div>
         </section>
 
-        {/* UPCOMING EVENT */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Next Experience</h3>
-          </div>
-          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-zinc-100 flex items-center justify-between group cursor-pointer transition-all active:scale-[0.98]">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center border border-zinc-100">
-                <Calendar className="text-zinc-900 w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="text-zinc-900 font-bold text-base tracking-tight">Upcoming event</h4>
-                <p className="text-zinc-400 text-xs font-medium">To be announced soon</p>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center group-hover:bg-zinc-900 group-hover:text-white transition-all">
-              <ChevronRight className="w-5 h-5" />
-            </div>
-          </div>
-        </section>
-
-        {/* PAST EVENTS */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Past Events</h3>
-          </div>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
-            <div className="flex-shrink-0 w-72 h-44 rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50">
-              <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1574096079513-d8259312b785?auto=format&fit=crop&w=800&q=80" alt="Neon Nights" />
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="absolute bottom-0 left-0 p-5">
-                <span className="text-white font-bold text-sm">Neon Nights</span>
-              </div>
-            </div>
-            <div className="flex-shrink-0 w-72 h-44 rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50">
-              <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80" alt="Warehouse" />
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="absolute bottom-0 left-0 p-5">
-                <span className="text-white font-bold text-sm">Warehouse Project</span>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
