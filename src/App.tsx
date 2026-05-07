@@ -9,12 +9,15 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-// Я добавил сюда 'gallery', так как он используется в твоем коде ниже
-export type Screen = 'events' | 'event-details' | 'event-details2' | 'event-details3' | 'event-details4' | 'about' | 'tickets' | 'profile' | 'admin' | 'gallery';
+// Убрали временные экраны. Теперь у нас единый 'event-details', который принимает ID ивента.
+export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'gallery';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
+  
+  // НОВОЕ: Состояние для хранения ID выбранного ивента
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   // Синхронизация и авто-регистрация пользователя
   useEffect(() => {
@@ -22,7 +25,6 @@ export default function App() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       
       if (tgUser?.id) {
-        // Проверяем, есть ли юзер в базе
         const { data, error } = await supabase
           .from('users')
           .select('role')
@@ -30,7 +32,6 @@ export default function App() {
           .single();
         
         if (error && error.code === 'PGRST116') {
-          // Юзер не найден (код PGRST116) — создаем запись
           const { data: newUser } = await supabase
             .from('users')
             .insert([{
@@ -45,7 +46,6 @@ export default function App() {
             
           if (newUser) setUserRole(newUser.role);
         } else if (data) {
-          // Юзер есть, просто ставим роль
           setUserRole(data.role);
         }
       }
@@ -86,20 +86,27 @@ export default function App() {
   }, [currentScreen]);
 
   // Массив экранов, на которых НЕ нужно показывать нижнее меню BottomNav
-  const hideBottomNav = ['event-details', 'event-details2', 'event-details3', 'event-details4', 'about'].includes(currentScreen);
+  const hideBottomNav = ['event-details', 'about'].includes(currentScreen);
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
-      {currentScreen === 'events' && <Events onNavigate={setCurrentScreen} />}
-      
-      {/* Пока у тебя нет созданных файлов EventDetails2, 3 и 4, мы временно перенаправляем их на основной EventDetails. Так карусель будет работать сразу и без ошибок. */}
-      {(currentScreen === 'event-details' || currentScreen === 'event-details2' || currentScreen === 'event-details3' || currentScreen === 'event-details4') && (
-        <EventDetails onNavigate={setCurrentScreen} />
+      {/* Передаем функцию onEventSelect, чтобы Events мог сообщить App, какой ID открывать */}
+      {currentScreen === 'events' && (
+        <Events 
+          onNavigate={setCurrentScreen} 
+          onEventSelect={(id) => setSelectedEventId(id)} 
+        />
       )}
       
-      {/* Новый экран About Kyrios */}
-      {currentScreen === 'about' && <AboutKyrios onNavigate={setCurrentScreen} />}
+      {/* Передаем выбранный eventId внутрь EventDetails */}
+      {currentScreen === 'event-details' && (
+        <EventDetails 
+          onNavigate={setCurrentScreen} 
+          eventId={selectedEventId} 
+        />
+      )}
       
+      {currentScreen === 'about' && <AboutKyrios onNavigate={setCurrentScreen} />}
       {currentScreen === 'tickets' && <Tickets onNavigate={setCurrentScreen} />}
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       
@@ -112,7 +119,6 @@ export default function App() {
       
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
       
-      {/* Нижнее меню не показывается на страницах ивентов и About */}
       {!hideBottomNav && (
         <BottomNav 
           currentScreen={currentScreen === 'admin' ? 'profile' : currentScreen as any} 
