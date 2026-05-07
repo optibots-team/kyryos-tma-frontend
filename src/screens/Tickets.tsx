@@ -212,7 +212,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                           <Clock className="w-4 h-4" />
                           <span className="text-[10px] font-bold uppercase tracking-widest">Time</span>
                         </div>
-                        <p className="font-bold text-zinc-900 text-sm leading-tight">{timeString} onwards</p>
+                        <p className="font-bold text-zinc-900 text-sm leading-tight">{timeString} </p>
                       </div>
                     </div>
                     
