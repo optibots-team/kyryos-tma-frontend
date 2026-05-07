@@ -9,7 +9,8 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-export type Screen = 'events' | 'event-details' | 'event-details2' | 'event-details3' | 'event-details4' | 'about' | 'tickets' | 'profile' | 'admin';
+// Я добавил сюда 'gallery', так как он используется в твоем коде ниже
+export type Screen = 'events' | 'event-details' | 'event-details2' | 'event-details3' | 'event-details4' | 'about' | 'tickets' | 'profile' | 'admin' | 'gallery';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
@@ -84,10 +85,21 @@ export default function App() {
     };
   }, [currentScreen]);
 
+  // Массив экранов, на которых НЕ нужно показывать нижнее меню BottomNav
+  const hideBottomNav = ['event-details', 'event-details2', 'event-details3', 'event-details4', 'about'].includes(currentScreen);
+
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
       {currentScreen === 'events' && <Events onNavigate={setCurrentScreen} />}
-      {currentScreen === 'event-details' && <EventDetails onNavigate={setCurrentScreen} />}
+      
+      {/* Пока у тебя нет созданных файлов EventDetails2, 3 и 4, мы временно перенаправляем их на основной EventDetails. Так карусель будет работать сразу и без ошибок. */}
+      {(currentScreen === 'event-details' || currentScreen === 'event-details2' || currentScreen === 'event-details3' || currentScreen === 'event-details4') && (
+        <EventDetails onNavigate={setCurrentScreen} />
+      )}
+      
+      {/* Новый экран About Kyrios */}
+      {currentScreen === 'about' && <AboutKyrios onNavigate={setCurrentScreen} />}
+      
       {currentScreen === 'tickets' && <Tickets onNavigate={setCurrentScreen} />}
       {currentScreen === 'gallery' && <Gallery onNavigate={setCurrentScreen} />}
       
@@ -100,9 +112,10 @@ export default function App() {
       
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
       
-      {currentScreen !== 'event-details' && (
+      {/* Нижнее меню не показывается на страницах ивентов и About */}
+      {!hideBottomNav && (
         <BottomNav 
-          currentScreen={currentScreen === 'admin' ? 'profile' : currentScreen} 
+          currentScreen={currentScreen === 'admin' ? 'profile' : currentScreen as any} 
           onNavigate={setCurrentScreen} 
         />
       )}
