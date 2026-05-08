@@ -10,7 +10,6 @@ interface EventDetailsProps {
 }
 
 export default function EventDetails({ onNavigate, eventId }: EventDetailsProps) {
-  // Обрати внимание: в твой хук usePurchaseTicket нужно будет добавить 3-й аргумент (promoCode)
   const { purchaseTicket, loading: purchaseLoading, error: purchaseError } = usePurchaseTicket();
   
   const [event, setEvent] = useState<any>(null);
@@ -71,7 +70,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     setPromoStatus('validating');
     
     try {
-      // Вызываем RPC функцию, которую напишет бэкендер
       const { data, error } = await supabase.rpc('validate_promo', { p_code: promoCode.trim().toUpperCase() });
       
       if (error || !data?.valid) {
@@ -217,7 +215,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <div className="w-full aspect-video rounded-[2rem] overflow-hidden shadow-lg border border-zinc-100">
               <iframe 
                 className="w-full h-full"
-                // Здесь можешь вставить ссылку из базы: src={event.youtube_link || "..."}
                 src="https://www.youtube.com/embed/n4XkLd-H9-I?si=yqB0O7hN2U3K5M6x" 
                 title="YouTube video player" 
                 frameBorder="0" 
@@ -305,8 +302,19 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
 
             <button 
-              // ТУТ ВАЖНО: передаем 3 параметра в твой хук (попроси бэкендера обновить хук usePurchaseTicket чтобы он принимал promoCode)
-              onClick={() => purchaseTicket(event.id, quantity, promoCode)}
+              onClick={async () => {
+                const result = await purchaseTicket(event.id, quantity, promoCode);
+                
+                // Если запрос прошел успешно (is_free: true или checkout_url получен внутри хука)
+                if (result && result.success) {
+                  setShowModal(false);
+                  
+                  // Мгновенный редирект для бесплатных билетов
+                  if (result.is_free) {
+                    onNavigate('tickets');
+                  }
+                }
+              }}
               disabled={purchaseLoading}
               className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
             >
