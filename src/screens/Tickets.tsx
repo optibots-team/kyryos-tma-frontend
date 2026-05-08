@@ -217,9 +217,9 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                     </div>
 
                     <div className="pt-4 border-t border-zinc-100 flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Status</span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Status</span>
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit ${
                             isUsed 
                               ? 'bg-zinc-100 text-zinc-500' 
@@ -229,12 +229,38 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                           </span>
                         </div>
 
-                        {/* Плашка промокода (emerald стиль как предложил бэк) */}
+                        {/* Новые бейджи типов оплаты (заполняются бэкендом) */}
+                        {ticket.payment_type && (
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {ticket.payment_type === 'promocode100' && (
+                              <span className="text-[10px] font-mono bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full border border-purple-200 font-bold uppercase">
+                                🎁 Free Promo
+                              </span>
+                            )}
+                            {ticket.payment_type === 'Stripe50' && (
+                              <span className="text-[10px] font-mono bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-200 font-bold uppercase">
+                                🎟 Promo Discount
+                              </span>
+                            )}
+                            {ticket.payment_type === 'early_bird30' && (
+                              <span className="text-[10px] font-mono bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200 font-bold uppercase">
+                                ⚡ Early Bird
+                              </span>
+                            )}
+                            {ticket.payment_type === 'Stripe100' && (
+                              <span className="text-[10px] font-mono bg-zinc-50 text-zinc-600 px-2 py-0.5 rounded-full border border-zinc-200 font-bold uppercase">
+                                💳 Standard Paid
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Сам текст промокода */}
                         {ticket.promo_code && (
-                          <div className="flex items-center gap-1.5 pt-1">
+                          <div className="flex items-center gap-1.5 mt-0.5">
                              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 
                                              px-2 py-0.5 rounded-full border border-emerald-200 font-bold uppercase">
-                              🎟 {ticket.promo_code} −{ticket.promo_discount_percent}%
+                              🏷 {ticket.promo_code} (−{ticket.promo_discount_percent}%)
                             </span>
                           </div>
                         )}
