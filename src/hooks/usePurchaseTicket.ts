@@ -9,7 +9,8 @@ export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
 
-  const purchaseTicket = async (tierId: string, quantity: number = 1) => {
+  // Добавили promoCode и поменяли tierId на eventId
+  const purchaseTicket = async (eventId: string, quantity: number = 1, promoCode?: string) => {
     setLoading(true)
     setError(null)
 
@@ -19,7 +20,7 @@ export function usePurchaseTicket() {
     if (!user || !user.id) {
       setError('Open this app inside Telegram')
       setLoading(false)
-      return
+      return { success: false, is_free: false }
     }
 
     try {
@@ -32,8 +33,9 @@ export function usePurchaseTicket() {
         },
         body: JSON.stringify({
           telegram_id: user.id,
-          tier_id:     tierId,
+          event_id:    eventId, // Отправляем event_id
           quantity:    quantity,
+          promo_code:  promoCode || null, // Отправляем промокод бэкенду
           // Передаем полные данные для Upsert на бэкенде
           user_data: {
             username: user.username || '',
@@ -49,16 +51,25 @@ export function usePurchaseTicket() {
         throw new Error(data.error ?? 'Payment initialization failed')
       }
 
+      // ВЕТКА А: Платный билет (Stripe)
       if (data.checkout_url) {
         // Оставляем пользователя строго внутри Mini App
         window.location.href = data.checkout_url;
-      } else {
+        return { success: true, is_free: false };
+      } 
+      // ВЕТКА Б: Бесплатный билет по промокоду (100% скидка)
+      else if (data.is_free) {
+        return { success: true, is_free: true };
+      } 
+      // Непредвиденный ответ бэкенда
+      else {
         throw new Error('No checkout URL received')
       }
 
     } catch (err: any) {
       console.error('Purchase error:', err)
       setError(err.message || 'Unknown error')
+      return { success: false, is_free: false };
     } finally {
       setLoading(false)
     }
