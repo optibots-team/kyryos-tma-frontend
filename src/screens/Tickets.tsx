@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Ticket as TicketIcon, MapPin, Calendar, Clock, User } from 'lucide-react';
+import { Ticket as TicketIcon, MapPin, Calendar, Clock, User, Tag } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
@@ -7,11 +7,9 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Состояния для полноэкранного QR-кода и свайпа
   const [expandedQr, setExpandedQr] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
 
-  // Получаем и форматируем имя гостя из Telegram
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   let guestName = "Guest";
   if (tgUser) {
@@ -51,7 +49,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     fetchTickets();
   }, [tgUser?.id]);
 
-  // Логика определения свайпа для закрытия QR
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
   };
@@ -62,7 +59,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     const dx = touchEnd.x - touchStart.x;
     const dy = touchEnd.y - touchStart.y;
     
-    // Если палец сдвинулся больше чем на 50px по X или Y — считаем это свайпом
     if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
       setExpandedQr(null);
     }
@@ -72,7 +68,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-        {/* Темно-красный спиннер загрузки */}
         <div className="w-8 h-8 border-4 border-[#A50021]/20 border-t-[#A50021] rounded-full animate-spin"></div>
         <p className="text-zinc-500 font-medium text-sm animate-pulse">Loading your tickets...</p>
       </div>
@@ -121,17 +116,13 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                   className="bg-white rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 border border-zinc-100 animate-fade-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  {/* Верхняя часть билета (Фон из БД + QR) */}
                   <div className="relative p-8 text-center bg-zinc-900 overflow-hidden">
-                    
-                    {/* Динамический фон (Афиша ивента) */}
                     {ticket.event_image_url && (
                       <div 
                         className="absolute inset-0 bg-cover bg-center opacity-40 blur-md scale-110"
                         style={{ backgroundImage: `url(${ticket.event_image_url})` }}
                       ></div>
                     )}
-                    {/* Градиент поверх картинки, чтобы текст читался */}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-zinc-900/95 pointer-events-none"></div>
                     
                     <div className="relative z-10 flex flex-col items-center">
@@ -139,7 +130,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                         {isUsed ? 'Ticket successfully verified' : 'Tap QR to expand & scan'}
                       </p>
                       
-                      {/* Контейнер QR-кода */}
                       <div 
                         onClick={() => !isUsed && setExpandedQr(ticket.ticket_code)}
                         className={`relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all ${
@@ -154,7 +144,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                           className={`w-full h-full object-contain ${isUsed ? 'blur-[2px]' : 'mix-blend-multiply'}`}
                         />
                         
-                        {/* Штамп SCANNED и крест */}
                         {isUsed && (
                           <div className="absolute inset-0 flex items-center justify-center rounded-3xl overflow-hidden">
                             <div className="absolute w-[140%] h-1.5 bg-red-600 transform -rotate-45 shadow-sm"></div>
@@ -171,14 +160,12 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                     </div>
                   </div>
 
-                  {/* Линия отрыва */}
                   <div className="relative h-8 flex items-center justify-between px-4 -my-4 z-20">
                     <div className="w-6 h-6 rounded-full bg-slate-50 border border-zinc-100 absolute -left-3"></div>
                     <div className="w-full border-t-2 border-dashed border-zinc-200"></div>
                     <div className="w-6 h-6 rounded-full bg-slate-50 border border-zinc-100 absolute -right-3"></div>
                   </div>
 
-                  {/* Инфо часть билета */}
                   <div className="p-8 pt-10 space-y-6 relative bg-white">
                     <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                       <div className="w-10 h-10 bg-zinc-200 rounded-xl flex items-center justify-center text-zinc-500">
@@ -212,7 +199,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                           <Clock className="w-4 h-4" />
                           <span className="text-[10px] font-bold uppercase tracking-widest">Time</span>
                         </div>
-                        <p className="font-bold text-zinc-900 text-sm leading-tight">{timeString} </p>
+                        <p className="font-bold text-zinc-900 text-sm leading-tight">{timeString}</p>
                       </div>
                     </div>
                     
@@ -229,16 +216,29 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                       </p>
                     </div>
 
-                    {/* Статус билета внизу */}
-                    <div className="pt-4 border-t border-zinc-100 flex justify-between items-center">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Status</span>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        isUsed 
-                          ? 'bg-zinc-100 text-zinc-500' 
-                          : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                      }`}>
-                        {isUsed ? 'SCANNED' : 'VALID ENTRY'}
-                      </span>
+                    <div className="pt-4 border-t border-zinc-100 flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Status</span>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit ${
+                            isUsed 
+                              ? 'bg-zinc-100 text-zinc-500' 
+                              : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          }`}>
+                            {isUsed ? 'SCANNED' : 'VALID ENTRY'}
+                          </span>
+                        </div>
+
+                        {/* Плашка промокода (emerald стиль как предложил бэк) */}
+                        {ticket.promo_code && (
+                          <div className="flex items-center gap-1.5 pt-1">
+                             <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 
+                                             px-2 py-0.5 rounded-full border border-emerald-200 font-bold uppercase">
+                              🎟 {ticket.promo_code} −{ticket.promo_discount_percent}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -247,7 +247,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
           </div>
         )}
 
-        {/* ПОЛНОЭКРАННЫЙ QR КОД */}
         {expandedQr && (
           <div 
             className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-200"
@@ -268,7 +267,6 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
               </div>
             </div>
             
-            {/* Кнопка НАЗАД */}
             <div className="w-full p-6 pb-12 bg-white">
               <button 
                 onClick={() => setExpandedQr(null)}
