@@ -93,12 +93,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Расчеты Capacity и Цены на основе данных из базы
+  // Расчеты Capacity и Цены
   const maxCapacity = event.capacity || 300;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  // ВОЗВРАЩАЕМ ЛОГИКУ EARLY BIRD
+  // Логика Early Bird
   const EARLY_BIRD_CAPACITY = Math.floor(maxCapacity / 4);
   const earlyBirdPlacesLeft = Math.max(0, EARLY_BIRD_CAPACITY - (event.total_sold || 0));
   const isEarlyBirdActive = earlyBirdPlacesLeft > 0;
@@ -201,6 +201,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 className="absolute left-0 top-0 h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
                 style={{ width: `${fillPercentage}%` }}
               ></div>
+              
+              {/* ВЕРНУЛИ 25% EARLY BIRD ЗОНУ */}
+              <div className="absolute right-[25%] top-0 bottom-0 w-[2px] bg-white/80 z-10"></div>
+              <div className="absolute right-0 top-0 h-full w-[25%] bg-purple-500/20 mix-blend-multiply border-l border-purple-500/30"></div>
             </div>
           </div>
 
@@ -310,26 +314,19 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
             </div>
 
-            {/* ЕДИНСТВЕННАЯ ИСПРАВЛЕННАЯ КНОПКА ПОКУПКИ */}
             <button 
               onClick={async () => {
-                // Если код пустой, передаем undefined
                 const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                const data = await purchaseTicket(event.id, quantity, codeToSend);
+                const result = await purchaseTicket(event.id, quantity, codeToSend);
                 
-                if (data) {
+                if (result) {
                   setShowModal(false);
                   
-                  if (data.is_free) {
-                    // Если 100% скидка — сразу на билеты
+                  if (result.is_free) {
                     onNavigate('tickets');
-                  } else if (data.checkout_url) {
-                    // Если платный — открываем Stripe через Telegram API
-                    if (window.Telegram?.WebApp?.openLink) {
-                      window.Telegram.WebApp.openLink(data.checkout_url);
-                    } else {
-                      window.location.href = data.checkout_url;
-                    }
+                  } else if (result.checkout_url) {
+                    // ИСПРАВЛЕНИЕ: Открываем внутри Mini App
+                    window.location.href = result.checkout_url;
                   }
                 }
               }}
