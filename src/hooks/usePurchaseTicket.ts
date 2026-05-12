@@ -33,7 +33,7 @@ export function usePurchaseTicket() {
         },
         body: JSON.stringify({
           telegram_id: user.id,
-          event_id:    eventId, // Отправляем event_id
+          tier_id:    eventId, // Отправляем event_id
           quantity:    quantity,
           promo_code:  promoCode || null, // Отправляем промокод бэкенду
           // Передаем полные данные для Upsert на бэкенде
