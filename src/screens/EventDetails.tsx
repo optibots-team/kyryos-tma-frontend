@@ -93,14 +93,20 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Расчеты Capacity и Цены на основе данных из базы
+  // Расчеты Capacity и Цены
   const maxCapacity = event.capacity || 300;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  // Цена с учетом скидки по промокоду
-  const basePriceForUser = event.current_price || 200;
-  const priceAfterPromo = Math.round(basePriceForUser * (1 - discountPercent / 100));
+  // ВОЗВРАЩАЕМ ЛОГИКУ EARLY BIRD
+  const EARLY_BIRD_CAPACITY = Math.floor(maxCapacity / 4);
+  const earlyBirdPlacesLeft = Math.max(0, EARLY_BIRD_CAPACITY - (event.total_sold || 0));
+  const isEarlyBirdActive = earlyBirdPlacesLeft > 0;
+  
+  // Цена с учетом Early Bird и скидки по промокоду
+  const basePrice = event.current_price || 200;
+  const currentPrice = isEarlyBirdActive ? Math.round(basePrice * 0.7) : basePrice;
+  const priceAfterPromo = Math.round(currentPrice * (1 - discountPercent / 100));
   const finalTotal = priceAfterPromo * quantity;
 
   const eventDate = new Date(event.event_date);
@@ -180,13 +186,13 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
               
               <div className="text-right">
-                <div className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${event.is_early_bird ? 'text-purple-600' : 'text-zinc-400'}`}>
-                  <Zap size={10} className={event.is_early_bird ? 'fill-purple-600' : ''} />
-                  {event.is_early_bird ? 'Early Bird Active' : 'Standard'}
+                <div className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${isEarlyBirdActive ? 'text-purple-600' : 'text-zinc-400'}`}>
+                  <Zap size={10} className={isEarlyBirdActive ? 'fill-purple-600' : ''} />
+                  Early Bird
                 </div>
-                {event.is_early_bird && (
-                  <p className="text-xs font-bold mt-0.5 text-purple-600">Discount applied</p>
-                )}
+                <p className={`text-xs font-bold mt-0.5 ${isEarlyBirdActive ? 'text-purple-600' : 'text-zinc-400 line-through'}`}>
+                  {earlyBirdPlacesLeft > 0 ? `${earlyBirdPlacesLeft} left at -30%` : 'Sold out'}
+                </p>
               </div>
             </div>
 
@@ -237,7 +243,8 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
           <div className="flex flex-col">
             <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
             <span className="font-headline font-extrabold text-lg text-white">
-              {basePriceForUser} PLN
+              {isEarlyBirdActive && <span className="text-zinc-500 line-through text-sm mr-2">{basePrice}</span>}
+              {currentPrice} PLN
             </span>
           </div>
           <button 
