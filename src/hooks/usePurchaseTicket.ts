@@ -9,18 +9,16 @@ export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
 
-  // Добавили promoCode и поменяли tierId на eventId
-  const purchaseTicket = async (eventId: string, quantity: number = 1, promoCode?: string) => {
+  const purchaseTicket = async (tierId: string, quantity: number = 1, promoCode?: string) => {
     setLoading(true)
     setError(null)
 
-    // Получаем сразу ВЕСЬ объект юзера из ТГ
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
     if (!user || !user.id) {
       setError('Open this app inside Telegram')
       setLoading(false)
-      return { success: false, is_free: false }
+      return null;
     }
 
     try {
@@ -33,10 +31,9 @@ export function usePurchaseTicket() {
         },
         body: JSON.stringify({
           telegram_id: user.id,
-          tier_id:    eventId, // Отправляем event_id
+          tier_id:     tierId, 
           quantity:    quantity,
-          promo_code:  promoCode || null, // Отправляем промокод бэкенду
-          // Передаем полные данные для Upsert на бэкенде
+          promo_code:  promoCode || null,
           user_data: {
             username: user.username || '',
             first_name: user.first_name || '',
@@ -51,25 +48,13 @@ export function usePurchaseTicket() {
         throw new Error(data.error ?? 'Payment initialization failed')
       }
 
-      // ВЕТКА А: Платный билет (Stripe)
-      if (data.checkout_url) {
-        // Оставляем пользователя строго внутри Mini App
-        window.location.href = data.checkout_url;
-        return { success: true, is_free: false };
-      } 
-      // ВЕТКА Б: Бесплатный билет по промокоду (100% скидка)
-      else if (data.is_free) {
-        return { success: true, is_free: true };
-      } 
-      // Непредвиденный ответ бэкенда
-      else {
-        throw new Error('No checkout URL received')
-      }
+      // Возвращаем данные на страницу, чтобы она сама сделала редирект
+      return data;
 
     } catch (err: any) {
       console.error('Purchase error:', err)
       setError(err.message || 'Unknown error')
-      return { success: false, is_free: false };
+      return null;
     } finally {
       setLoading(false)
     }
