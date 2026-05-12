@@ -330,6 +330,34 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   ? 'CLAIM FREE TICKET' 
                   : `PROCEED TO PAYMENT — ${finalTotal} PLN`
               )}
+           <button 
+              onClick={async () => {
+                const data = await purchaseTicket(event.id, quantity, promoCode);
+                
+                if (data) {
+                  setShowModal(false);
+                  
+                  if (data.is_free) {
+                    // Если 100% скидка — сразу на билеты
+                    onNavigate('tickets');
+                  } else if (data.checkout_url) {
+                    // Если платный — открываем Stripe через Telegram API
+                    if (window.Telegram?.WebApp) {
+                      window.Telegram.WebApp.openLink(data.checkout_url);
+                    } else {
+                      window.location.href = data.checkout_url;
+                    }
+                  }
+                }
+              }}
+              disabled={purchaseLoading}
+              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+            >
+              {purchaseLoading ? 'PROCESSING...' : (
+                finalTotal === 0 
+                  ? 'CLAIM FREE TICKET' 
+                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+              )}
             </button>
           </div>
         </div>
