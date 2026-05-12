@@ -93,7 +93,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Расчеты Capacity и Цены
+  // Расчеты Capacity и Цены на основе данных из базы
   const maxCapacity = event.capacity || 300;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
@@ -231,6 +231,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
             </div>
           )}
+        </div>
       </main>
 
       {/* Нижняя плашка покупки */}
@@ -309,31 +310,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
             </div>
 
+            {/* ЕДИНСТВЕННАЯ ИСПРАВЛЕННАЯ КНОПКА ПОКУПКИ */}
             <button 
               onClick={async () => {
-                const result = await purchaseTicket(event.id, quantity, promoCode);
-                
-                // Если запрос прошел успешно (is_free: true или checkout_url получен внутри хука)
-                if (result && result.success) {
-                  setShowModal(false);
-                  
-                  // Мгновенный редирект для бесплатных билетов
-                  if (result.is_free) {
-                    onNavigate('tickets');
-                  }
-                }
-              }}
-              disabled={purchaseLoading}
-              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
-            >
-              {purchaseLoading ? 'PROCESSING...' : (
-                finalTotal === 0 
-                  ? 'CLAIM FREE TICKET' 
-                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-              )}
-           <button 
-              onClick={async () => {
-                const data = await purchaseTicket(event.id, quantity, promoCode);
+                // Если код пустой, передаем undefined
+                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                const data = await purchaseTicket(event.id, quantity, codeToSend);
                 
                 if (data) {
                   setShowModal(false);
@@ -343,7 +325,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                     onNavigate('tickets');
                   } else if (data.checkout_url) {
                     // Если платный — открываем Stripe через Telegram API
-                    if (window.Telegram?.WebApp) {
+                    if (window.Telegram?.WebApp?.openLink) {
                       window.Telegram.WebApp.openLink(data.checkout_url);
                     } else {
                       window.location.href = data.checkout_url;
