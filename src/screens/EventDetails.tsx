@@ -212,24 +212,25 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </p>
           </div>
 
-          {/* YouTube Video Плеер */}
-          <div className="space-y-3 animate-fade-up delay-300">
-            <div className="flex items-center gap-2 text-zinc-900">
-              <PlayCircle className="w-5 h-5 text-[#A50021]" />
-              <h3 className="font-headline font-bold text-lg tracking-tight">PREVIEW</h3>
+          {/* YouTube Video Плеер (Динамический) */}
+          {event.youtube_link && (
+            <div className="space-y-3 animate-fade-up delay-300">
+              <div className="flex items-center gap-2 text-zinc-900">
+                <PlayCircle className="w-5 h-5 text-[#A50021]" />
+                <h3 className="font-headline font-bold text-lg tracking-tight">PREVIEW</h3>
+              </div>
+              <div className="w-full aspect-video rounded-[2rem] overflow-hidden shadow-lg border border-zinc-100">
+                <iframe 
+                  className="w-full h-full"
+                  src={event.youtube_link} 
+                  title="YouTube video player" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              </div>
             </div>
-            <div className="w-full aspect-video rounded-[2rem] overflow-hidden shadow-lg border border-zinc-100">
-              <iframe 
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/n4XkLd-H9-I?si=yqB0O7hN2U3K5M6x" 
-                title="YouTube video player" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                allowFullScreen
-              ></iframe>
-            </div>
-          </div>
-        </div>
+          )}
       </main>
 
       {/* Нижняя плашка покупки */}
