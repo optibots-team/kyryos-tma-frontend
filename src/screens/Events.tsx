@@ -88,9 +88,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             
             <div className="absolute inset-0 p-8 flex flex-col justify-end">
               <div className="flex items-center gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] font-bold uppercase tracking-widest">
-                  {mainEvent.location || 'Warsaw'}
-                </span>
               </div>
               
               <h2 className="text-white font-headline font-extrabold text-4xl mb-2 tracking-tight">{mainEvent.title}</h2>
