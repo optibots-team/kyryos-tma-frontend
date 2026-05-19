@@ -167,24 +167,63 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity (С динамическим рендером всех партий) */}
-          <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-5 shadow-sm animate-fade-up delay-200">
-            <div className="flex justify-between items-end border-b border-zinc-100 pb-3">
+         {/* Плашка Capacity (Подсвеченная) */}
+          <div className="relative bg-white border-2 border-[#A50021]/20 p-6 rounded-[2rem] space-y-4 shadow-[0_8px_30px_rgba(165,0,33,0.08)] animate-fade-up delay-200 overflow-hidden">
+            {/* Декоративный легкий фон для выделения плашки */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#A50021]/5 to-transparent pointer-events-none"></div>
+
+            <div className="relative z-10 flex justify-between items-end pb-1">
               <div>
-                <span className="text-xs font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Total Capacity</span>
-                <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-400 font-normal">places left</span></span>
+                <span className="text-xs font-label uppercase tracking-wider text-[#A50021] font-bold block mb-1">Total Capacity</span>
+                <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-500 font-normal">places left</span></span>
               </div>
               
               <div className="text-right">
                 <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
                   <Zap size={10} className="fill-purple-600" />
-                  {currentBatchName} Active
+                  {currentBatchName.replace('-я', '')} Active
                 </div>
                 <p className="text-xs font-bold mt-0.5 text-purple-600">
                   {batchAvailable > 0 ? `${batchAvailable} left` : 'Sold out'}
                 </p>
               </div>
             </div>
+
+            {/* КРАСНАЯ ШКАЛА ТЕПЕРЬ ЗДЕСЬ (сразу под цифрами) */}
+            <div className="relative z-10 w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
+              <div 
+                className="absolute left-0 top-0 h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
+                style={{ width: `${fillPercentage}%` }}
+              ></div>
+            </div>
+
+            {/* СПИСОК ВСЕХ ПАРТИЙ ИЗ БЭКЕНДА */}
+            {event.batches && event.batches.length > 0 && (
+              <div className="relative z-10 mt-4 space-y-2 bg-white/60 backdrop-blur p-4 rounded-2xl border border-[#A50021]/10">
+                <span className="text-[10px] font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Ticket Batches</span>
+                {event.batches.map((batch: any) => {
+                  const displayName = batch.name.replace('-я', ''); // Фикс текста "4-я"
+                  return (
+                    <div key={batch.id} className="flex items-center justify-between py-1 border-b border-zinc-200/50 last:border-0 last:pb-0">
+                      <span className={`text-xs font-bold ${batch.is_sold_out ? 'text-zinc-400 line-through' : 'text-zinc-800'}`}>
+                        {displayName}
+                      </span>
+                      {batch.is_sold_out ? (
+                        <span className="text-red-500 text-[10px] font-black tracking-wider uppercase bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                          Sold Out
+                        </span>
+                      ) : (
+                        <span className={`text-xs ${batch.id === event.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
+                          {batch.available} left · <span className="font-headline">{batch.price} PLN</span>
+                          {batch.id === event.ticket_type_id && ' 🔥'}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
             {/* СПИСОК ВСЕХ ПАРТИЙ ИЗ БЭКЕНДА */}
             {event.batches && event.batches.length > 0 && (
