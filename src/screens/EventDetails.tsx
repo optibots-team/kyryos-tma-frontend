@@ -18,12 +18,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   
-  // Состояния промокода
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [promoStatus, setPromoStatus] = useState<'none' | 'validating' | 'success' | 'error'>('none');
 
-  // 1. Загрузка данных ивента
   useEffect(() => {
     async function fetchEvent() {
       if (!eventId) {
@@ -47,31 +45,26 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     fetchEvent();
   }, [eventId]);
 
-  // 2. Управление кнопкой "Назад" от Telegram для модалки
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
-
     const handleBackFromModal = () => setShowModal(false);
 
     if (showModal) {
       tg.BackButton.show();
       tg.BackButton.onClick(handleBackFromModal);
     }
-
     return () => {
       tg.BackButton.offClick(handleBackFromModal);
     };
   }, [showModal]);
 
-  // 3. Валидация промокода
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
     setPromoStatus('validating');
     
     try {
       const { data, error } = await supabase.rpc('validate_promo', { p_code: promoCode.trim().toUpperCase() });
-      
       if (error || !data?.valid) {
         setPromoStatus('error');
         setDiscountPercent(0);
@@ -93,20 +86,18 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Расчеты Capacity и Цены
-  const maxCapacity = event.capacity || 300;
+  // Общая шкала заполненности ивента (если бэкенд возвращает эти поля)
+  const maxCapacity = event.capacity || 400;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  // Логика Early Bird
-  const EARLY_BIRD_CAPACITY = Math.floor(maxCapacity / 4);
-  const earlyBirdPlacesLeft = Math.max(0, EARLY_BIRD_CAPACITY - (event.total_sold || 0));
-  const isEarlyBirdActive = earlyBirdPlacesLeft > 0;
+  // Данные текущей активной партии из бэкенда
+  const currentBatchName = event.ticket_type_name || 'Standard Ticket';
+  const batchAvailable = event.available || 0;
   
-  // Цена с учетом Early Bird и скидки по промокоду
+  // Цена с учетом промокода
   const basePrice = event.current_price || 200;
-  const currentPrice = isEarlyBirdActive ? Math.round(basePrice * 0.7) : basePrice;
-  const priceAfterPromo = Math.round(currentPrice * (1 - discountPercent / 100));
+  const priceAfterPromo = Math.round(basePrice * (1 - discountPercent / 100));
   const finalTotal = priceAfterPromo * quantity;
 
   const eventDate = new Date(event.event_date);
@@ -120,7 +111,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
       </header>
 
       <main>
-        {/* Баннер */}
         <section className="relative w-full h-[397px] overflow-hidden animate-fade-up">
           <img className="w-full h-full object-cover" src={event.image_url} alt={event.title} />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent"></div>
@@ -177,21 +167,21 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity */}
+          {/* Плашка Capacity (Динамическая) */}
           <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-4 shadow-sm animate-fade-up delay-200">
             <div className="flex justify-between items-end">
               <div>
-                <span className="text-xs font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Capacity</span>
+                <span className="text-xs font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Total Capacity</span>
                 <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-400 font-normal">places left</span></span>
               </div>
               
               <div className="text-right">
-                <div className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${isEarlyBirdActive ? 'text-purple-600' : 'text-zinc-400'}`}>
-                  <Zap size={10} className={isEarlyBirdActive ? 'fill-purple-600' : ''} />
-                  Early Bird
+                <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
+                  <Zap size={10} className="fill-purple-600" />
+                  {currentBatchName}
                 </div>
-                <p className={`text-xs font-bold mt-0.5 ${isEarlyBirdActive ? 'text-purple-600' : 'text-zinc-400 line-through'}`}>
-                  {earlyBirdPlacesLeft > 0 ? `${earlyBirdPlacesLeft} left at -30%` : 'Sold out'}
+                <p className="text-xs font-bold mt-0.5 text-purple-600">
+                  {batchAvailable > 0 ? `${batchAvailable} left at ${basePrice} PLN` : 'Sold out'}
                 </p>
               </div>
             </div>
@@ -201,14 +191,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 className="absolute left-0 top-0 h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
                 style={{ width: `${fillPercentage}%` }}
               ></div>
-              
-              {/* ВЕРНУЛИ 25% EARLY BIRD ЗОНУ */}
-              <div className="absolute right-[25%] top-0 bottom-0 w-[2px] bg-white/80 z-10"></div>
-              <div className="absolute right-0 top-0 h-full w-[25%] bg-purple-500/20 mix-blend-multiply border-l border-purple-500/30"></div>
             </div>
           </div>
 
-          {/* Описание */}
           <div className="space-y-3 animate-fade-up delay-300">
             <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-900">ABOUT</h3>
             <p className="text-zinc-500 text-sm leading-relaxed tracking-wide">
@@ -216,7 +201,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </p>
           </div>
 
-          {/* YouTube Video Плеер (Динамический) */}
           {event.youtube_link && (
             <div className="space-y-3 animate-fade-up delay-300">
               <div className="flex items-center gap-2 text-zinc-900">
@@ -238,7 +222,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </div>
       </main>
 
-      {/* Нижняя плашка покупки */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 flex flex-col gap-2 animate-fade-up delay-400">
         {purchaseError && (
           <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50">
@@ -249,8 +232,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
           <div className="flex flex-col">
             <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
             <span className="font-headline font-extrabold text-lg text-white">
-              {isEarlyBirdActive && <span className="text-zinc-500 line-through text-sm mr-2">{basePrice}</span>}
-              {currentPrice} PLN
+              {basePrice} PLN
             </span>
           </div>
           <button 
@@ -262,7 +244,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </div>
       </div>
 
-      {/* Модальное окно выбора билетов и промокода */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
@@ -270,7 +251,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-headline font-bold text-xl text-zinc-900">Select Tickets</h3>
+              <div className="flex flex-col">
+                <h3 className="font-headline font-bold text-xl text-zinc-900">Select Tickets</h3>
+                <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">{currentBatchName} Active</span>
+              </div>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-zinc-500 active:scale-95">✕</button>
             </div>
             
@@ -279,11 +263,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               <div className="flex items-center gap-6">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
                 <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
-                <button onClick={() => setQuantity(Math.min(10, quantity + 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+                <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
               </div>
             </div>
 
-            {/* Блок Промокода */}
             <div className="mb-6 space-y-2">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-zinc-400" />
@@ -309,7 +292,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   {promoStatus === 'validating' ? '...' : 'Apply'}
                 </button>
               </div>
-              {/* Статус промокода */}
               {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
               {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
             </div>
@@ -317,16 +299,16 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <button 
               onClick={async () => {
                 const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                const result = await purchaseTicket(event.id, quantity, codeToSend);
+                // ВАЖНО: Передаем ticket_type_id вместо event_id
+                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
                 
-                if (result) {
+                if (data) {
                   setShowModal(false);
                   
-                  if (result.is_free) {
+                  if (data.is_free) {
                     onNavigate('tickets');
-                  } else if (result.checkout_url) {
-                    // ИСПРАВЛЕНИЕ: Открываем внутри Mini App
-                    window.location.href = result.checkout_url;
+                  } else if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
                   }
                 }
               }}
