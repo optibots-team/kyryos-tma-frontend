@@ -9,7 +9,8 @@ export function usePurchaseTicket() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
 
-  const purchaseTicket = async (tierId: string, quantity: number = 1, promoCode?: string) => {
+  // Изменили eventId на ticketTypeId
+  const purchaseTicket = async (ticketTypeId: string, quantity: number = 1, promoCode?: string) => {
     setLoading(true)
     setError(null)
 
@@ -30,14 +31,14 @@ export function usePurchaseTicket() {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
-          telegram_id: user.id,
-          tier_id:     tierId, 
-          quantity:    quantity,
-          promo_code:  promoCode || null,
+          telegram_id:    user.id,
+          ticket_type_id: ticketTypeId, // Передаем новый ID партии/стола
+          quantity:       quantity,
+          promo_code:     promoCode || null,
           user_data: {
-            username: user.username || '',
+            username:   user.username || '',
             first_name: user.first_name || '',
-            last_name: user.last_name || ''
+            last_name:  user.last_name || ''
           }
         }),
       })
@@ -48,7 +49,6 @@ export function usePurchaseTicket() {
         throw new Error(data.error ?? 'Payment initialization failed')
       }
 
-      // Возвращаем данные на страницу, чтобы она сама сделала редирект
       return data;
 
     } catch (err: any) {
