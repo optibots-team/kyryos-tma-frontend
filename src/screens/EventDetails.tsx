@@ -86,12 +86,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Общая шкала заполненности ивента (если бэкенд возвращает эти поля)
+  // Общая шкала заполненности ивента
   const maxCapacity = event.capacity || 400;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  // Данные текущей активной партии из бэкенда
+  // Данные текущей активной партии
   const currentBatchName = event.ticket_type_name || 'Standard Ticket';
   const batchAvailable = event.available || 0;
   
@@ -167,9 +167,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity (Динамическая) */}
-          <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-4 shadow-sm animate-fade-up delay-200">
-            <div className="flex justify-between items-end">
+          {/* Плашка Capacity (С динамическим рендером всех партий) */}
+          <div className="bg-white border border-zinc-100 p-6 rounded-[2rem] space-y-5 shadow-sm animate-fade-up delay-200">
+            <div className="flex justify-between items-end border-b border-zinc-100 pb-3">
               <div>
                 <span className="text-xs font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Total Capacity</span>
                 <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-400 font-normal">places left</span></span>
@@ -178,13 +178,37 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               <div className="text-right">
                 <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
                   <Zap size={10} className="fill-purple-600" />
-                  {currentBatchName}
+                  {currentBatchName} Active
                 </div>
                 <p className="text-xs font-bold mt-0.5 text-purple-600">
-                  {batchAvailable > 0 ? `${batchAvailable} left at ${basePrice} PLN` : 'Sold out'}
+                  {batchAvailable > 0 ? `${batchAvailable} left` : 'Sold out'}
                 </p>
               </div>
             </div>
+
+            {/* СПИСОК ВСЕХ ПАРТИЙ ИЗ БЭКЕНДА */}
+            {event.batches && event.batches.length > 0 && (
+              <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
+                <span className="text-[10px] font-label uppercase tracking-wider text-zinc-400 font-bold block mb-1">Ticket Batches</span>
+                {event.batches.map((batch: any) => (
+                  <div key={batch.id} className="flex items-center justify-between py-1 border-b border-zinc-200/40 last:border-0 last:pb-0">
+                    <span className={`text-xs font-bold ${batch.is_sold_out ? 'text-zinc-400 line-through' : 'text-zinc-800'}`}>
+                      {batch.name}
+                    </span>
+                    {batch.is_sold_out ? (
+                      <span className="text-red-500 text-[10px] font-black tracking-wider uppercase bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                        Sold Out
+                      </span>
+                    ) : (
+                      <span className={`text-xs ${batch.id === event.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
+                        {batch.available} left · <span className="font-headline">{batch.price} PLN</span>
+                        {batch.id === event.ticket_type_id && ' 🔥'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="relative w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
               <div 
@@ -299,7 +323,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <button 
               onClick={async () => {
                 const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                // ВАЖНО: Передаем ticket_type_id вместо event_id
                 const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
