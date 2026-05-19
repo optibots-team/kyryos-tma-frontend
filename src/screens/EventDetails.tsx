@@ -167,27 +167,27 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity (Подсвеченная с правильной иерархией) */}
+          {/* Плашка Capacity (Идеальная структура без дубликатов) */}
           <div className="relative bg-white border-2 border-[#A50021]/20 p-6 rounded-[2rem] shadow-[0_8px_30px_rgba(165,0,33,0.08)] animate-fade-up delay-200 overflow-hidden">
-            {/* Декоративный фон для выделения */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#A50021]/5 to-transparent pointer-events-none"></div>
 
             <div className="relative z-10 flex flex-col gap-4">
-              {/* Верхняя часть: Цифры */}
-              <div className="flex justify-between items-end">
+              {/* Цифры верхнего ряда */}
+              <div className="flex justify-between items-center">
                 <div>
                   <span className="text-xs font-label uppercase tracking-wider text-[#A50021] font-bold block mb-1">Total Capacity</span>
                   <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-500 font-normal">places left</span></span>
                 </div>
                 
-               <div className="text-right flex items-center h-full">
-  <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
-    <Zap size={10} className="fill-purple-600" />
-    {currentBatchName} Active
-  </div>
-</div>
+                <div className="text-right flex items-center">
+                  <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                    <Zap size={10} className="fill-purple-600" />
+                    {currentBatchName} Active
+                  </div>
+                </div>
+              </div>
 
-              {/* КРАСНАЯ ШКАЛА (сразу под цифрами) */}
+              {/* КРАСНАЯ ШКАЛА (сразу под places left) */}
               <div className="w-full h-2.5 bg-zinc-200/50 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
@@ -195,7 +195,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 ></div>
               </div>
 
-              {/* СПИСОК ПАРТИЙ */}
+              {/* ТАБЛИЦА ПАРТИЙ */}
               {event.batches && event.batches.length > 0 && (
                 <div className="mt-2 space-y-2 bg-white/80 backdrop-blur p-4 rounded-2xl border border-[#A50021]/10">
                   <span className="text-[10px] font-label uppercase tracking-wider text-zinc-400 font-bold block mb-2">Ticket Batches</span>
