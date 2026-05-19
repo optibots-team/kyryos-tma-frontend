@@ -184,10 +184,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
                     <Zap size={10} className="fill-purple-600" />
                     {currentBatchName} Active
-                  </div>
-                  <p className="text-xs font-bold mt-0.5 text-purple-600">
-                    {batchAvailable > 0 ? `${batchAvailable} left` : 'Sold out'}
-                  </p>
                 </div>
               </div>
 
