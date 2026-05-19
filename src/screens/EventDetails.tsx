@@ -180,12 +180,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   <span className="text-sm font-bold text-zinc-900">{placesLeft}/{maxCapacity} <span className="text-zinc-500 font-normal">places left</span></span>
                 </div>
                 
-                <div className="text-right">
-                  <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
-                    <Zap size={10} className="fill-purple-600" />
-                    {currentBatchName} Active
-                </div>
-              </div>
+               <div className="text-right flex items-center h-full">
+  <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600">
+    <Zap size={10} className="fill-purple-600" />
+    {currentBatchName} Active
+  </div>
+</div>
 
               {/* КРАСНАЯ ШКАЛА (сразу под цифрами) */}
               <div className="w-full h-2.5 bg-zinc-200/50 rounded-full overflow-hidden">
