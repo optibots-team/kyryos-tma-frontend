@@ -29,7 +29,6 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
             </div>
             <div className="px-2">
               <h3 className="font-headline font-bold text-xl tracking-tight text-zinc-900">MEMORIES COMING SOON</h3>
-              <p className="font-body text-xs text-zinc-500 uppercase tracking-[0.15em] mt-1">JUNE 21, 2024</p>
             </div>
           </div>
 
@@ -43,7 +42,6 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
             </div>
             <div className="px-2">
               <h3 className="font-headline font-bold text-xl tracking-tight text-zinc-900">PHOTOS UPDATING SOON</h3>
-              <p className="font-body text-xs text-zinc-500 uppercase tracking-[0.15em] mt-1">MAY 12, 2024</p>
             </div>
           </div>
         </div>
