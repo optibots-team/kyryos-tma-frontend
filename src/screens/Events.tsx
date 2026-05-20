@@ -138,37 +138,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           </section>
         )}
 
-        {/* UPCOMING EVENTS CAROUSEL (Динамическая из базы) */}
-        {upcomingEvents.length > 0 && (
-          <section className="space-y-4 animate-fade-up">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Upcoming Events</h3>
-            </div>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
-              {upcomingEvents.map((event) => (
-                <div 
-                  key={event.id}
-                  onClick={() => handleEventClick(event.id)}
-                  className="flex-shrink-0 w-60 aspect-[4/5] rounded-[2rem] overflow-hidden relative shadow-lg shadow-zinc-200/50 cursor-pointer group active:scale-[0.98] transition-all"
-                >
-                  <img 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    src={event.image_url} 
-                    alt={event.title} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 p-6">
-                    <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-1.5">
-                      {new Date(event.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </p>
-                    <h4 className="text-white font-headline font-bold text-xl tracking-tight leading-tight">{event.title}</h4>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* ABOUT KYRIOS */}
         <section className="space-y-4 animate-fade-up">
           <div className="flex items-center justify-between px-2">
