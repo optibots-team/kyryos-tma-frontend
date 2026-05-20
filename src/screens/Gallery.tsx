@@ -15,7 +15,7 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
       <main className="pt-8 pb-32 px-6 max-w-5xl mx-auto">
         <div className="mb-12 text-center">
           <h2 className="font-headline font-extrabold text-4xl tracking-tighter uppercase mb-2 text-zinc-900">Gallery</h2>
-          <p className="font-body text-xs text-zinc-500 tracking-widest uppercase">The Archive 2024</p>
+          <p className="font-body text-xs text-zinc-500 tracking-widest uppercase">The Archive </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
