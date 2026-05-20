@@ -5,12 +5,11 @@ import { supabase } from '../lib/supabaseClient';
 
 interface EventsProps {
   onNavigate: (s: Screen) => void;
-  onEventSelect: (id: string) => void; // Новый пропс для передачи ID в App.tsx
+  onEventSelect: (id: string) => void;
 }
 
 export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   const [mainEvent, setMainEvent] = useState<any>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [hasTicket, setHasTicket] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -19,18 +18,17 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
       try {
         setLoading(true);
         
-        // 1. Берем данные из нового View, который сделал бэкендер
-        const { data: events, error } = await supabase
+        // Запрашиваем только один самый актуальный ивент
+        const { data: events } = await supabase
           .from('active_events')
           .select('*')
-          .limit(4); // Берем максимум 4 ивента
+          .limit(1);
 
         if (events && events.length > 0) {
-          setMainEvent(events[0]); // Самый ближайший — главный
-          setUpcomingEvents(events.slice(1)); // Остальные — в карусель
+          setMainEvent(events[0]);
         }
 
-        // 2. Проверяем наличие билетов у юзера для плашки Quick Check-in
+        // Проверяем наличие активных билетов для плашки быстрого чекина
         const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (user?.id) {
           const { count } = await supabase
@@ -50,10 +48,9 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     fetchData();
   }, []);
 
-  // Функция для перехода на детали ивента
   const handleEventClick = (eventId: string) => {
-    onEventSelect(eventId); // Сначала сохраняем ID в App.tsx
-    onNavigate('event-details'); // Затем переключаем экран
+    onEventSelect(eventId);
+    onNavigate('event-details');
   };
 
   if (loading) {
@@ -64,16 +61,20 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     );
   }
 
+  // Динамический расчет остатка мест для главного ивента на основе данных партий
+  const maxCapacity = mainEvent?.capacity || 400;
+  const placesLeft = Math.max(0, maxCapacity - (mainEvent?.total_sold || 0));
+  const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* ГЛОБАЛЬНАЯ ШТОРКА */}
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
       </header>
 
       <main className="px-6 py-8 space-y-8">
         
-        {/* ГЛАВНЫЙ ИВЕНТ (Берется из базы) */}
+        {/* ГЛАВНЫЙ ИВЕНТ */}
         {mainEvent && (
           <section 
             onClick={() => handleEventClick(mainEvent.id)}
@@ -87,9 +88,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
             
             <div className="absolute inset-0 p-8 flex flex-col justify-end">
-              <div className="flex items-center gap-2 mb-4">
-              </div>
-              
               <h2 className="text-white font-headline font-extrabold text-4xl mb-2 tracking-tight">{mainEvent.title}</h2>
               <p className="text-white/70 text-sm mb-6 font-medium">
                 {new Date(mainEvent.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -100,7 +98,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
                   <div>
                     <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-1">Capacity</p>
                     <p className="text-white font-bold text-sm">
-                      {Math.max(0, 300 - (mainEvent.total_sold || 0))} <span className="text-white/60 font-normal">places left</span>
+                      {placesLeft} <span className="text-white/60 font-normal">places left</span>
                     </p>
                   </div>
                   <div className="px-5 py-2.5 bg-[#A50021] text-white font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)]">
@@ -111,7 +109,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
                 <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
-                    style={{ width: `${Math.max(0, 100 - ((mainEvent.total_sold || 0) / 300 * 100))}%` }}
+                    style={{ width: `${fillPercentage}%` }}
                   ></div>
                 </div>
               </div>
