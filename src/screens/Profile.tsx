@@ -47,7 +47,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   const pointsToNextLevel = isMaxLevel ? 0 : POINTS_PER_LEVEL - pointsInCurrentLevel;
 
   const getRankName = (lvl: number) => {
-    if (lvl <= 2) return "Raver";
+    if (lvl <= 2) return "Dancer";
     if (lvl <= 4) return "Insider";
     if (lvl <= 7) return "Headliner";
     if (lvl <= 9) return "Legend";
