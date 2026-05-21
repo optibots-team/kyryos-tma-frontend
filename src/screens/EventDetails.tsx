@@ -109,9 +109,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-  // Список партнеров для рендера
-  const partners = ['Just Cars', 'Красиво Project', 'Obrani', 'Roar'];
-
   return (
     <div className="min-h-screen bg-slate-50 pb-16">
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
@@ -125,7 +122,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </section>
 
         <div className="px-6 -mt-12 relative z-10 space-y-8">
-          {/* Заголовок и блоки инфо */}
           <div className="space-y-4 animate-fade-up delay-100">
             <h2 className="font-headline font-extrabold text-4xl tracking-tighter text-zinc-900">{event.title}</h2>
             
@@ -176,7 +172,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity */}
           <div className="relative bg-white border-2 border-[#A50021]/20 p-6 rounded-[2rem] shadow-[0_8px_30px_rgba(165,0,33,0.08)] animate-fade-up delay-200 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-[#A50021]/5 to-transparent pointer-events-none"></div>
 
@@ -227,15 +222,14 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Описание Ивента с фиксом абзацев (whitespace-pre-line) */}
+          {/* Описание Ивента с фиксом абзацев */}
           <div className="space-y-3 animate-fade-up delay-300">
-            <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-400 uppercase tracking-[0.15em] text-xs">About Event</h3>
+            <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs">About Event</h3>
             <p className="text-zinc-600 text-sm leading-relaxed tracking-wide whitespace-pre-line">
               {event.description || 'Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.'}
             </p>
           </div>
 
-          {/* Видео Превью */}
           {event.youtube_link && (
             <div className="space-y-3 animate-fade-up delay-300">
               <div className="flex items-center gap-2 text-zinc-900">
@@ -255,25 +249,41 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           )}
 
-          {/* РАЗДЕЛ 2: ПАРТНЕРЫ (Добавлено перед кнопкой) */}
+          {/* ПАРТНЕРЫ (С путями напрямую в папку public и расширением .jpg) */}
           <div className="space-y-4 pt-4 animate-fade-up">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs text-center">Partners</h3>
             <div className="grid grid-cols-2 gap-3">
-              {partners.map((partner, index) => (
+              {[
+                { name: 'Just Cars', src: '/just-cars.jpg' },
+                { name: 'Красиво Project', src: '/krasivo.jpg' },
+                { name: 'Obrani', src: '/obrani.jpg' },
+                { name: 'Roar', src: '/roar.jpg' }
+              ].map((partner, index) => (
                 <div 
                   key={index} 
                   className="h-16 rounded-2xl bg-white border border-zinc-200/60 shadow-sm flex items-center justify-center p-3 text-center transition-all active:scale-[0.98]"
                 >
-                  {/* Временная текстовая заглушка. Когда будут картинки, заменим на <img src={...} /> */}
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-400 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100 w-full truncate">
-                    {partner}
-                  </span>
+                  <img 
+                    src={partner.src} 
+                    alt={partner.name} 
+                    className="max-h-10 max-w-full object-contain filter grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all" 
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const span = document.createElement('span');
+                        span.className = "text-xs font-black uppercase tracking-wider text-zinc-400 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100 w-full truncate";
+                        span.innerText = partner.name;
+                        parent.appendChild(span);
+                      }
+                    }}
+                  />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* РАЗДЕЛ 1: КНОПКА КУПИТЬ БИЛЕТ (Перенесена в обычный поток вниз страницы) */}
+          {/* ГЛАВНАЯ КНОПКА (Перенесена в самый низ страницы) */}
           <div className="pt-4 pb-8 animate-fade-up">
             {purchaseError && (
               <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
@@ -299,91 +309,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </div>
       </main>
 
-      {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА */}
+      {/* МОДАЛЬНОЕ ОКНО */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
             className="bg-white border-t border-zinc-100 w-full max-w-md rounded-t-[2rem] p-6 pb-12 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex flex-col">
-                <h3 className="font-headline font-bold text-xl text-zinc-900">Select Tickets</h3>
-                <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">{currentBatchName} Active</span>
-              </div>
-              <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-zinc-500 active:scale-95">✕</button>
-            </div>
-            
-            <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
-              <span className="font-bold text-zinc-900">Quantity</span>
-              <div className="flex items-center gap-6">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
-                <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
-                <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
-              </div>
-            </div>
-
-            <div className="mb-6 space-y-2">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-zinc-400" />
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Promo Code</span>
-              </div>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={promoCode}
-                  onChange={(e) => {
-                    setPromoCode(e.target.value.toUpperCase());
-                    setPromoStatus('none');
-                    setDiscountPercent(0);
-                  }}
-                  placeholder="Enter code" 
-                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors uppercase"
-                />
-                <button 
-                  onClick={handleApplyPromo}
-                  disabled={!promoCode.trim() || promoStatus === 'validating'}
-                  className="px-6 bg-zinc-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase active:scale-95 disabled:opacity-50 transition-all"
-                >
-                  {promoStatus === 'validating' ? '...' : 'Apply'}
-                </button>
-              </div>
-              {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
-              {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
-            </div>
-
-            <button 
-              onClick={async () => {
-                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                
-                if (window.Telegram?.WebApp?.BackButton) {
-                  window.Telegram.WebApp.BackButton.hide();
-                }
-
-                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-                
-                if (data) {
-                  setShowModal(false);
-                  
-                  if (data.is_free) {
-                    onNavigate('tickets');
-                  } else if (data.checkout_url) {
-                    window.location.href = data.checkout_url;
-                  }
-                }
-              }}
-              disabled={purchaseLoading}
-              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
-            >
-              {purchaseLoading ? 'PROCESSING...' : (
-                finalTotal === 0 
-                  ? 'CLAIM FREE TICKET' 
-                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+            onClick={e => e
