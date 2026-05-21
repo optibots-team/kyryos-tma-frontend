@@ -329,36 +329,37 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
 
  <button 
-              onClick={async () => {
-                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                
-                // ВАЖНО: Прячем кнопку Телеграма прямо перед переходом на Stripe!
-                if (window.Telegram?.WebApp?.BackButton) {
-                  window.Telegram.WebApp.BackButton.hide();
-                }
-
-                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-                
-                if (data) {
-                  setShowModal(false);
-                  
-                  if (data.is_free) {
-                    onNavigate('tickets');
-                  } else if (data.checkout_url) {
-                    // Открываем Stripe во внутреннем браузере
-                    window.location.href = data.checkout_url;
-                  }
-                }
-              }}
-              disabled={purchaseLoading}
-              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
-            >
-              {purchaseLoading ? 'PROCESSING...' : (
-                finalTotal === 0 
-                  ? 'CLAIM FREE TICKET' 
-                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-              )}
-            </button>
+  onClick={async () => {
+    const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+    
+    // Переводим кнопку в режим PROCESSING...
+    const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+    
+    if (data) {
+      setShowModal(false);
+      
+      if (data.is_free) {
+        onNavigate('tickets');
+      } else if (data.checkout_url) {
+        // Открываем Stripe во внешнем браузере. 
+        // Apple Pay / Google Pay / BLIK теперь будут работать на 100% стабильно.
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.openLink(data.checkout_url);
+        } else {
+          window.open(data.checkout_url, '_blank');
+        }
+      }
+    }
+  }}
+  disabled={purchaseLoading}
+  className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+>
+  {purchaseLoading ? 'PREPARING SECURE PAYMENT...' : (
+    finalTotal === 0 
+      ? 'CLAIM FREE TICKET' 
+      : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+  )}
+</button>
           </div>
         </div>
       )}
