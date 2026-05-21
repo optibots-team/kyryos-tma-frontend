@@ -45,19 +45,31 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     fetchEvent();
   }, [eventId]);
 
+  // НАВЕДЕНИЕ ПОРЯДКА С КНОПКОЙ НАЗАД ОТ TELEGRAM
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
-    const handleBackFromModal = () => setShowModal(false);
 
-    if (showModal) {
-      tg.BackButton.show();
-      tg.BackButton.onClick(handleBackFromModal);
-    }
-    return () => {
-      tg.BackButton.offClick(handleBackFromModal);
+    // Включаем нативную стрелку сразу при заходе на экран деталей
+    tg.BackButton.show();
+
+    const handleBackClick = () => {
+      if (showModal) {
+        // Если открыта модалка — закрываем сначала её
+        setShowModal(false);
+      } else {
+        // Если модалка закрыта — возвращаем на главный экран событий
+        onNavigate('events');
+      }
     };
-  }, [showModal]);
+
+    tg.BackButton.onClick(handleBackClick);
+
+    return () => {
+      tg.BackButton.offClick(handleBackClick);
+      tg.BackButton.hide(); // Прячем кнопку при уходе с экрана
+    };
+  }, [showModal, onNavigate]);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
@@ -86,16 +98,13 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Общая шкала заполненности ивента
   const maxCapacity = event.capacity || 400;
   const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  // Данные текущей активной партии
   const currentBatchName = event.ticket_type_name || 'Standard Ticket';
   const batchAvailable = event.available || 0;
   
-  // Цена с учетом промокода
   const basePrice = event.current_price || 200;
   const priceAfterPromo = Math.round(basePrice * (1 - discountPercent / 100));
   const finalTotal = priceAfterPromo * quantity;
@@ -167,12 +176,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Плашка Capacity (Идеальная структура без дубликатов) */}
           <div className="relative bg-white border-2 border-[#A50021]/20 p-6 rounded-[2rem] shadow-[0_8px_30px_rgba(165,0,33,0.08)] animate-fade-up delay-200 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-[#A50021]/5 to-transparent pointer-events-none"></div>
 
             <div className="relative z-10 flex flex-col gap-4">
-              {/* Цифры верхнего ряда */}
               <div className="flex justify-between items-center">
                 <div>
                   <span className="text-xs font-label uppercase tracking-wider text-[#A50021] font-bold block mb-1">Total Capacity</span>
@@ -187,7 +194,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </div>
               </div>
 
-              {/* КРАСНАЯ ШКАЛА (сразу под places left) */}
               <div className="w-full h-2.5 bg-zinc-200/50 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
@@ -195,7 +201,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 ></div>
               </div>
 
-              {/* ТАБЛИЦА ПАРТИЙ */}
               {event.batches && event.batches.length > 0 && (
                 <div className="mt-2 space-y-2 bg-white/80 backdrop-blur p-4 rounded-2xl border border-[#A50021]/10">
                   <span className="text-[10px] font-label uppercase tracking-wider text-zinc-400 font-bold block mb-2">Ticket Batches</span>
