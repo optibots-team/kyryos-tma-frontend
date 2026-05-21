@@ -328,37 +328,37 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
             </div>
 
-           <button 
-  onClick={async () => {
-    const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-    
-    // 1. Принудительно гасим стрелку Telegram, чтобы на Stripe осталась только одна
-    if (window.Telegram?.WebApp?.BackButton) {
-      window.Telegram.WebApp.BackButton.hide();
-    }
+ <button 
+              onClick={async () => {
+                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                
+                // ВАЖНО: Прячем кнопку Телеграма прямо перед переходом на Stripe!
+                if (window.Telegram?.WebApp?.BackButton) {
+                  window.Telegram.WebApp.BackButton.hide();
+                }
 
-    const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-    
-    if (data) {
-      setShowModal(false);
-      
-      if (data.is_free) {
-        onNavigate('tickets');
-      } else if (data.checkout_url) {
-        // 2. Возвращаем внутреннее открытие. Юзер остается внутри экосистемы Telegram
-        window.location.href = data.checkout_url;
-      }
-    }
-  }}
-  disabled={purchaseLoading}
-  className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
->
-  {purchaseLoading ? 'PROCESSING...' : (
-    finalTotal === 0 
-      ? 'CLAIM FREE TICKET' 
-      : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-  )}
-</button>
+                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+                
+                if (data) {
+                  setShowModal(false);
+                  
+                  if (data.is_free) {
+                    onNavigate('tickets');
+                  } else if (data.checkout_url) {
+                    // Открываем Stripe во внутреннем браузере
+                    window.location.href = data.checkout_url;
+                  }
+                }
+              }}
+              disabled={purchaseLoading}
+              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+            >
+              {purchaseLoading ? 'PROCESSING...' : (
+                finalTotal === 0 
+                  ? 'CLAIM FREE TICKET' 
+                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+              )}
+            </button>
           </div>
         </div>
       )}
