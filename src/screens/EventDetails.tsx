@@ -222,7 +222,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* Описание Ивента с фиксом абзацев */}
           <div className="space-y-3 animate-fade-up delay-300">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs">About Event</h3>
             <p className="text-zinc-600 text-sm leading-relaxed tracking-wide whitespace-pre-line">
@@ -249,15 +248,15 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           )}
 
-          {/* ПАРТНЕРЫ (С путями напрямую в папку public и расширением .jpg) */}
+          {/* ПАРТНЕРЫ — Пути полностью синхронизированы с твоим GitHub */}
           <div className="space-y-4 pt-4 animate-fade-up">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs text-center">Partners</h3>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { name: 'Just Cars', src: '/just-cars.jpg' },
-                { name: 'Красиво Project', src: '/krasivo.jpg' },
-                { name: 'Obrani', src: '/obrani.jpg' },
-                { name: 'Roar', src: '/roar.jpg' }
+                { name: 'Just Cars', src: '/just-cars.png.jpg' },
+                { name: 'Красиво Project', src: '/krasivo.png.png' },
+                { name: 'Obrani', src: '/obrani.png.png' },
+                { name: 'Roar', src: '/roar.png.png' }
               ].map((partner, index) => (
                 <div 
                   key={index} 
@@ -283,7 +282,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
-          {/* ГЛАВНАЯ КНОПКА (Перенесена в самый низ страницы) */}
+          {/* ГЛАВНАЯ КНОПКА КУПИТЬ */}
           <div className="pt-4 pb-8 animate-fade-up">
             {purchaseError && (
               <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
@@ -309,9 +308,95 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </div>
       </main>
 
-      {/* МОДАЛЬНОЕ ОКНО */}
+      {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА БИЛЕТОВ */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
             className="bg-white border-t border-zinc-100 w-full max-w-md rounded-t-[2rem] p-6 pb-12 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl"
-            onClick={e => e
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col">
+                <h3 className="font-headline font-bold text-xl text-zinc-900">Select Tickets</h3>
+                <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">{currentBatchName} Active</span>
+              </div>
+              <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-zinc-500 active:scale-95">✕</button>
+            </div>
+            
+            <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
+              <span className="font-bold text-zinc-900">Quantity</span>
+              <div className="flex items-center gap-6">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
+                <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
+                <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+              </div>
+            </div>
+
+            <div className="mb-6 space-y-2">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-zinc-400" />
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Promo Code</span>
+              </div>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value.toUpperCase());
+                    setPromoStatus('none');
+                    setDiscountPercent(0);
+                  }}
+                  placeholder="Enter code" 
+                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors uppercase"
+                />
+                <button 
+                  onClick={handleApplyPromo}
+                  disabled={!promoCode.trim() || promoStatus === 'validating'}
+                  className="px-6 bg-zinc-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase active:scale-95 disabled:opacity-50 transition-all"
+                >
+                  {promoStatus === 'validating' ? '...' : 'Apply'}
+                </button>
+              </div>
+              {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
+              {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
+            </div>
+
+            <button 
+              onClick={async () => {
+                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                
+                if (window.Telegram?.WebApp?.BackButton) {
+                  window.Telegram.WebApp.BackButton.hide();
+                }
+
+                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+                
+                if (data) {
+                  setShowModal(false);
+                  
+                  if (data.is_free) {
+                    onNavigate('tickets');
+                  } else if (data.checkout_url) {
+                    if (window.Telegram?.WebApp) {
+                      window.Telegram.WebApp.openLink(data.checkout_url);
+                    } else {
+                      window.open(data.checkout_url, '_blank');
+                    }
+                  }
+                }
+              }}
+              disabled={purchaseLoading}
+              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+            >
+              {purchaseLoading ? 'PROCESSING...' : (
+                finalTotal === 0 
+                  ? 'CLAIM FREE TICKET' 
+                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
