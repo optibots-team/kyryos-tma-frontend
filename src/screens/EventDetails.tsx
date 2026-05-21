@@ -331,6 +331,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <button 
               onClick={async () => {
                 const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                
+                // ВАРИАНТ 1: Скрываем нативную кнопку перед переходом на Stripe
+                if (window.Telegram?.WebApp?.BackButton) {
+                  window.Telegram.WebApp.BackButton.hide();
+                }
+
                 const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
@@ -339,7 +345,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   if (data.is_free) {
                     onNavigate('tickets');
                   } else if (data.checkout_url) {
-                    window.location.href = data.checkout_url;
+                    // ВАРИАНТ 2: Открываем Stripe через нативное API Telegram
+                    if (window.Telegram?.WebApp?.openLink) {
+                      window.Telegram.WebApp.openLink(data.checkout_url);
+                    } else {
+                      window.location.href = data.checkout_url;
+                    }
                   }
                 }
               }}
