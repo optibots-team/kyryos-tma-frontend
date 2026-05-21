@@ -55,7 +55,7 @@ export default function AboutKyrios({ onNavigate }: { onNavigate: (s: Screen) =>
             We Are Kyrios
           </h1>
           <p className="text-zinc-600 text-sm leading-relaxed tracking-wide font-medium">
-            A premier creative agency and event collective based in Warsaw. We craft immersive nightlife experiences, curate cutting-edge electronic music, and build communities around pure, unadulterated sound.
+            We create conceptual events and immersive experiences where music, aesthetics, atmosphere, and people become one story. From private celebrations and luxury brand activations to corporate events, festivals, and underground parties - our agency focuses on emotion, visual identity, and unforgettable energy in every detail.  
           </p>
         </section>
 
