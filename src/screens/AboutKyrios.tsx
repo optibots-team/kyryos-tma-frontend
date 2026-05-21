@@ -66,7 +66,7 @@ export default function AboutKyrios({ onNavigate }: { onNavigate: (s: Screen) =>
           <div className="space-y-3">
             {/* Кнопка 1: Instagram */}
             <a 
-              href="https://instagram.com/kyrios.agency" 
+              href="https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center justify-between w-full p-5 bg-white rounded-2xl border border-zinc-100 shadow-sm active:scale-95 transition-all group"
@@ -81,44 +81,6 @@ export default function AboutKyrios({ onNavigate }: { onNavigate: (s: Screen) =>
                 </div>
               </div>
               <ExternalLink size={18} className="text-zinc-300 group-hover:text-pink-500 transition-colors" />
-            </a>
-
-            {/* Кнопка 2: Музыкальный Лейбл / Soundcloud */}
-            <a 
-              href="https://soundcloud.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-between w-full p-5 bg-white rounded-2xl border border-zinc-100 shadow-sm active:scale-95 transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
-                  <Music className="text-orange-500 w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-zinc-900 text-base">Kyrios Records</h4>
-                  <p className="text-zinc-400 text-xs font-medium">Listen to our sets</p>
-                </div>
-              </div>
-              <ExternalLink size={18} className="text-zinc-300 group-hover:text-orange-500 transition-colors" />
-            </a>
-
-            {/* Кнопка 3: Основной сайт / Мерч */}
-            <a 
-              href="https://kyrios.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-between w-full p-5 bg-white rounded-2xl border border-zinc-100 shadow-sm active:scale-95 transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center border border-zinc-200 group-hover:bg-zinc-200 transition-colors">
-                  <Globe className="text-zinc-600 w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-zinc-900 text-base">Official Website</h4>
-                  <p className="text-zinc-400 text-xs font-medium">Merch & Contact</p>
-                </div>
-              </div>
-              <ExternalLink size={18} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
             </a>
           </div>
         </section>
