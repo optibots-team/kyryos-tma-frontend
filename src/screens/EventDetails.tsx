@@ -45,20 +45,16 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     fetchEvent();
   }, [eventId]);
 
-  // НАВЕДЕНИЕ ПОРЯДКА С КНОПКОЙ НАЗАД ОТ TELEGRAM
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
 
-    // Включаем нативную стрелку сразу при заходе на экран деталей
     tg.BackButton.show();
 
     const handleBackClick = () => {
       if (showModal) {
-        // Если открыта модалка — закрываем сначала её
         setShowModal(false);
       } else {
-        // Если модалка закрыта — возвращаем на главный экран событий
         onNavigate('events');
       }
     };
@@ -67,7 +63,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
     return () => {
       tg.BackButton.offClick(handleBackClick);
-      tg.BackButton.hide(); // Прячем кнопку при уходе с экрана
+      tg.BackButton.hide();
     };
   }, [showModal, onNavigate]);
 
@@ -113,8 +109,11 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
+  // Список партнеров для рендера
+  const partners = ['Just Cars', 'Красиво Project', 'Obrani', 'Roar'];
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-40">
+    <div className="min-h-screen bg-slate-50 pb-16">
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
       </header>
@@ -126,6 +125,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </section>
 
         <div className="px-6 -mt-12 relative z-10 space-y-8">
+          {/* Заголовок и блоки инфо */}
           <div className="space-y-4 animate-fade-up delay-100">
             <h2 className="font-headline font-extrabold text-4xl tracking-tighter text-zinc-900">{event.title}</h2>
             
@@ -176,6 +176,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
+          {/* Плашка Capacity */}
           <div className="relative bg-white border-2 border-[#A50021]/20 p-6 rounded-[2rem] shadow-[0_8px_30px_rgba(165,0,33,0.08)] animate-fade-up delay-200 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-[#A50021]/5 to-transparent pointer-events-none"></div>
 
@@ -226,13 +227,15 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
+          {/* Описание Ивента с фиксом абзацев (whitespace-pre-line) */}
           <div className="space-y-3 animate-fade-up delay-300">
-            <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-900">ABOUT</h3>
-            <p className="text-zinc-500 text-sm leading-relaxed tracking-wide">
+            <h3 className="font-headline font-bold text-lg tracking-tight text-zinc-400 uppercase tracking-[0.15em] text-xs">About Event</h3>
+            <p className="text-zinc-600 text-sm leading-relaxed tracking-wide whitespace-pre-line">
               {event.description || 'Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.'}
             </p>
           </div>
 
+          {/* Видео Превью */}
           {event.youtube_link && (
             <div className="space-y-3 animate-fade-up delay-300">
               <div className="flex items-center gap-2 text-zinc-900">
@@ -251,31 +254,52 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
             </div>
           )}
+
+          {/* РАЗДЕЛ 2: ПАРТНЕРЫ (Добавлено перед кнопкой) */}
+          <div className="space-y-4 pt-4 animate-fade-up">
+            <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs text-center">Partners</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {partners.map((partner, index) => (
+                <div 
+                  key={index} 
+                  className="h-16 rounded-2xl bg-white border border-zinc-200/60 shadow-sm flex items-center justify-center p-3 text-center transition-all active:scale-[0.98]"
+                >
+                  {/* Временная текстовая заглушка. Когда будут картинки, заменим на <img src={...} /> */}
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-400 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100 w-full truncate">
+                    {partner}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* РАЗДЕЛ 1: КНОПКА КУПИТЬ БИЛЕТ (Перенесена в обычный поток вниз страницы) */}
+          <div className="pt-4 pb-8 animate-fade-up">
+            {purchaseError && (
+              <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
+                {purchaseError}
+              </div>
+            )}
+            <div className="bg-zinc-900 rounded-[2rem] p-3 pl-6 flex items-center justify-between shadow-xl border border-zinc-800">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
+                <span className="font-headline font-extrabold text-lg text-white">
+                  {basePrice} PLN
+                </span>
+              </div>
+              <button 
+                onClick={() => setShowModal(true)}
+                className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all"
+              >
+                BUY TICKET
+              </button>
+            </div>
+          </div>
+
         </div>
       </main>
 
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 flex flex-col gap-2 animate-fade-up delay-400">
-        {purchaseError && (
-          <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50">
-            {purchaseError}
-          </div>
-        )}
-        <div className="bg-zinc-900 rounded-full p-2 pl-6 flex items-center justify-between shadow-2xl border border-zinc-800">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
-            <span className="font-headline font-extrabold text-lg text-white">
-              {basePrice} PLN
-            </span>
-          </div>
-          <button 
-            onClick={() => setShowModal(true)}
-            className="px-8 py-3.5 bg-[#A50021] text-white font-headline font-black text-sm rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all"
-          >
-            BUY TICKET
-          </button>
-        </div>
-      </div>
-
+      {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
@@ -328,38 +352,35 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
             </div>
 
- <button 
-  onClick={async () => {
-    const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-    
-    // Переводим кнопку в режим PROCESSING...
-    const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-    
-    if (data) {
-      setShowModal(false);
-      
-      if (data.is_free) {
-        onNavigate('tickets');
-      } else if (data.checkout_url) {
-        // Открываем Stripe во внешнем браузере. 
-        // Apple Pay / Google Pay / BLIK теперь будут работать на 100% стабильно.
-        if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.openLink(data.checkout_url);
-        } else {
-          window.open(data.checkout_url, '_blank');
-        }
-      }
-    }
-  }}
-  disabled={purchaseLoading}
-  className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
->
-  {purchaseLoading ? 'PREPARING SECURE PAYMENT...' : (
-    finalTotal === 0 
-      ? 'CLAIM FREE TICKET' 
-      : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-  )}
-</button>
+            <button 
+              onClick={async () => {
+                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                
+                if (window.Telegram?.WebApp?.BackButton) {
+                  window.Telegram.WebApp.BackButton.hide();
+                }
+
+                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+                
+                if (data) {
+                  setShowModal(false);
+                  
+                  if (data.is_free) {
+                    onNavigate('tickets');
+                  } else if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                  }
+                }
+              }}
+              disabled={purchaseLoading}
+              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+            >
+              {purchaseLoading ? 'PROCESSING...' : (
+                finalTotal === 0 
+                  ? 'CLAIM FREE TICKET' 
+                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+              )}
+            </button>
           </div>
         </div>
       )}
