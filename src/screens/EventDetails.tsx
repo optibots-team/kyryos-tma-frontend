@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, ExternalLink, Zap, Tag, PlayCircle, Instagram } from 'lucide-react';
+import { Calendar, Clock, MapPin, ExternalLink, Zap, Tag, PlayCircle } from 'lucide-react';
 import { Screen } from '../App';
 import { usePurchaseTicket } from '../hooks/usePurchaseTicket';
 import { supabase } from '../lib/supabaseClient';
@@ -94,14 +94,30 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  const maxCapacity = event.capacity || 400;
-  const placesLeft = Math.max(0, maxCapacity - (event.total_sold || 0));
+  // Находим живой батч, если бэкенд завис на пустом (available === 0)
+  let activeBatch = event;
+  if ((event.available === 0 || !event.ticket_type_id) && event.batches && event.batches.length > 0) {
+    const nextBatch = event.batches.find((b: any) => !b.is_sold_out && b.available > 0);
+    if (nextBatch) {
+      activeBatch = {
+        ...event,
+        ticket_type_id: nextBatch.id,
+        ticket_type_name: nextBatch.name,
+        current_price: nextBatch.price,
+        available: nextBatch.available,
+        capacity: nextBatch.capacity
+      };
+    }
+  }
+
+  const maxCapacity = activeBatch.capacity || 400;
+  const placesLeft = activeBatch.available !== null && activeBatch.available !== undefined ? activeBatch.available : maxCapacity;
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  const currentBatchName = event.ticket_type_name || 'Standard Ticket';
-  const batchAvailable = event.available || 0;
+  const currentBatchName = activeBatch.ticket_type_name || 'Standard Ticket';
+  const batchAvailable = activeBatch.available || 0;
   
-  const basePrice = event.current_price || 200;
+  const basePrice = activeBatch.current_price || 200;
   const priceAfterPromo = Math.round(basePrice * (1 - discountPercent / 100));
   const finalTotal = priceAfterPromo * quantity;
 
@@ -210,9 +226,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                           Sold Out
                         </span>
                       ) : (
-                        <span className={`text-xs ${batch.id === event.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
+                        <span className={`text-xs ${batch.id === activeBatch.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
                           {batch.available} left · <span className="font-headline">{batch.price} PLN</span>
-                          {batch.id === event.ticket_type_id && ' 🔥'}
+                          {batch.id === activeBatch.ticket_type_id && ' 🔥'}
                         </span>
                       )}
                     </div>
@@ -260,7 +276,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 rel="noopener noreferrer"
                 className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
               >
-                {/* Градиентная рамка */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
                   <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 flex items-center gap-1">
@@ -336,10 +351,15 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </span>
               </div>
               <button 
-                onClick={() => setShowModal(true)}
-                className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all"
+                onClick={() => {
+                  if (batchAvailable > 0 || (event.batches && event.batches.some((b: any) => !b.is_sold_out && b.available > 0))) {
+                    setShowModal(true);
+                  }
+                }}
+                disabled={batchAvailable === 0 && (!event.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0))}
+                className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
-                BUY TICKET
+                {batchAvailable === 0 && (!event.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0)) ? 'SOLD OUT' : 'BUY TICKET'}
               </button>
             </div>
           </div>
@@ -408,7 +428,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   window.Telegram.WebApp.BackButton.hide();
                 }
 
-                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+                const data = await purchaseTicket(activeBatch.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
                   setShowModal(false);
