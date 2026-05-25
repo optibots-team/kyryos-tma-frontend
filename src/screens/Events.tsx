@@ -61,9 +61,9 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     );
   }
 
-  // Динамический расчет остатка мест для главного ивента на основе данных партий
+  // ⚡ ИСПРАВЛЕННЫЙ РАСЧЕТ КАПАСИТИ ДЛЯ ТЕКУЩЕЙ АКТИВНОЙ ПАРТИИ
   const maxCapacity = mainEvent?.capacity || 400;
-  const placesLeft = Math.max(0, maxCapacity - (mainEvent?.total_sold || 0));
+  const placesLeft = mainEvent?.available !== null && mainEvent?.available !== undefined ? mainEvent.available : maxCapacity;
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
 
   return (
@@ -102,7 +102,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
                     </p>
                   </div>
                   <div className="px-5 py-2.5 bg-[#A50021] text-white font-headline font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)]">
-                    BUY TICKET
+                    {placesLeft === 0 ? 'SOLD OUT' : 'BUY TICKET'}
                   </div>
                 </div>
                 
