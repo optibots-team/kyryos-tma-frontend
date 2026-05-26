@@ -94,30 +94,15 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Находим живой батч, если бэкенд завис на пустом (available === 0)
-  let activeBatch = event;
-  if ((event.available === 0 || !event.ticket_type_id) && event.batches && event.batches.length > 0) {
-    const nextBatch = event.batches.find((b: any) => !b.is_sold_out && b.available > 0);
-    if (nextBatch) {
-      activeBatch = {
-        ...event,
-        ticket_type_id: nextBatch.id,
-        ticket_type_name: nextBatch.name,
-        current_price: nextBatch.price,
-        available: nextBatch.available,
-        capacity: nextBatch.capacity
-      };
-    }
-  }
-
-  const maxCapacity = activeBatch.capacity || 400;
-  const placesLeft = activeBatch.available !== null && activeBatch.available !== undefined ? activeBatch.available : maxCapacity;
+  // Бэкенд исправлен! Работаем напрямую с корневым объектом event
+  const maxCapacity = event.capacity || 400;
+  const placesLeft = event.available !== null && event.available !== undefined ? event.available : maxCapacity;
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
   
-  const currentBatchName = activeBatch.ticket_type_name || 'Standard Ticket';
-  const batchAvailable = activeBatch.available || 0;
+  const currentBatchName = event.ticket_type_name || 'Standard Ticket';
+  const batchAvailable = event.available || 0;
   
-  const basePrice = activeBatch.current_price || 200;
+  const basePrice = event.current_price || 200;
   const priceAfterPromo = Math.round(basePrice * (1 - discountPercent / 100));
   const finalTotal = priceAfterPromo * quantity;
 
@@ -226,9 +211,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                           Sold Out
                         </span>
                       ) : (
-                        <span className={`text-xs ${batch.id === activeBatch.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
+                        <span className={`text-xs ${batch.id === event.ticket_type_id ? 'text-purple-600 font-bold' : 'text-zinc-500'}`}>
                           {batch.available} left · <span className="font-headline">{batch.price} PLN</span>
-                          {batch.id === activeBatch.ticket_type_id && ' 🔥'}
+                          {batch.id === event.ticket_type_id && ' 🔥'}
                         </span>
                       )}
                     </div>
@@ -264,79 +249,40 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           )}
 
-          {/* РАЗДЕЛ ПАРТНЕРЫ: Чистый текст, легкий градиент Kyrios и кликабельность */}
           <div className="space-y-4 pt-4 animate-fade-up">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs text-center">Partners</h3>
             <div className="grid grid-cols-2 gap-3">
-              
-              {/* 1. СВЕРХУ СЛЕВА — KRASIVO PROJECT */}
-              <a 
-                href="https://www.instagram.com/krasivo.project" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
-              >
+              <a href="https://www.instagram.com/krasivo.project" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 flex items-center gap-1">
-                    KRASIVO PROJECT
-                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 flex items-center gap-1">KRASIVO PROJECT</span>
                   <span className="text-[10px] text-zinc-400 font-semibold mt-1">@krasivo.project</span>
                 </div>
               </a>
-
-              {/* 2. СВЕРХУ СПРАВА — ROAR */}
-              <a 
-                href="https://www.instagram.com/roar.cruise" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
-              >
+              <a href="https://www.instagram.com/roar.cruise" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">
-                    ROAR
-                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">ROAR</span>
                   <span className="text-[10px] text-zinc-400 font-semibold mt-1">@roar.cruise</span>
                 </div>
               </a>
-
-              {/* 3. СНИЗУ СЛЕВА — JUSTCARS */}
-              <a 
-                href="https://www.instagram.com/justcars_sng" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
-              >
+              <a href="https://www.instagram.com/justcars_sng" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">
-                    JUSTCARS
-                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">JUSTCARS</span>
                   <span className="text-[10px] text-zinc-400 font-semibold mt-1">@justcars_sng</span>
                 </div>
               </a>
-
-              {/* 4. СПРАВА ВНИЗУ — OBRANI CREW */}
-              <a 
-                href="https://www.instagram.com/obrani.crew" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
-              >
+              <a href="https://www.instagram.com/obrani.crew" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">
-                    OBRANI CREW
-                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">OBRANI CREW</span>
                   <span className="text-[10px] text-zinc-400 font-semibold mt-1">@obrani.crew</span>
                 </div>
               </a>
-
             </div>
           </div>
 
-          {/* ГЛАВНАЯ КНОПКА КУПИТЬ */}
           <div className="pt-4 pb-8 animate-fade-up">
             {purchaseError && (
               <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
@@ -352,14 +298,14 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
               <button 
                 onClick={() => {
-                  if (batchAvailable > 0 || (event.batches && event.batches.some((b: any) => !b.is_sold_out && b.available > 0))) {
+                  if (batchAvailable > 0) {
                     setShowModal(true);
                   }
                 }}
-                disabled={batchAvailable === 0 && (!event.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0))}
+                disabled={batchAvailable === 0}
                 className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
-                {batchAvailable === 0 && (!event.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0)) ? 'SOLD OUT' : 'BUY TICKET'}
+                {batchAvailable === 0 ? 'SOLD OUT' : 'BUY TICKET'}
               </button>
             </div>
           </div>
@@ -428,8 +374,8 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   window.Telegram.WebApp.BackButton.hide();
                 }
 
-                // Передаем id именно из объекта activeBatch, который мы вычислили вверху
-                const data = await purchaseTicket(activeBatch.ticket_type_id, quantity, codeToSend);
+                // Чистый вызов напрямую из корневого event.ticket_type_id
+                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
                   setShowModal(false);
