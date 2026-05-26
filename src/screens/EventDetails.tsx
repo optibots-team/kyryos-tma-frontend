@@ -428,6 +428,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   window.Telegram.WebApp.BackButton.hide();
                 }
 
+                // Передаем id именно из объекта activeBatch, который мы вычислили вверху
                 const data = await purchaseTicket(activeBatch.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
