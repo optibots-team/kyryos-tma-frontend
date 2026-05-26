@@ -19,7 +19,8 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const [quantity, setQuantity] = useState(1);
   
   const [promoCode, setPromoCode] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
+  // Храним оба типа скидок в одном объекте
+  const [promoDiscount, setPromoDiscount] = useState({ percent: 0, amount: 0 });
   const [promoStatus, setPromoStatus] = useState<'none' | 'validating' | 'success' | 'error'>('none');
 
   useEffect(() => {
@@ -75,14 +76,18 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
       const { data, error } = await supabase.rpc('validate_promo', { p_code: promoCode.trim().toUpperCase() });
       if (error || !data?.valid) {
         setPromoStatus('error');
-        setDiscountPercent(0);
+        setPromoDiscount({ percent: 0, amount: 0 });
       } else {
         setPromoStatus('success');
-        setDiscountPercent(data.discount_percent);
+        // Записываем данные бэкенда v31
+        setPromoDiscount({
+          percent: data.discount_percent || 0,
+          amount: data.discount_amount || 0
+        });
       }
     } catch (err) {
       setPromoStatus('error');
-      setDiscountPercent(0);
+      setPromoDiscount({ percent: 0, amount: 0 });
     }
   };
 
@@ -94,7 +99,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     );
   }
 
-  // Бэкенд исправлен! Работаем напрямую с корневым объектом event
   const maxCapacity = event.capacity || 400;
   const placesLeft = event.available !== null && event.available !== undefined ? event.available : maxCapacity;
   const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
@@ -103,8 +107,14 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const batchAvailable = event.available || 0;
   
   const basePrice = event.current_price || 200;
-  const priceAfterPromo = Math.round(basePrice * (1 - discountPercent / 100));
-  const finalTotal = priceAfterPromo * quantity;
+
+  // 🎯 Расчёт итоговой цены на основе логики бэкенда v31
+  let finalTotal = basePrice * quantity;
+  if (promoDiscount.percent > 0) {
+    finalTotal = Math.round(finalTotal * (1 - promoDiscount.percent / 100));
+  } else if (promoDiscount.amount > 0) {
+    finalTotal = Math.max(0, finalTotal - promoDiscount.amount);
+  }
 
   const eventDate = new Date(event.event_date);
   const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -292,6 +302,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <div className="bg-zinc-900 rounded-[2rem] p-3 pl-6 flex items-center justify-between shadow-xl border border-zinc-800">
               <div className="flex flex-col">
                 <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
+                {/* Показываем базовую цену за 1 билет. 
+                  Для превью корзины итоговая цена со скидкой корректно считается ниже в модалке 
+                */}
                 <span className="font-headline font-extrabold text-lg text-white">
                   {basePrice} PLN
                 </span>
@@ -349,7 +362,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   onChange={(e) => {
                     setPromoCode(e.target.value.toUpperCase());
                     setPromoStatus('none');
-                    setDiscountPercent(0);
+                    setPromoDiscount({ percent: 0, amount: 0 });
                   }}
                   placeholder="Enter code" 
                   className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors uppercase"
@@ -363,7 +376,16 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </button>
               </div>
               {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
-              {promoStatus === 'success' && <p className="text-emerald-500 text-xs font-bold ml-1">Promo applied: -{discountPercent}%</p>}
+              
+              {/* 🎯 Динамический вывод успешного статуса под тип промокода */}
+              {promoStatus === 'success' && (
+                <p className="text-emerald-500 text-xs font-bold ml-1">
+                  {promoDiscount.amount > 0 
+                    ? `Promo applied: -${promoDiscount.amount} PLN` 
+                    : `Promo applied: -${promoDiscount.percent}%`
+                  }
+                </p>
+              )}
             </div>
 
             <button 
@@ -374,7 +396,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   window.Telegram.WebApp.BackButton.hide();
                 }
 
-                // Чистый вызов напрямую из корневого event.ticket_type_id
                 const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
                 
                 if (data) {
