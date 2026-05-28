@@ -19,7 +19,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const [quantity, setQuantity] = useState(1);
   
   const [promoCode, setPromoCode] = useState('');
-  // Храним оба типа скидок в одном объекте
   const [promoDiscount, setPromoDiscount] = useState({ percent: 0, amount: 0 });
   const [promoStatus, setPromoStatus] = useState<'none' | 'validating' | 'success' | 'error'>('none');
 
@@ -69,7 +68,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   }, [showModal, onNavigate]);
 
   const handleApplyPromo = async () => {
-    if (!promoCode.trim()) return;
+    if (!promoCode.trim() || event?.sales_paused) return;
     setPromoStatus('validating');
     
     try {
@@ -79,7 +78,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         setPromoDiscount({ percent: 0, amount: 0 });
       } else {
         setPromoStatus('success');
-        // Записываем данные бэкенда v31
         setPromoDiscount({
           percent: data.discount_percent || 0,
           amount: data.discount_amount || 0
@@ -108,7 +106,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   
   const basePrice = event.current_price || 200;
 
-  // 🎯 Расчёт итоговой цены на основе логики бэкенда v31
   let finalTotal = basePrice * quantity;
   if (promoDiscount.percent > 0) {
     finalTotal = Math.round(finalTotal * (1 - promoDiscount.percent / 100));
@@ -293,34 +290,41 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           </div>
 
+          {/* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ ИЛИ БАННЕРОМ ПАУЗЫ */}
           <div className="pt-4 pb-8 animate-fade-up">
             {purchaseError && (
               <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
                 {purchaseError}
               </div>
             )}
-            <div className="bg-zinc-900 rounded-[2rem] p-3 pl-6 flex items-center justify-between shadow-xl border border-zinc-800">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
-                {/* Показываем базовую цену за 1 билет. 
-                  Для превью корзины итоговая цена со скидкой корректно считается ниже в модалке 
-                */}
-                <span className="font-headline font-extrabold text-lg text-white">
-                  {basePrice} PLN
-                </span>
+            
+            {event.sales_paused ? (
+              /* 🔒 Баннер паузы продаж вместо кнопки */
+              <div className="w-full bg-zinc-800/80 backdrop-blur border border-zinc-700 rounded-2xl py-4 text-center text-sm font-bold text-zinc-300 tracking-wide shadow-inner flex items-center justify-center gap-2">
+                🔒 Ticket sales are temporarily paused
               </div>
-              <button 
-                onClick={() => {
-                  if (batchAvailable > 0) {
-                    setShowModal(true);
-                  }
-                }}
-                disabled={batchAvailable === 0}
-                className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
-              >
-                {batchAvailable === 0 ? 'SOLD OUT' : 'BUY TICKET'}
-              </button>
-            </div>
+            ) : (
+              /* Стандартная кнопка покупки */
+              <div className="bg-zinc-900 rounded-[2rem] p-3 pl-6 flex items-center justify-between shadow-xl border border-zinc-800">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
+                  <span className="font-headline font-extrabold text-lg text-white">
+                    {basePrice} PLN
+                  </span>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (batchAvailable > 0) {
+                      setShowModal(true);
+                    }
+                  }}
+                  disabled={batchAvailable === 0}
+                  className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  {batchAvailable === 0 ? 'SOLD OUT' : 'BUY TICKET'}
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
@@ -341,55 +345,64 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-zinc-500 active:scale-95">✕</button>
             </div>
             
-            <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
-              <span className="font-bold text-zinc-900">Quantity</span>
-              <div className="flex items-center gap-6">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
-                <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
-                <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+            {event.sales_paused ? (
+              /* Подстраховка: если модалка была открыта в момент лока */
+              <div className="w-full bg-zinc-100 border border-zinc-200 rounded-2xl py-4 text-center text-sm font-bold text-zinc-500 mb-4">
+                🔒 Ticket sales are temporarily paused
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
+                  <span className="font-bold text-zinc-900">Quantity</span>
+                  <div className="flex items-center gap-6">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
+                    <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+                  </div>
+                </div>
 
-            <div className="mb-6 space-y-2">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-zinc-400" />
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Promo Code</span>
-              </div>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={promoCode}
-                  onChange={(e) => {
-                    setPromoCode(e.target.value.toUpperCase());
-                    setPromoStatus('none');
-                    setPromoDiscount({ percent: 0, amount: 0 });
-                  }}
-                  placeholder="Enter code" 
-                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors uppercase"
-                />
-                <button 
-                  onClick={handleApplyPromo}
-                  disabled={!promoCode.trim() || promoStatus === 'validating'}
-                  className="px-6 bg-zinc-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase active:scale-95 disabled:opacity-50 transition-all"
-                >
-                  {promoStatus === 'validating' ? '...' : 'Apply'}
-                </button>
-              </div>
-              {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
-              
-              {/* 🎯 Динамический вывод успешного статуса под тип промокода */}
-              {promoStatus === 'success' && (
-                <p className="text-emerald-500 text-xs font-bold ml-1">
-                  {promoDiscount.amount > 0 
-                    ? `Promo applied: -${promoDiscount.amount} PLN` 
-                    : `Promo applied: -${promoDiscount.percent}%`
-                  }
-                </p>
-              )}
-            </div>
+                {/* Поле промокода скрывается при sales_paused === true */}
+                <div className="mb-6 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-zinc-400" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Promo Code</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase());
+                        setPromoStatus('none');
+                        setPromoDiscount({ percent: 0, amount: 0 });
+                      }}
+                      placeholder="Enter code" 
+                      className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors uppercase"
+                    />
+                    <button 
+                      onClick={handleApplyPromo}
+                      disabled={!promoCode.trim() || promoStatus === 'validating'}
+                      className="px-6 bg-zinc-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase active:scale-95 disabled:opacity-50 transition-all"
+                    >
+                      {promoStatus === 'validating' ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
+                  {promoStatus === 'success' && (
+                    <p className="text-emerald-500 text-xs font-bold ml-1">
+                      {promoDiscount.amount > 0 
+                        ? `Promo applied: -${promoDiscount.amount} PLN` 
+                        : `Promo applied: -${promoDiscount.percent}%`
+                      }
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
             <button 
               onClick={async () => {
+                if (event.sales_paused) return;
                 const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
                 
                 if (window.Telegram?.WebApp?.BackButton) {
@@ -400,7 +413,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 
                 if (data) {
                   setShowModal(false);
-                  
                   if (data.is_free) {
                     onNavigate('tickets');
                   } else if (data.checkout_url) {
@@ -412,10 +424,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   }
                 }
               }}
-              disabled={purchaseLoading}
-              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(239,68,68,0.5)] active:scale-95 transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021]'}`}
+              disabled={purchaseLoading || event.sales_paused}
+              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl transition-all disabled:opacity-50 ${event.sales_paused ? 'bg-zinc-400 shadow-none pointer-events-none' : finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(239,68,68,0.5)]'}`}
             >
-              {purchaseLoading ? 'PROCESSING...' : (
+              {event.sales_paused ? 'SALES PAUSED' : purchaseLoading ? 'PROCESSING...' : (
                 finalTotal === 0 
                   ? 'CLAIM FREE TICKET' 
                   : `PROCEED TO PAYMENT — ${finalTotal} PLN`
