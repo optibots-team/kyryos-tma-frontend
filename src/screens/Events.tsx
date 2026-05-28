@@ -49,6 +49,9 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   }, []);
 
   const handleEventClick = (eventId: string) => {
+    // Если продажи на паузе, блокируем переход на страницу деталей
+    if (mainEvent?.sales_paused) return;
+    
     onEventSelect(eventId);
     onNavigate('event-details');
   };
@@ -77,10 +80,10 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
         {mainEvent && (
           <section 
             onClick={() => handleEventClick(mainEvent.id)}
-            className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 animate-fade-up"
+            className={`relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 animate-fade-up ${mainEvent.sales_paused ? 'cursor-default' : 'cursor-pointer group'}`}
           >
             <img 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+              className={`w-full h-full object-cover transition-transform duration-700 ${mainEvent.sales_paused ? '' : 'group-hover:scale-105'}`} 
               src={mainEvent.image_url} 
               alt={mainEvent.title} 
             />
@@ -92,11 +95,19 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
                 {new Date(mainEvent.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               
-              {/* Контейнер с кнопкой покупки по центру */}
+              {/* Контейнер динамически меняется в зависимости от статуса продаж из базы данных */}
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-[1.5rem] p-4 flex items-center justify-center">
-                <div className="w-full max-w-[240px] text-center py-3.5 bg-[#A50021] text-white font-headline font-black text-sm tracking-widest rounded-xl shadow-[0_4px_16px_rgba(165,0,33,0.4)] transition-all transform group-hover:scale-[1.02]">
-                  {isSoldOut ? 'SOLD OUT' : 'BUY TICKET'}
-                </div>
+                {mainEvent.sales_paused ? (
+                  /* 🔒 Баннер паузы продаж подтягивается из базы данных */
+                  <div className="w-full max-w-[280px] text-center py-3 bg-zinc-800/90 text-zinc-300 font-headline font-bold text-xs tracking-wide rounded-xl border border-zinc-700 shadow-inner">
+                    🔒 Ticket sales are temporarily paused
+                  </div>
+                ) : (
+                  /* Стандартная кнопка покупки */
+                  <div className="w-full max-w-[240px] text-center py-3.5 bg-[#A50021] text-white font-headline font-black text-sm tracking-widest rounded-xl shadow-[0_4px_16px_rgba(165,0,33,0.4)] transition-all transform group-hover:scale-[1.02]">
+                    {isSoldOut ? 'SOLD OUT' : 'BUY TICKET'}
+                  </div>
+                )}
               </div>
 
             </div>
