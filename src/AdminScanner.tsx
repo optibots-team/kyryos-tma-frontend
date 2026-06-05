@@ -28,16 +28,23 @@ export function AdminScanner({ userRole }: AdminScannerProps) {
 function ScannerView() {
   const [scanResult, setScanResult] = useState<ScanResult>({ state: 'idle' })
 
-  // ── Ticket verification logic ─────────────────────────────
+ // ── Ticket verification logic ─────────────────────────────
   const verifyTicket = useCallback(async (scannedCode: string) => {
     setScanResult({ state: 'loading' })
 
     try {
-      const { data: ticket, error: fetchError } = await supabase
-        .from('tickets')
-        .select('id, status')
-        .or(`id.eq.${scannedCode},ticket_code.eq.${scannedCode}`)
-        .single()
+      // 🎯 Проверяем формат: если код содержит дефисы и похож на UUID — ищем по id, иначе по ticket_code
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scannedCode);
+      
+      let query = supabase.from('tickets').select('id, status');
+      
+      if (isUuid) {
+        query = query.eq('id', scannedCode);
+      } else {
+        query = query.eq('ticket_code', scannedCode);
+      }
+
+      const { data: ticket, error: fetchError } = await query.single();
 
       if (fetchError || !ticket) {
         setScanResult({ state: 'error', message: 'Ticket not found in database' })
@@ -58,6 +65,28 @@ function ScannerView() {
         setScanResult({ state: 'error', message: `Unexpected ticket status: ${ticket.status}` })
         return
       }
+
+      // Atomic update
+      const { data: updated, error: updateError } = await supabase
+        .from('tickets')
+        .update({ status: 'used' })
+        .eq('id', ticket.id)      
+        .eq('status', 'paid')     
+        .select('id')
+        .single()
+
+      if (updateError || !updated) {
+        setScanResult({ state: 'error', message: 'Already scanned — ticket was just used by another scanner' })
+        return
+      }
+
+      setScanResult({ state: 'success', message: '✓ Guest admitted' })
+
+    } catch (err) {
+      console.error('[AdminScanner] verifyTicket error:', err)
+      setScanResult({ state: 'error', message: 'Network error — try again' })
+    }
+  }, [])
 
       // Atomic update
       const { data: updated, error: updateError } = await supabase
