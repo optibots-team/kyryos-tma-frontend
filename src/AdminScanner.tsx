@@ -8,13 +8,13 @@
 import { useState, useCallback, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import type { UserRole, ScanResult } from './types/tickets' 
-// Если Vite настроен с алиасами, пути могут быть '@/lib/supabaseClient' и '@/types/tickets'
 
 interface AdminScannerProps {
   userRole: UserRole
 }
 
-const CODE_REGEX = /^(KYR-[A-Z0-9]{8}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+// ✅ ИСПРАВЛЕНО: Сделали регулярное выражение гибким для KYR-кодов (от 6 до 15 символов)
+const CODE_REGEX = /^(KYR-[A-Z0-9]{6,15}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 
 export function AdminScanner({ userRole }: AdminScannerProps) {
   // ── Guard: only render for privileged roles ───────────────
@@ -96,14 +96,18 @@ function ScannerView() {
       // Закрываем нативное окно сканера
       tg.closeScanQrPopup();
 
-      if (!CODE_REGEX.test(decodedText.trim())) {
+      // ✅ ИСПРАВЛЕНО: Очищаем код от пробелов по краям и приводим к ВЕРХНЕМУ регистру
+      const cleanCode = decodedText.trim().toUpperCase();
+
+      if (!CODE_REGEX.test(cleanCode)) {
         setScanResult({ state: 'error', message: 'Invalid QR code format' });
         return true; 
       }
 
-      verifyTicket(decodedText.trim());
+      // Верифицируем очищенную строку
+      verifyTicket(cleanCode);
       
-      // Возвращаем true, чтобы Telegram знал, что мы обработали скан и окно можно закрыть
+      // Возвращаем true для Telegram API
       return true; 
     });
   }
