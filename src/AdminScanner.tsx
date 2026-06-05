@@ -13,7 +13,7 @@ interface AdminScannerProps {
   userRole: UserRole
 }
 
-// ✅ ИСПРАВЛЕНО: Сделали регулярное выражение гибким для KYR-кодов (от 6 до 15 символов)
+// ✅ Сделали регулярное выражение гибким для KYR-кодов (от 6 до 15 символов)
 const CODE_REGEX = /^(KYR-[A-Z0-9]{6,15}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 
 export function AdminScanner({ userRole }: AdminScannerProps) {
@@ -28,7 +28,7 @@ export function AdminScanner({ userRole }: AdminScannerProps) {
 function ScannerView() {
   const [scanResult, setScanResult] = useState<ScanResult>({ state: 'idle' })
 
- // ── Ticket verification logic ─────────────────────────────
+  // ── Ticket verification logic ─────────────────────────────
   const verifyTicket = useCallback(async (scannedCode: string) => {
     setScanResult({ state: 'loading' })
 
@@ -88,28 +88,6 @@ function ScannerView() {
     }
   }, [])
 
-      // Atomic update
-      const { data: updated, error: updateError } = await supabase
-        .from('tickets')
-        .update({ status: 'used' })
-        .eq('id', ticket.id)      
-        .eq('status', 'paid')     
-        .select('id')
-        .single()
-
-      if (updateError || !updated) {
-        setScanResult({ state: 'error', message: 'Already scanned — ticket was just used by another scanner' })
-        return
-      }
-
-      setScanResult({ state: 'success', message: '✓ Guest admitted' })
-
-    } catch (err) {
-      console.error('[AdminScanner] verifyTicket error:', err)
-      setScanResult({ state: 'error', message: 'Network error — try again' })
-    }
-  }, [])
-
   // ── Trigger Telegram Native Scanner ───────────────────────
   const handleOpenScanner = () => {
     setScanResult({ state: 'idle' });
@@ -125,7 +103,7 @@ function ScannerView() {
       // Закрываем нативное окно сканера
       tg.closeScanQrPopup();
 
-      // ✅ ИСПРАВЛЕНО: Очищаем код от пробелов по краям и приводим к ВЕРХНЕМУ регистру
+      // Очищаем код от пробелов по краям и приводим к ВЕРХНЕМУ регистру
       const cleanCode = decodedText.trim().toUpperCase();
 
       if (!CODE_REGEX.test(cleanCode)) {
