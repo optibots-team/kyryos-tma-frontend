@@ -82,10 +82,25 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
           percent: data.discount_percent || 0,
           amount: data.discount_amount || 0
         });
+
+        if (event?.ticket_mode === 'guestlist') {
+          await executeGuestlistPurchase(promoCode.trim().toUpperCase());
+        }
       }
     } catch (err) {
       setPromoStatus('error');
       setPromoDiscount({ percent: 0, amount: 0 });
+    }
+  };
+
+  const executeGuestlistPurchase = async (validCode: string) => {
+    if (window.Telegram?.WebApp?.BackButton) {
+      window.Telegram.WebApp.BackButton.hide();
+    }
+    const data = await purchaseTicket(event.ticket_type_id, 1, validCode);
+    if (data) {
+      setShowModal(false);
+      onNavigate('tickets');
     }
   };
 
@@ -96,6 +111,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
       </div>
     );
   }
+
+  const isGuestlist = event.ticket_mode === 'guestlist';
+  const mainButtonText = isGuestlist ? 'GET TICKET' : 'BUY TICKET';
 
   const maxCapacity = event.capacity || 400;
   const placesLeft = event.available !== null && event.available !== undefined ? event.available : maxCapacity;
@@ -117,6 +135,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
+  // 🎯 Проверка: видео или изображение в обложке
+  const isVideo = event.image_url?.match(/\.(mp4|webm)$/i);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-16">
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
@@ -124,8 +145,24 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
       </header>
 
       <main>
+        {/* БЛОК ОБЛОЖКИ (МЕДИАПЛЕЕР) */}
         <section className="relative w-full h-[397px] overflow-hidden animate-fade-up">
-          <img className="w-full h-full object-cover" src={event.image_url} alt={event.title} />
+          {isVideo ? (
+            <video
+              src={event.image_url}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img 
+              className="w-full h-full object-cover" 
+              src={event.image_url} 
+              alt={event.title} 
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent"></div>
         </section>
 
@@ -193,7 +230,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 <div className="text-right flex items-center">
                   <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
                     <Zap size={10} className="fill-purple-600" />
-                    {currentBatchName} Active
+                    {isGuestlist ? 'Guestlist Mode' : `${currentBatchName} Active`}
                   </div>
                 </div>
               </div>
@@ -205,7 +242,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 ></div>
               </div>
 
-              {event.batches && event.batches.length > 0 && (
+              {!isGuestlist && event.batches && event.batches.length > 0 && (
                 <div className="mt-2 space-y-2 bg-white/80 backdrop-blur p-4 rounded-2xl border border-[#A50021]/10">
                   <span className="text-[10px] font-label uppercase tracking-wider text-zinc-400 font-bold block mb-2">Ticket Batches</span>
                   {event.batches.map((batch: any) => (
@@ -232,9 +269,15 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
           <div className="space-y-3 animate-fade-up delay-300">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs">About Event</h3>
-            <p className="text-zinc-600 text-sm leading-relaxed tracking-wide whitespace-pre-line">
-              {event.description || 'Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.'}
-            </p>
+            <div className="text-zinc-600 text-sm leading-relaxed tracking-wide whitespace-pre-line space-y-3">
+              {event.description ? (
+                event.description.split('\n\n').map((paragraph: string, i: number) => (
+                  <p key={i}>{paragraph}</p>
+                ))
+              ) : (
+                <p>Experience the ethereal transition of sound as the sun hangs high. A curated journey through melodic deep house and organic textures.</p>
+              )}
+            </div>
           </div>
 
           {event.youtube_link && (
@@ -259,38 +302,46 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
           <div className="space-y-4 pt-4 animate-fade-up">
             <h3 className="font-headline font-bold text-zinc-400 uppercase tracking-[0.15em] text-xs text-center">Partners</h3>
             <div className="grid grid-cols-2 gap-3">
-              <a href="https://www.instagram.com/krasivo.project" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
+              
+              {/* 1. SIENNA */}
+              <a href="https://www.instagram.com/sienna.warsaw?igsh=MWZ0MWJsbHZhem93ag==" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 flex items-center gap-1">KRASIVO PROJECT</span>
-                  <span className="text-[10px] text-zinc-400 font-semibold mt-1">@krasivo.project</span>
+                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">SIENNA</span>
+                  <span className="text-[9px] text-zinc-400 font-semibold mt-0.5 block truncate w-full">Restauracja & Lounge</span>
                 </div>
               </a>
-              <a href="https://www.instagram.com/roar.cruise" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
+
+              {/* 2. BOHEMIAN OKO */}
+              <a href="https://www.instagram.com/bohemianoko?igsh=MXY3ajh3Ymg0OWl2eA==" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">ROAR</span>
-                  <span className="text-[10px] text-zinc-400 font-semibold mt-1">@roar.cruise</span>
+                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">BOHEMIAN OKO</span>
+                  <span className="text-[9px] text-zinc-400 font-semibold mt-0.5 block truncate w-full">Music events</span>
                 </div>
               </a>
+
+              {/* 3. KYRIOS */}
+              <a href="https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
+                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">KYRIOS</span>
+                  <span className="text-[9px] text-zinc-400 font-semibold mt-0.5 block truncate w-full">Event agency</span>
+                </div>
+              </a>
+
+              {/* 4. JUSTCARS */}
               <a href="https://www.instagram.com/justcars_sng" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">JUSTCARS</span>
-                  <span className="text-[10px] text-zinc-400 font-semibold mt-1">@justcars_sng</span>
+                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">JUSTCARS</span>
+                  <span className="text-[9px] text-zinc-400 font-semibold mt-0.5 block truncate w-full">@justcars_sng</span>
                 </div>
               </a>
-              <a href="https://www.instagram.com/obrani.crew" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-white p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-3 relative z-10">
-                  <span className="text-xs font-black uppercase tracking-wider text-zinc-800 group-hover:text-[#A50021] transition-colors duration-300">OBRANI CREW</span>
-                  <span className="text-[10px] text-zinc-400 font-semibold mt-1">@obrani.crew</span>
-                </div>
-              </a>
+
             </div>
           </div>
 
-          {/* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ ИЛИ БАННЕРОМ ПАУЗЫ */}
           <div className="pt-4 pb-8 animate-fade-up">
             {purchaseError && (
               <div className="bg-red-500/90 text-white text-xs font-bold text-center py-2 px-4 rounded-full backdrop-blur-sm shadow-lg border border-red-500/50 mb-3">
@@ -299,29 +350,29 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             )}
             
             {event.sales_paused ? (
-              /* 🔒 Баннер паузы продаж вместо кнопки */
               <div className="w-full bg-zinc-800/80 backdrop-blur border border-zinc-700 rounded-2xl py-4 text-center text-sm font-bold text-zinc-300 tracking-wide shadow-inner flex items-center justify-center gap-2">
                 🔒 Ticket sales are temporarily paused
               </div>
             ) : (
-              /* Стандартная кнопка покупки */
               <div className="bg-zinc-900 rounded-[2rem] p-3 pl-6 flex items-center justify-between shadow-xl border border-zinc-800">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">Entry from</span>
+                  <span className="text-[10px] font-label uppercase text-zinc-400 font-bold tracking-widest">
+                    {isGuestlist ? 'Access' : 'Entry from'}
+                  </span>
                   <span className="font-headline font-extrabold text-lg text-white">
-                    {basePrice} PLN
+                    {isGuestlist ? 'FREE / PROMO' : `${basePrice} PLN`}
                   </span>
                 </div>
                 <button 
                   onClick={() => {
-                    if (batchAvailable > 0) {
+                    if (batchAvailable > 0 || isGuestlist) {
                       setShowModal(true);
                     }
                   }}
-                  disabled={batchAvailable === 0}
+                  disabled={batchAvailable === 0 && !isGuestlist}
                   className="px-8 py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-[1.5rem] shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
                 >
-                  {batchAvailable === 0 ? 'SOLD OUT' : 'BUY TICKET'}
+                  {batchAvailable === 0 && !isGuestlist ? 'SOLD OUT' : mainButtonText}
                 </button>
               </div>
             )}
@@ -330,7 +381,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
         </div>
       </main>
 
-      {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА БИЛЕТОВ */}
+      {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА БИЛЕТОВ / ВВОДА ПРОМОКОДА */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <div 
@@ -339,33 +390,39 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
           >
             <div className="flex justify-between items-center mb-6">
               <div className="flex flex-col">
-                <h3 className="font-headline font-bold text-xl text-zinc-900">Select Tickets</h3>
-                <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">{currentBatchName} Active</span>
+                <h3 className="font-headline font-bold text-xl text-zinc-900">
+                  {isGuestlist ? 'Guestlist Invitation' : 'Select Tickets'}
+                </h3>
+                <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">
+                  {isGuestlist ? 'Promo Code Required' : `${currentBatchName} Active`}
+                </span>
               </div>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-zinc-500 active:scale-95">✕</button>
             </div>
             
             {event.sales_paused ? (
-              /* Подстраховка: если модалка была открыта в момент лока */
               <div className="w-full bg-zinc-100 border border-zinc-200 rounded-2xl py-4 text-center text-sm font-bold text-zinc-500 mb-4">
                 🔒 Ticket sales are temporarily paused
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
-                  <span className="font-bold text-zinc-900">Quantity</span>
-                  <div className="flex items-center gap-6">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
-                    <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
-                    <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+                {!isGuestlist && (
+                  <div className="flex items-center justify-between bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-4">
+                    <span className="font-bold text-zinc-900">Quantity</span>
+                    <div className="flex items-center gap-6">
+                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">-</button>
+                      <span className="font-headline font-bold text-xl w-4 text-center text-zinc-900">{quantity}</span>
+                      <button onClick={() => setQuantity(Math.min(10, Math.min(quantity + 1, batchAvailable)))} className="w-10 h-10 rounded-[1rem] bg-white border border-zinc-200 flex items-center justify-center font-bold text-xl text-zinc-900 shadow-sm active:scale-95">+</button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Поле промокода скрывается при sales_paused === true */}
                 <div className="mb-6 space-y-2">
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-zinc-400" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Promo Code</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                      {isGuestlist ? 'Enter Guestlist Promo Code' : 'Promo Code'}
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     <input 
@@ -381,14 +438,14 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                     />
                     <button 
                       onClick={handleApplyPromo}
-                      disabled={!promoCode.trim() || promoStatus === 'validating'}
+                      disabled={!promoCode.trim() || promoStatus === 'validating' || purchaseLoading}
                       className="px-6 bg-zinc-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase active:scale-95 disabled:opacity-50 transition-all"
                     >
                       {promoStatus === 'validating' ? '...' : 'Apply'}
                     </button>
                   </div>
                   {promoStatus === 'error' && <p className="text-red-500 text-xs font-bold ml-1">Invalid or expired code</p>}
-                  {promoStatus === 'success' && (
+                  {promoStatus === 'success' && !isGuestlist && (
                     <p className="text-emerald-500 text-xs font-bold ml-1">
                       {promoDiscount.amount > 0 
                         ? `Promo applied: -${promoDiscount.amount} PLN` 
@@ -397,42 +454,41 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                     </p>
                   )}
                 </div>
+
+                {!isGuestlist && (
+                  <button 
+                    onClick={async () => {
+                      const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+                      if (window.Telegram?.WebApp?.BackButton) {
+                        window.Telegram.WebApp.BackButton.hide();
+                      }
+
+                      const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
+                      if (data) {
+                        setShowModal(false);
+                        if (data.is_free) {
+                          onNavigate('tickets');
+                        } else if (data.checkout_url) {
+                          if (window.Telegram?.WebApp) {
+                            window.Telegram.WebApp.openLink(data.checkout_url);
+                          } else {
+                            window.open(data.checkout_url, '_blank');
+                          }
+                        }
+                      }
+                    }}
+                    disabled={purchaseLoading}
+                    className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(239,68,68,0.5)]'}`}
+                  >
+                    {purchaseLoading ? 'PROCESSING...' : (
+                      finalTotal === 0 
+                        ? 'CLAIM FREE TICKET' 
+                        : `PROCEED TO PAYMENT — ${finalTotal} PLN`
+                    )}
+                  </button>
+                )}
               </>
             )}
-
-            <button 
-              onClick={async () => {
-                if (event.sales_paused) return;
-                const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                
-                if (window.Telegram?.WebApp?.BackButton) {
-                  window.Telegram.WebApp.BackButton.hide();
-                }
-
-                const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-                
-                if (data) {
-                  setShowModal(false);
-                  if (data.is_free) {
-                    onNavigate('tickets');
-                  } else if (data.checkout_url) {
-                    if (window.Telegram?.WebApp) {
-                      window.Telegram.WebApp.openLink(data.checkout_url);
-                    } else {
-                      window.open(data.checkout_url, '_blank');
-                    }
-                  }
-                }
-              }}
-              disabled={purchaseLoading || event.sales_paused}
-              className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl transition-all disabled:opacity-50 ${event.sales_paused ? 'bg-zinc-400 shadow-none pointer-events-none' : finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(239,68,68,0.5)]'}`}
-            >
-              {event.sales_paused ? 'SALES PAUSED' : purchaseLoading ? 'PROCESSING...' : (
-                finalTotal === 0 
-                  ? 'CLAIM FREE TICKET' 
-                  : `PROCEED TO PAYMENT — ${finalTotal} PLN`
-              )}
-            </button>
           </div>
         </div>
       )}
