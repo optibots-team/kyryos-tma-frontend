@@ -54,13 +54,18 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     return "Kyrios VIP";
   };
 
+  // ✅ ИСПРАВЛЕНО: Реферальная логика переведена на @kyrios_events_bot с передачей ref_ через /start
   const handleInvite = () => {
     if (!tgUser?.id) return;
-    const BOT_USERNAME = "roar_party_bot"; // ТВОЙ ЮЗЕРНЕЙМ БОТА
-    const inviteLink = `https://t.me/${BOT_USERNAME}?start=ref_${tgUser.id}`;
     
-    const shareText = `Join the best underground parties in Warsaw! Get exclusive tickets and rewards. 🚀`;
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
+    // Новая реферальная ссылка на актуального бота
+    const refLink = `https://t.me/kyrios_events_bot?start=ref_${tgUser.id}`;
+    
+    // Текст для шаринга
+    const text = `Привет! Присоединяйся к Kyrios Events — крутые мероприятия в Варшаве 🎉`;
+    
+    // Открываем нативный шаринг Telegram через WebApp
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
     
     window.Telegram?.WebApp?.openTelegramLink(shareUrl);
   };
@@ -176,7 +181,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 </div>
                 <div>
                   <h4 className="font-bold text-zinc-900 text-sm">Invite a Friend</h4>
-                  <p className="text-blue-500 font-bold text-xs mt-0.5">+1000 XP</p>
+                  {/* ✅ ИСПРАВЛЕНО: Обновлено визуальное отображение начисляемых очков под бэкенд */}
+                  <p className="text-blue-500 font-bold text-xs mt-0.5">+500 XP</p>
                 </div>
               </div>
               <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-xs rounded-xl active:scale-95 transition-all">Share</button>
