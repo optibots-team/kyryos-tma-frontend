@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Share2, Trophy, User, ShieldCheck, QrCode,
-  Flame, Lock, CreditCard, Crown, CheckCircle2, Save 
+  Flame, Lock, CreditCard, Crown, CheckCircle2, Instagram 
 } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -57,6 +57,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
       const supabaseUrl = (supabase as any).supabaseUrl;
       const { data: { session } } = await supabase.auth.getSession();
 
+      const cleanInsta = instaHandle.replace('@', '').trim();
+
       const res = await fetch(`${supabaseUrl}/functions/v1/update-profile`, {
         method: 'POST',
         headers: {
@@ -66,20 +68,21 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         body: JSON.stringify({
           telegram_id: tgUser.id,
           full_name: fullName.trim(),
-          instagram: instaHandle.replace('@', '').trim()
+          instagram: cleanInsta
         })
       });
 
       const result = await res.json();
 
+      // ГАРАНТИРОВАННОЕ ОБНОВЛЕНИЕ ОЧКОВ И ШКАЛЫ
       if (result.points_earned > 0) {
         setPoints(prev => prev + result.points_earned);
         setXpNotify({ show: true, msg: `+${result.points_earned} XP EARNED! ✨` });
         setTimeout(() => setXpNotify({ show: false, msg: '' }), 4000);
       }
 
-      if (result.full_name_updated) setIsNameFilled(true);
-      if (result.instagram_updated) setIsInstaFilled(true);
+      if (fullName.trim()) setIsNameFilled(true);
+      if (cleanInsta) setIsInstaFilled(true);
 
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -114,7 +117,14 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     return "Kyrios VIP";
   };
 
+  // 🎯 Имя: приоритет ручному вводу, затем Телеграм
   const displayName = fullName || tgUser?.first_name || tgUser?.username || 'Guest';
+  
+  // 🎯 Подзаголовок: приоритет Instagram с собачкой, если нет — ник ТГ
+  const displaySub = instaHandle ? `@${instaHandle.replace('@', '')}` : (tgUser?.username ? `@${tgUser.username}` : 'unknown');
+
+  // Проверяем, заполнено ли всё, чтобы скрыть блок ввода
+  const isProfileComplete = isNameFilled && isInstaFilled;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -131,7 +141,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
       <main className="px-6 py-4 space-y-6 overflow-x-hidden">
         
-        {/* 1. АВАТАРКА И ИМЯ */}
+        {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
@@ -141,62 +151,66 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
             </div>
           )}
           <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
-          <p className="text-zinc-500 text-sm font-medium mt-1">@{tgUser?.username || 'unknown'}</p>
+          
+          <div className="flex items-center gap-1 text-zinc-500 text-sm font-medium mt-1.5">
+            {isInstaFilled && <Instagram size={14} className="text-[#A50021]" />}
+            <span>{displaySub}</span>
+          </div>
         </div>
 
-        {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ (ТЕПЕРЬ СРАЗУ ПОД НИКНЕЙМОМ) */}
-        <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Complete Your Profile</h3>
-            <button 
-              onClick={handleSaveProfile}
-              disabled={saveLoading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 shadow-md shadow-zinc-200"
-            >
-              {saveLoading ? '...' : 'Save'}
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Enter Name & Surname"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {isNameFilled ? (
-                  <CheckCircle2 size={18} className="text-emerald-500" />
-                ) : (
-                  <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
-                    +500 XP ✨
-                  </span>
-                )}
-              </div>
+        {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ (ИСЧЕЗАЕТ, ЕСЛИ ВСЁ ЗАПОЛНЕНО) */}
+        {!isProfileComplete && (
+          <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Complete Your Profile</h3>
+              <button 
+                onClick={handleSaveProfile}
+                disabled={saveLoading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 shadow-md shadow-zinc-200"
+              >
+                {saveLoading ? '...' : 'Save'}
+              </button>
             </div>
 
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="@your_instagram"
-                value={instaHandle.startsWith('@') || !instaHandle ? instaHandle : `@${instaHandle}`}
-                onChange={(e) => setInstaHandle(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {isInstaFilled ? (
-                  <CheckCircle2 size={18} className="text-emerald-500" />
-                ) : (
-                  <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
-                    +500 XP ✨
-                  </span>
-                )}
-              </div>
+            <div className="space-y-3">
+              {/* Поле имени (скрывается индивидуально, если заполнено) */}
+              {!isNameFilled && (
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Enter Name & Surname"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
+                      +500 XP ✨
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Поле Instagram (скрывается индивидуально, если заполнено) */}
+              {!isInstaFilled && (
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="@your_instagram"
+                    value={instaHandle.startsWith('@') || !instaHandle ? instaHandle : `@${instaHandle}`}
+                    onChange={(e) => setInstaHandle(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
+                      +500 XP ✨
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* 3. ШКАЛА УРОВНЯ */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
@@ -246,7 +260,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </section>
 
-        {/* 4. КАРТА VIP-КЛУБА (ТЕПЕРЬ СМЕЩЕНА СЮДА — ПОД ШКАЛУ ПРОГРЕССА) */}
+        {/* 4. КАРТА VIP-КЛУБА */}
         <section className="animate-fade-up delay-125">
           {isMaxLevel ? (
             <div className="bg-gradient-to-br from-zinc-900 to-[#A50021]/30 rounded-[2rem] p-6 border border-[#A50021]/50 relative overflow-hidden shadow-[0_10px_30px_rgba(165,0,33,0.2)]">
@@ -281,13 +295,12 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           )}
         </section>
 
-        {/* 5. СПИСОК ЗАДАНИЙ (РЕФЕРАЛЫ + ПОСЕЩЕНИЕ МЕРОПРИЯТИЙ) */}
+        {/* 5. СПИСОК ЗАДАНИЙ */}
         <section className="space-y-4 animate-fade-up delay-150">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">How to Earn XP</h3>
           </div>
           <div className="grid grid-cols-1 gap-2">
-            {/* Задание 1: Инвайты */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -301,7 +314,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
               <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-[10px] uppercase rounded-xl active:scale-95 transition-all">Share</button>
             </div>
 
-            {/* Задание 2: Посещение мероприятий (🎯 ВЕРНУЛИ ИЗ ПРОШЛОЙ ЛОГИКИ) */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
