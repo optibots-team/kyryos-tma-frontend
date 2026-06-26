@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Share2, Zap, QrCode, Trophy, User, ShieldCheck, Flame, Lock, CreditCard, Crown } from 'lucide-react';
+import { 
+  Share2, Zap, QrCode, Trophy, User, ShieldCheck, 
+  Flame, Lock, CreditCard, Crown, CheckCircle2, Instagram, Save 
+} from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
@@ -14,34 +17,91 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
+  
+  // Новые поля профиля
+  const [fullName, setFullName] = useState('');
+  const [instaHandle, setInstaHandle] = useState('');
+  const [isNameFilled, setIsNameFilled] = useState(false);
+  const [isInstaFilled, setIsInstaFilled] = useState(false);
+  
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [xpNotify, setXpNotify] = useState<{show: boolean, msg: string}>({show: false, msg: ''});
 
   useEffect(() => {
-    async function fetchPoints() {
+    async function fetchUserData() {
       if (tgUser?.id) {
         const { data } = await supabase
           .from('users')
-          .select('points, streak_count')
+          .select('points, streak_count, full_name, instagram')
           .eq('telegram_id', tgUser.id)
           .single();
         
         if (data) {
           setPoints(data.points || 0);
           setStreak(data.streak_count || 0);
+          setFullName(data.full_name || '');
+          setInstaHandle(data.instagram || '');
+          setIsNameFilled(!!data.full_name);
+          setIsInstaFilled(!!data.instagram);
         }
       }
     }
-    fetchPoints();
+    fetchUserData();
   }, [tgUser?.id]);
 
-  // Логика уровней и лимита в 10 уровней
+  const handleSaveProfile = async () => {
+    if (!tgUser?.id || saveLoading) return;
+    setSaveLoading(true);
+
+    try {
+      const supabaseUrl = (supabase as any).supabaseUrl;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/update-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || (supabase as any).supabaseKey}`
+        },
+        body: JSON.stringify({
+          telegram_id: tgUser.id,
+          full_name: fullName.trim(),
+          instagram: instaHandle.replace('@', '').trim()
+        })
+      });
+
+      const result = await res.json();
+
+      if (result.points_earned > 0) {
+        setPoints(prev => prev + result.points_earned);
+        setXpNotify({ show: true, msg: `+${result.points_earned} XP EARNED! ✨` });
+        setTimeout(() => setXpNotify({ show: false, msg: '' }), 4000);
+      }
+
+      if (result.full_name_updated) setIsNameFilled(true);
+      if (result.instagram_updated) setIsInstaFilled(true);
+
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleInvite = () => {
+    if (!tgUser?.id) return;
+    const refLink = `https://t.me/kyrios_events_bot?start=ref_${tgUser.id}`;
+    const text = `Привет! Присоединяйся к Kyrios Events — крутые мероприятия в Варшаве 🎉`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
+    window.Telegram?.WebApp?.openTelegramLink(shareUrl);
+  };
+
+  // Логика уровней
   const POINTS_PER_LEVEL = 1000;
   const MAX_LEVEL = 10;
-  
-  // Вычисляем текущий уровень, но не даем ему подняться выше MAX_LEVEL
   const calculatedLevel = Math.floor(points / POINTS_PER_LEVEL) + 1;
   const currentLevel = Math.min(calculatedLevel, MAX_LEVEL);
   const isMaxLevel = currentLevel === MAX_LEVEL;
-
   const pointsInCurrentLevel = isMaxLevel ? POINTS_PER_LEVEL : points % POINTS_PER_LEVEL;
   const progressPercentage = isMaxLevel ? 100 : Math.min(100, (pointsInCurrentLevel / POINTS_PER_LEVEL) * 100);
   const pointsToNextLevel = isMaxLevel ? 0 : POINTS_PER_LEVEL - pointsInCurrentLevel;
@@ -54,21 +114,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     return "Kyrios VIP";
   };
 
-  // ✅ ИСПРАВЛЕНО: Реферальная логика переведена на @kyrios_events_bot с передачей ref_ через /start
-  const handleInvite = () => {
-    if (!tgUser?.id) return;
-    
-    // Новая реферальная ссылка на актуального бота
-    const refLink = `https://t.me/kyrios_events_bot?start=ref_${tgUser.id}`;
-    
-    // Текст для шаринга
-    const text = `Привет! Присоединяйся к Kyrios Events — крутые мероприятия в Варшаве 🎉`;
-    
-    // Открываем нативный шаринг Telegram через WebApp
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
-    
-    window.Telegram?.WebApp?.openTelegramLink(shareUrl);
-  };
+  // 🎯 Динамическое имя пользователя
+  const displayName = fullName || tgUser?.first_name || tgUser?.username || 'Guest';
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -76,21 +123,82 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
       </header>
 
-      <main className="px-6 py-4 space-y-8 overflow-x-hidden">
+      {/* Уведомление о XP */}
+      {xpNotify.show && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-zinc-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-[#A50021] animate-in slide-in-from-top-10 duration-300">
+          <p className="font-headline font-black text-sm tracking-widest text-[#A50021]">{xpNotify.msg}</p>
+        </div>
+      )}
+
+      <main className="px-6 py-4 space-y-6 overflow-x-hidden">
         
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
           ) : (
             <div className="w-24 h-24 rounded-full bg-[#A50021] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
-              {tgUser?.first_name?.charAt(0) || <User size={40} />}
+              {displayName.charAt(0)}
             </div>
           )}
-          <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight">
-            {tgUser?.first_name || 'Guest'} {tgUser?.last_name || ''}
-          </h2>
+          <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
           <p className="text-zinc-500 text-sm font-medium mt-1">@{tgUser?.username || 'unknown'}</p>
         </div>
+
+        {/* 🆕 НОВЫЙ БЛОК: РЕДАКТИРОВАНИЕ ПРОФИЛЯ */}
+        <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Complete Your Profile</h3>
+            <button 
+              onClick={handleSaveProfile}
+              disabled={saveLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+            >
+              {saveLoading ? '...' : <><Save size={12} /> Save</>}
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Имя и Фамилия */}
+            <div className="relative group">
+              <input 
+                type="text" 
+                placeholder="Enter Name & Surname"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {isNameFilled ? (
+                  <CheckCircle2 size={18} className="text-emerald-500" />
+                ) : (
+                  <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
+                    +500 XP ✨
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Instagram */}
+            <div className="relative group">
+              <input 
+                type="text" 
+                placeholder="@your_instagram"
+                value={instaHandle.startsWith('@') || !instaHandle ? instaHandle : `@${instaHandle}`}
+                onChange={(e) => setInstaHandle(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {isInstaFilled ? (
+                  <CheckCircle2 size={18} className="text-emerald-500" />
+                ) : (
+                  <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
+                    +500 XP ✨
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ШКАЛА УРОВНЯ */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
@@ -103,10 +211,9 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
               <div>
                 <p className="text-[#A50021] text-[10px] font-bold uppercase tracking-widest mb-1">Current Rank</p>
                 <h3 className="text-white font-headline font-black text-3xl tracking-tight">
-                  {getRankName(currentLevel)} <span className="text-zinc-500 text-xl font-medium">Lvl {currentLevel} / {MAX_LEVEL}</span>
+                  {getRankName(currentLevel)} <span className="text-zinc-500 text-xl font-medium">Lvl {currentLevel}</span>
                 </h3>
               </div>
-              {/* Плашка Streak */}
               {streak > 0 && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-xl">
                   <Flame size={14} className="text-orange-500" />
@@ -115,91 +222,60 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
               )}
             </div>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 space-y-3">
               <div className="flex justify-between items-end">
-                <span className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Progress</span>
+                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Progress</span>
                 <span className="text-white font-bold text-sm">
-                  {isMaxLevel ? 'MAX' : pointsInCurrentLevel} <span className="text-zinc-500 font-normal">/ {isMaxLevel ? 'MAX' : POINTS_PER_LEVEL} XP</span>
+                  {isMaxLevel ? 'MAX' : pointsInCurrentLevel} <span className="text-zinc-500 font-normal">/ {POINTS_PER_LEVEL} XP</span>
                 </span>
               </div>
-              
-              <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
+              <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
                 <div 
                   className="h-full bg-[#A50021] rounded-full shadow-[0_0_15px_rgba(165,0,33,0.5)] transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
-              <p className="text-zinc-500 text-xs text-right font-medium">
+              <p className="text-zinc-500 text-[10px] text-right font-medium">
                 {isMaxLevel ? 'Maximum level reached!' : `${pointsToNextLevel} XP left to Level ${currentLevel + 1}`}
               </p>
             </div>
           </div>
         </section>
 
-        {/* KYRIOS VIP CARD */}
-        <section className="animate-fade-up delay-150">
-          {isMaxLevel ? (
-            // Открытая VIP-карта
-            <div className="bg-gradient-to-br from-zinc-900 to-[#A50021]/30 rounded-[2rem] p-6 border border-[#A50021]/50 relative overflow-hidden shadow-[0_10px_30px_rgba(165,0,33,0.2)]">
-              <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none">
-                <Crown size={100} className="text-white" />
-              </div>
-              <div className="flex items-center gap-5 relative z-10">
-                <div className="w-14 h-14 bg-[#A50021] rounded-xl flex items-center justify-center shadow-lg shadow-[#A50021]/40 border border-[#A50021]">
-                  <CreditCard className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-headline font-bold text-white text-lg tracking-tight">Kyrios VIP Card</h4>
-                  <p className="text-[#A50021] text-xs font-bold uppercase tracking-widest mt-1">Status: Active</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Заблокированная VIP-карта
-            <div className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm relative overflow-hidden flex items-center gap-5 grayscale opacity-70">
-              <div className="w-14 h-14 bg-zinc-100 rounded-xl flex items-center justify-center border border-zinc-200">
-                <Lock className="text-zinc-400 w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-zinc-900 text-base">Kyrios VIP Card</h4>
-                <p className="text-zinc-500 text-xs font-medium mt-0.5 leading-tight">Reach Level 10 to unlock exclusive discounts on all tickets</p>
-              </div>
-            </div>
-          )}
-        </section>
-
         {/* EARN XP POINTS */}
         <section className="space-y-4 animate-fade-up delay-200">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Earn XP Points</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">How to Earn XP</h3>
           </div>
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm flex items-center justify-between">
+          <div className="grid grid-cols-1 gap-2">
+            {/* New Tasks */}
+            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
-                  <Share2 className="text-blue-500 w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-zinc-900 text-sm">Invite a Friend</h4>
-                  {/* ✅ ИСПРАВЛЕНО: Обновлено визуальное отображение начисляемых очков под бэкенд */}
-                  <p className="text-blue-500 font-bold text-xs mt-0.5">+500 XP</p>
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center border border-zinc-100"><User className="text-zinc-400 w-5 h-5" /></div>
+                <div><h4 className="font-bold text-zinc-900 text-xs">Fill in your name</h4><p className="text-zinc-400 font-bold text-[10px] mt-0.5">{isNameFilled ? '✅ Completed' : '+500 XP'}</p></div>
               </div>
-              <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-xs rounded-xl active:scale-95 transition-all">Share</button>
             </div>
-            <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm flex items-center justify-between">
+            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100"><QrCode className="text-emerald-500 w-5 h-5" /></div>
-                <div><h4 className="font-bold text-zinc-900 text-sm">Attend an Event</h4><p className="text-emerald-500 font-bold text-xs mt-0.5">+200 XP</p></div>
+                <div className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center border border-zinc-100"><Instagram className="text-zinc-400 w-5 h-5" /></div>
+                <div><h4 className="font-bold text-zinc-900 text-xs">Add Instagram handle</h4><p className="text-zinc-400 font-bold text-[10px] mt-0.5">{isInstaFilled ? '✅ Completed' : '+500 XP'}</p></div>
               </div>
-              <div className="px-3 py-1.5 bg-zinc-100 text-zinc-400 font-bold text-[10px] uppercase tracking-wider rounded-lg">Auto</div>
             </div>
-            <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm flex items-center justify-between">
+
+            {/* Existing Tasks */}
+            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center border border-purple-100"><Zap className="text-purple-500 w-5 h-5" /></div>
-                <div><h4 className="font-bold text-zinc-900 text-sm">Early Bird Ticket</h4><p className="text-purple-500 font-bold text-xs mt-0.5">+150 XP</p></div>
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100"><Share2 className="text-blue-500 w-5 h-5" /></div>
+                <div><h4 className="font-bold text-zinc-900 text-xs">Invite a Friend</h4><p className="text-blue-500 font-bold text-[10px] mt-0.5">+500 XP</p></div>
               </div>
-              <div className="px-3 py-1.5 bg-zinc-100 text-zinc-400 font-bold text-[10px] uppercase tracking-wider rounded-lg">Auto</div>
+              <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-[10px] uppercase rounded-xl active:scale-95 transition-all">Share</button>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100"><QrCode className="text-emerald-500 w-5 h-5" /></div>
+                <div><h4 className="font-bold text-zinc-900 text-xs">Attend an Event</h4><p className="text-emerald-500 font-bold text-[10px] mt-0.5">+200 XP</p></div>
+              </div>
+              <div className="px-3 py-1.5 bg-zinc-100 text-zinc-400 font-bold text-[9px] uppercase tracking-wider rounded-lg">Auto</div>
             </div>
           </div>
         </section>
