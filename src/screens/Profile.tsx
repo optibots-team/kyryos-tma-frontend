@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { 
-  Share2, Trophy, User, ShieldCheck, 
+  Share2, Trophy, User, ShieldCheck, QrCode,
   Flame, Lock, CreditCard, Crown, CheckCircle2, Save 
 } from 'lucide-react';
 import { Screen } from '../App';
@@ -131,7 +131,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
       <main className="px-6 py-4 space-y-6 overflow-x-hidden">
         
-        {/* АВАТАРКА И ИМЯ */}
+        {/* 1. АВАТАРКА И ИМЯ */}
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
@@ -144,43 +144,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           <p className="text-zinc-500 text-sm font-medium mt-1">@{tgUser?.username || 'unknown'}</p>
         </div>
 
-        {/* 👑 КАРТА VIP-КЛУБА (ТЕПЕРЬ НАВЕРХУ С МОТИВАЦИЕЙ И ПЛЮШКАМИ) */}
-        <section className="animate-fade-up delay-75">
-          {isMaxLevel ? (
-            <div className="bg-gradient-to-br from-zinc-900 to-[#A50021]/30 rounded-[2rem] p-6 border border-[#A50021]/50 relative overflow-hidden shadow-[0_10px_30px_rgba(165,0,33,0.2)]">
-              <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none">
-                <Crown size={100} className="text-white" />
-              </div>
-              <div className="flex items-center gap-5 relative z-10">
-                <div className="w-14 h-14 bg-[#A50021] rounded-xl flex items-center justify-center shadow-lg shadow-[#A50021]/40 border border-[#A50021]">
-                  <CreditCard className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-headline font-bold text-white text-lg tracking-tight">Kyrios VIP Membership</h4>
-                  <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">Status: Active · Unlimited Perks</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gradient-to-br from-white to-zinc-50/50 rounded-[2rem] p-6 border border-zinc-200/60 shadow-sm relative overflow-hidden flex gap-5 items-start">
-              <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center border border-zinc-200 shrink-0 mt-0.5">
-                <Lock className="text-zinc-400 w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-headline font-bold text-zinc-900 text-base flex items-center gap-1.5">
-                  Kyrios VIP Card
-                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>
-                </h4>
-                <p className="text-zinc-500 text-xs leading-relaxed font-medium">
-                  Unlock Level 10 to activate your VIP membership: exclusive token rewards, free access to selected events, and priority guestlist slots.
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ЗАПОЛНЕНИЕ ПРОФИЛЯ */}
-        <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-100">
+        {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ (ТЕПЕРЬ СРАЗУ ПОД НИКНЕЙМОМ) */}
+        <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Complete Your Profile</h3>
             <button 
@@ -233,8 +198,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </section>
 
-        {/* ШКАЛА УРОВНЯ */}
-        <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-150 border border-zinc-800">
+        {/* 3. ШКАЛА УРОВНЯ */}
+        <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
             <Trophy size={100} className="text-[#A50021]" />
           </div>
@@ -269,7 +234,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 ></div>
               </div>
               
-              {/* 🎯 ПОДСКАЗКА С ЦЕЛЬЮ ВНУТРИ БЛОКА ШКАЛЫ */}
               <div className="flex justify-between items-center pt-1">
                 <span className="text-[9px] font-bold text-[#A50021] tracking-wide bg-[#A50021]/10 px-2 py-0.5 rounded-md">
                   ✨ Get 10,000 XP for Auto-VIP
@@ -282,12 +246,48 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </section>
 
-        {/* СПИСОК ЗАДАНИЙ (ОСТАВЛЕНЫ ТОЛЬКО РЕФЕРАЛЫ) */}
-        <section className="space-y-4 animate-fade-up delay-200">
+        {/* 4. КАРТА VIP-КЛУБА (ТЕПЕРЬ СМЕЩЕНА СЮДА — ПОД ШКАЛУ ПРОГРЕССА) */}
+        <section className="animate-fade-up delay-125">
+          {isMaxLevel ? (
+            <div className="bg-gradient-to-br from-zinc-900 to-[#A50021]/30 rounded-[2rem] p-6 border border-[#A50021]/50 relative overflow-hidden shadow-[0_10px_30px_rgba(165,0,33,0.2)]">
+              <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none">
+                <Crown size={100} className="text-white" />
+              </div>
+              <div className="flex items-center gap-5 relative z-10">
+                <div className="w-14 h-14 bg-[#A50021] rounded-xl flex items-center justify-center shadow-lg shadow-[#A50021]/40 border border-[#A50021]">
+                  <CreditCard className="text-white w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-headline font-bold text-white text-lg tracking-tight">Kyrios VIP Membership</h4>
+                  <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">Status: Active · Unlimited Perks</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-white to-zinc-50/50 rounded-[2rem] p-6 border border-zinc-200/60 shadow-sm relative overflow-hidden flex gap-5 items-start">
+              <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center border border-zinc-200 shrink-0 mt-0.5">
+                <Lock className="text-zinc-400 w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-headline font-bold text-zinc-900 text-base flex items-center gap-1.5">
+                  Kyrios VIP Card
+                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>
+                </h4>
+                <p className="text-zinc-500 text-xs leading-relaxed font-medium">
+                  Unlock Level 10 to activate your VIP membership: exclusive token rewards, free access to selected events, and priority guestlist slots.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* 5. СПИСОК ЗАДАНИЙ (РЕФЕРАЛЫ + ПОСЕЩЕНИЕ МЕРОПРИЯТИЙ) */}
+        <section className="space-y-4 animate-fade-up delay-150">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">How to Earn XP</h3>
           </div>
           <div className="grid grid-cols-1 gap-2">
+            {/* Задание 1: Инвайты */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -300,12 +300,26 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
               </div>
               <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-[10px] uppercase rounded-xl active:scale-95 transition-all">Share</button>
             </div>
+
+            {/* Задание 2: Посещение мероприятий (🎯 ВЕРНУЛИ ИЗ ПРОШЛОЙ ЛОГИКИ) */}
+            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                  <QrCode className="text-emerald-500 w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-zinc-900 text-xs">Attend an Event</h4>
+                  <p className="text-emerald-500 font-bold text-[10px] mt-0.5">+250 XP</p>
+                </div>
+              </div>
+              <div className="px-3 py-1.5 bg-zinc-100 text-zinc-400 font-bold text-[9px] uppercase tracking-wider rounded-lg">Auto</div>
+            </div>
           </div>
         </section>
 
         {/* АДМИН ПАНЕЛЬ */}
         {(userRole === 'admin' || userRole === 'hostess' || userRole === 'scanner') && (
-          <section className="space-y-4 animate-fade-up delay-250">
+          <section className="space-y-4 animate-fade-up delay-200">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h3>
             <button onClick={() => onNavigate('admin')} className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm">
               <div className="flex items-center gap-4">
