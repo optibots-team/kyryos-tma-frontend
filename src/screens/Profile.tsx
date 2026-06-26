@@ -141,7 +141,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
       <main className="px-6 py-4 space-y-6 overflow-x-hidden">
         
-        {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
+       {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
@@ -152,9 +152,19 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           )}
           <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
           
-          <div className="flex items-center gap-1 text-zinc-500 text-sm font-medium mt-1.5">
-            {isInstaFilled && <Instagram size={14} className="text-[#A50021]" />}
-            <span>{displaySub}</span>
+          {/* ✅ ИСПРАВЛЕНО: Теперь выводятся ОБА никнейма в одну аккуратную строку */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-zinc-500 text-sm font-medium mt-1.5">
+            <span>tg: @{tgUser?.username || 'unknown'}</span>
+            
+            {isInstaFilled && (
+              <>
+                <span className="text-zinc-300">•</span>
+                <div className="flex items-center gap-1">
+                  <Instagram size={14} className="text-[#A50021]" />
+                  <span>@{instaHandle.replace('@', '')}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
