@@ -9,7 +9,8 @@ interface EventsProps {
 }
 
 export default function Events({ onNavigate, onEventSelect }: EventsProps) {
-  const [mainEvent, setMainEvent] = useState<any>(null);
+  // 🎯 ТЕПЕРЬ ХРАНИМ МАССИВ ИВЕНТОВ
+  const [events, setEvents] = useState<any[]>([]);
   const [hasTicket, setHasTicket] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -18,14 +19,14 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
       try {
         setLoading(true);
         
-        // Запрашиваем только один самый актуальный ивент
-        const { data: events } = await supabase
+        // ✅ ИСПРАВЛЕНО: Запрашиваем 2 самых актуальных ивента (пятница + суббота)
+        const { data } = await supabase
           .from('active_events')
           .select('*')
-          .limit(1);
+          .limit(2);
 
-        if (events && events.length > 0) {
-          setMainEvent(events[0]);
+        if (data) {
+          setEvents(data);
         }
 
         // Проверяем наличие активных билетов для плашки быстрого чекина
@@ -49,7 +50,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   }, []);
 
   const handleEventClick = (eventId: string) => {
-    // Переход разрешен всегда, так как внутри карточки деталей теперь есть обработка sales_paused и ticket_mode
     onEventSelect(eventId);
     onNavigate('event-details');
   };
@@ -62,23 +62,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     );
   }
 
-  // Проверяем доступность билетов для корректной надписи на кнопке (только для stripe режима)
-  const isGuestlist = mainEvent?.ticket_mode === 'guestlist';
-  const placesLeft = mainEvent?.available !== null && mainEvent?.available !== undefined ? mainEvent.available : (mainEvent?.capacity || 400);
-  const isSoldOut = !isGuestlist && placesLeft === 0 && (!mainEvent?.batches || !mainEvent.batches.some((b: any) => !b.is_sold_out && b.available > 0));
-
-  // Динамический текст кнопки на основе режима ивента
-  const centerButtonText = mainEvent?.sales_paused 
-    ? 'SALES PAUSED' 
-    : isSoldOut 
-      ? 'SOLD OUT' 
-      : isGuestlist 
-        ? 'GET TICKET' 
-        : 'BUY TICKET';
-
-  // Проверяем: видео или картинка находится в URL обложки
-  const isVideo = mainEvent?.image_url?.match(/\.(mp4|webm)$/i);
-
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
@@ -87,47 +70,16 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
       <main className="px-6 py-8 space-y-8">
         
-        {/* ГЛАВНЫЙ ИВЕНТ */}
-        {mainEvent && (
-          <section 
-            onClick={() => handleEventClick(mainEvent.id)}
-            className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 animate-fade-up"
-          >
-            {/* 🎯 Динамический плеер/изображение для главной карточки */}
-            {isVideo ? (
-              <video
-                src={mainEvent.image_url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            ) : (
-              <img 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                src={mainEvent.image_url} 
-                alt={mainEvent.title} 
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-            
-            <div className="absolute inset-0 p-8 flex flex-col justify-end">
-              <h2 className="text-white font-headline font-extrabold text-4xl mb-2 tracking-tight">{mainEvent.title}</h2>
-              <p className="text-white/70 text-sm mb-6 font-medium">
-                {new Date(mainEvent.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-              
-              {/* Контейнер с кнопкой покупки по центру */}
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-[1.5rem] p-4 flex items-center justify-center">
-                <div className={`w-full max-w-[260px] text-center py-3.5 text-white font-headline font-black text-sm tracking-widest rounded-xl transition-all transform group-hover:scale-[1.02] ${mainEvent.sales_paused ? 'bg-zinc-800 border border-zinc-700 text-zinc-400 shadow-inner' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.4)]'}`}>
-                  {centerButtonText}
-                </div>
-              </div>
-
-            </div>
-          </section>
-        )}
+        {/* 🎯 РАЗДЕЛ С ГЛАВНЫМИ ИВЕНТАМИ (ПЯТНИЦА + СУББОТА) */}
+        <div className="space-y-6">
+          {events.map((event) => (
+            <EventCard 
+              key={event.id} 
+              event={event} 
+              onCardClick={handleEventClick} 
+            />
+          ))}
+        </div>
 
         {/* Quick Check-in */}
         {hasTicket && (
@@ -171,5 +123,60 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
       </main>
     </div>
+  );
+}
+
+// ── ВНУТРЕННИЙ КОМПОНЕНТ КАРТОЧКИ ДЛЯ ИСКЛЮЧЕНИЯ ДУБЛИРОВАНИЯ КОДА ──
+function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: string) => void }) {
+  const isGuestlist = event?.ticket_mode === 'guestlist';
+  const placesLeft = event?.available !== null && event?.available !== undefined ? event.available : (event?.capacity || 400);
+  const isSoldOut = !isGuestlist && placesLeft === 0 && (!event?.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0));
+
+  const centerButtonText = event?.sales_paused 
+    ? 'SALES PAUSED' 
+    : isSoldOut 
+      ? 'SOLD OUT' 
+      : isGuestlist 
+        ? 'GET TICKET' 
+        : 'BUY TICKET';
+
+  const isVideo = event?.image_url?.match(/\.(mp4|webm)$/i);
+
+  return (
+    <section 
+      onClick={() => onCardClick(event.id)}
+      className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 animate-fade-up block"
+    >
+      {isVideo ? (
+        <video
+          src={event.image_url}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+      ) : (
+        <img 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          src={event.image_url} 
+          alt={event.title} 
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+      
+      <div className="absolute inset-0 p-8 flex flex-col justify-end">
+        <h2 className="text-white font-headline font-extrabold text-4xl mb-2 tracking-tight">{event.title}</h2>
+        <p className="text-white/70 text-sm mb-6 font-medium">
+          {new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+        
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-[1.5rem] p-4 flex items-center justify-center">
+          <div className={`w-full max-w-[260px] text-center py-3.5 text-white font-headline font-black text-sm tracking-widest rounded-xl transition-all transform group-hover:scale-[1.02] ${event.sales_paused ? 'bg-zinc-800 border border-zinc-700 text-zinc-400 shadow-inner' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.4)]'}`}>
+            {centerButtonText}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
