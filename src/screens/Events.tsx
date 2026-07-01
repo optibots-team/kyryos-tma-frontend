@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChevronRight, Ticket as TicketIcon, Info } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -13,9 +13,10 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   const [hasTicket, setHasTicket] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Календарь и управление колодой
+  // Календарь и карусель
   const [calendarDays, setCalendarDays] = useState<any[]>([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -36,7 +37,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           setEvents(sortedEvents);
         }
 
-        // Генерация календарной полоски (7 дней)
+        // Генерация календарной полоской (7 дней начиная с сегодня)
         const days = [];
         const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
         
@@ -44,6 +45,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           const d = new Date();
           d.setDate(d.getDate() + i);
           
+          // Проверяем, есть ли мероприятие в этот день
           const hasEvent = sortedEvents.find(e => 
             new Date(e.event_date).toDateString() === d.toDateString()
           );
@@ -78,10 +80,27 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     fetchData();
   }, []);
 
+  // Клик по календарю скроллит карусель на нужный ивент
   const handleDayClick = (eventId: string | null) => {
-    if (!eventId) return;
+    if (!eventId || !carouselRef.current) return;
     const index = events.findIndex(e => e.id === eventId);
     if (index !== -1) {
+      const cardWidth = carouselRef.current.offsetWidth * 0.85;
+      carouselRef.current.scrollTo({
+        left: index * (cardWidth + 16), // ширина карты + gap (space-x-4)
+        behavior: 'smooth'
+      });
+      setActiveCardIndex(index);
+    }
+  };
+
+  // Отслеживание скролла карусели для интерактивного изменения масштаба
+  const handleScroll = () => {
+    if (!carouselRef.current) return;
+    const scrollLeft = carouselRef.current.scrollLeft;
+    const cardWidth = carouselRef.current.offsetWidth * 0.85 + 16;
+    const index = Math.round(scrollLeft / cardWidth);
+    if (index !== activeCardIndex && index >= 0 && index < events.length) {
       setActiveCardIndex(index);
     }
   };
@@ -89,12 +108,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   const handleEventClick = (eventId: string) => {
     onEventSelect(eventId);
     onNavigate('event-details');
-  };
-
-  // Переключение карточек по тапу на нижнюю карту в колоде
-  const toggleStack = () => {
-    if (events.length < 2) return;
-    setActiveCardIndex((prev) => (prev === 0 ? 1 : 0));
   };
 
   if (loading) {
@@ -106,7 +119,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32 select-none overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 pb-32 select-none">
       <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex flex-col items-center justify-center px-6 pt-6 pb-3 border-b border-zinc-400/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain mb-3" />
         
@@ -146,37 +159,31 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
         </div>
       </header>
 
-      <main className="py-6 space-y-12">
+      <main className="py-6 space-y-8">
         
-        {/* 🎯 КОНЦЕПТ КОЛОДЫ КАРТ (THE STACK SHIFT) */}
-        <div className="space-y-4 px-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Weekend Stack</h3>
+        {/* 🎯 HORIZONTAL CINEMATIC CAROUSEL */}
+        <div className="space-y-2">
+          <div className="px-6 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Featured Lineup</h3>
             <span className="text-[10px] font-black text-zinc-400 bg-zinc-200/50 px-2.5 py-1 rounded-full">
-              Tap lower card to shift
+              {activeCardIndex + 1} / {events.length}
             </span>
           </div>
 
-          {/* Контейнер колоды */}
-          <div className="relative w-full aspect-[4/5] mt-2">
-            {events.map((event, index) => {
-              const isTop = index === activeCardIndex;
-              
-              return (
-                <div
-                  key={event.id}
-                  onClick={() => isTop ? handleEventClick(event.id) : toggleStack()}
-                  className={`absolute inset-0 w-full h-full transition-all duration-500 ease-out origin-bottom rounded-[2.5rem] overflow-hidden shadow-2xl cursor-pointer
-                    ${isTop 
-                      ? 'z-20 translate-y-0 rotate-0 scale-100 opacity-100 pointer-events-auto' 
-                      : 'z-10 translate-y-6 rotate-3 scale-[0.94] opacity-70 blur-[0.5px] pointer-events-auto hover:translate-y-4 hover:rotate-1'
-                    }
-                  `}
-                >
-                  <EventCardContent event={event} isTop={isTop} />
-                </div>
-              );
-            })}
+          <div 
+            ref={carouselRef}
+            onScroll={handleScroll}
+            className="w-full flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 py-2"
+            style={{ scrollPaddingLeft: '24px' }}
+          >
+            {events.map((event, index) => (
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                isActive={index === activeCardIndex}
+                onCardClick={handleEventClick} 
+              />
+            ))}
           </div>
         </div>
 
@@ -208,7 +215,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           </div>
           <div 
             onClick={() => onNavigate('about')}
-            className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[180px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm active:scale-[0.98] transition-all"
+            className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[200px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm active:scale-[0.98] transition-all"
           >
             <div className="absolute top-0 right-0 p-8">
               <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-900">
@@ -227,8 +234,8 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   );
 }
 
-// ── ВНУТРЕННИЙ РЕНДЕР КАРТЫ С КНОПКАМИ И ДЕТАЛЯМИ ──
-function EventCardContent({ event, isTop }: { event: any; isTop: boolean }) {
+// ── ВНУТРЕННИЙ КОМПОНЕНТ КАРТОЧКИ (ГОРИЗОНТАЛЬНЫЙ СТИЛЬ С МАСШТАБИРОВАНИЕМ) ──
+function EventCard({ event, isActive, onCardClick }: { event: any; isActive: boolean; onCardClick: (id: string) => void }) {
   const isGuestlist = event?.ticket_mode === 'guestlist';
   const placesLeft = event?.available !== null && event?.available !== undefined ? event.available : (event?.capacity || 400);
   const isSoldOut = !isGuestlist && placesLeft === 0 && (!event?.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0));
@@ -244,7 +251,12 @@ function EventCardContent({ event, isTop }: { event: any; isTop: boolean }) {
   const isVideo = event?.image_url?.match(/\.(mp4|webm)$/i);
 
   return (
-    <>
+    <section 
+      onClick={() => onCardClick(event.id)}
+      className={`relative w-[85%] aspect-[3/4] rounded-[2.5rem] overflow-hidden cursor-pointer group shadow-2xl transition-all duration-500 ease-out shrink-0 snap-center
+        ${isActive ? 'scale-100 opacity-100 shadow-zinc-300/60' : 'scale-[0.93] opacity-40 blur-[0.5px]'}
+      `}
+    >
       <div className="w-full h-full overflow-hidden relative bg-black">
         {isVideo ? (
           <video
@@ -253,11 +265,11 @@ function EventCardContent({ event, isTop }: { event: any; isTop: boolean }) {
             loop
             muted
             playsInline
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`}
           />
         ) : (
           <img 
-            className="w-full h-full object-cover" 
+            className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`} 
             src={event.image_url} 
             alt={event.title} 
           />
@@ -266,26 +278,23 @@ function EventCardContent({ event, isTop }: { event: any; isTop: boolean }) {
       
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
       
-      <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
+      <div className="absolute inset-0 p-6 flex flex-col justify-end z-10">
         <span className="text-[#A50021] text-[10px] font-black uppercase tracking-[0.2em] mb-1">
           {new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long' })}
         </span>
-        <h2 className="text-white font-headline font-extrabold text-3xl mb-1 tracking-tight leading-none">
+        <h2 className="text-white font-headline font-extrabold text-3xl mb-1 tracking-tight leading-none group-hover:text-[#A50021] transition-colors">
           {event.title}
         </h2>
         <p className="text-white/60 text-[11px] mb-5 font-bold uppercase tracking-wider">
-          {new Date(event.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {new Date(event.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
         </p>
         
-        {/* Кнопка активна и видна только на верхней карточке */}
-        <div className={`bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center justify-center transition-all duration-300
-          ${isTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}
-        `}>
-          <div className={`w-full text-center py-3 text-white font-headline font-black text-xs tracking-widest rounded-xl transform ${event.sales_paused ? 'bg-zinc-800 border border-zinc-700 text-zinc-400 shadow-inner' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.3)]'}`}>
+        <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center justify-center transition-all duration-300 group-hover:bg-white/15">
+          <div className={`w-full text-center py-3 text-white font-headline font-black text-xs tracking-widest rounded-xl transition-all transform ${event.sales_paused ? 'bg-zinc-800 border border-zinc-700 text-zinc-400 shadow-inner' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.3)]'}`}>
             {centerButtonText}
           </div>
         </div>
       </div>
-    </>
+    </section>
   );
 }
