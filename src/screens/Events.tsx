@@ -22,11 +22,20 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
         // ✅ ИСПРАВЛЕНО: Запрашиваем 2 самых актуальных ивента (пятница + суббота)
         const { data } = await supabase
           .from('active_events')
-          .select('*')
-          .limit(2);
+          .select('*'); // Убираем жесткий .limit(2) здесь, чтобы сначала отсортировать
 
         if (data) {
-          setEvents(data);
+          const now = new Date().getTime();
+          
+          const sortedEvents = data
+            // 1. Оставляем только те, которые еще не прошли (или идут сегодня)
+            .filter((e: any) => new Date(e.event_date).getTime() >= now - 86400000)
+            // 2. Сортируем: чем ближе дата к сегодняшней, тем выше ивент
+            .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+            // 3. Берем только первые 2 главных ивента для экрана
+            .slice(0, 2);
+
+          setEvents(sortedEvents);
         }
 
         // Проверяем наличие активных билетов для плашки быстрого чекина
