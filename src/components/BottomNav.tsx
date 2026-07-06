@@ -20,9 +20,9 @@ export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps)
         {navItems.map((item) => {
           const Icon = item.icon;
           
-          // Подсвечиваем профиль, если мы на экране профиля, сканера или админки
+          // ✅ ИСПРАВЛЕНО: Привели currentScreen к типу string, чтобы у TypeScript не было конфликтов типов при проверке .includes()
           const isActive = currentScreen === item.id || 
-            (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen));
+            (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen as string));
           
           return (
             <button
