@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Share2, Trophy, User, ShieldCheck, QrCode,
-  Flame, Lock, CreditCard, Crown, CheckCircle2, Instagram 
+  Flame, Lock, CreditCard, Crown, Instagram 
 } from 'lucide-react';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -18,7 +18,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   
-  // Поля профиля
   const [fullName, setFullName] = useState('');
   const [instaHandle, setInstaHandle] = useState('');
   const [isNameFilled, setIsNameFilled] = useState(false);
@@ -74,7 +73,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
       const result = await res.json();
 
-      // ГАРАНТИРОВАННОЕ ОБНОВЛЕНИЕ ОЧКОВ И ШКАЛЫ
       if (result.points_earned > 0) {
         setPoints(prev => prev + result.points_earned);
         setXpNotify({ show: true, msg: `+${result.points_earned} XP EARNED! ✨` });
@@ -99,7 +97,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     window.Telegram?.WebApp?.openTelegramLink(shareUrl);
   };
 
-  // Логика уровней
+  // Levels algorithm
   const POINTS_PER_LEVEL = 1000;
   const MAX_LEVEL = 10;
   const calculatedLevel = Math.floor(points / POINTS_PER_LEVEL) + 1;
@@ -117,13 +115,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     return "Kyrios VIP";
   };
 
-  // 🎯 Имя: приоритет ручному вводу, затем Телеграм
   const displayName = fullName || tgUser?.first_name || tgUser?.username || 'Guest';
-  
-  // 🎯 Подзаголовок: приоритет Instagram с собачкой, если нет — ник ТГ
-  const displaySub = instaHandle ? `@${instaHandle.replace('@', '')}` : (tgUser?.username ? `@${tgUser.username}` : 'unknown');
-
-  // Проверяем, заполнено ли всё, чтобы скрыть блок ввода
   const isProfileComplete = isNameFilled && isInstaFilled;
 
   return (
@@ -132,7 +124,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
       </header>
 
-      {/* Уведомление о XP */}
       {xpNotify.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-zinc-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-[#A50021] animate-in slide-in-from-top-10 duration-300">
           <p className="font-headline font-black text-sm tracking-widest text-[#A50021]">{xpNotify.msg}</p>
@@ -141,7 +132,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
       <main className="px-6 py-4 space-y-6 overflow-x-hidden">
         
-       {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
+        {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
@@ -152,7 +143,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           )}
           <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
           
-          {/* ✅ ИСПРАВЛЕНО: Теперь выводятся ОБА никнейма в одну аккуратную строку */}
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-zinc-500 text-sm font-medium mt-1.5">
             <span>tg: @{tgUser?.username || 'unknown'}</span>
             
@@ -168,7 +158,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </div>
 
-        {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ (ИСЧЕЗАЕТ, ЕСЛИ ВСЁ ЗАПОЛНЕНО) */}
+        {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ */}
         {!isProfileComplete && (
           <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
             <div className="flex items-center justify-between mb-2">
@@ -183,7 +173,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
             </div>
 
             <div className="space-y-3">
-              {/* Поле имени (скрывается индивидуально, если заполнено) */}
               {!isNameFilled && (
                 <div className="relative">
                   <input 
@@ -201,7 +190,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 </div>
               )}
 
-              {/* Поле Instagram (скрывается индивидуально, если заполнено) */}
               {!isInstaFilled && (
                 <div className="relative">
                   <input 
@@ -222,30 +210,30 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
-        {/* ✅ КНОПКА ВХОДА В АДМИН-ПАНЕЛЬ */}
-          {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
-            <section className="w-full mt-6 animate-fade-up">
-              <button 
-                onClick={() => onNavigate('admin')} 
-                className="w-full bg-zinc-900 text-white p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/20 group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 11h10"/><path d="M7 15h10"/><path d="M7 7h10"/></svg>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-white font-headline font-black text-base tracking-tight uppercase">Admin Panel</p>
-                    <p className="text-white/60 text-xs font-medium mt-0.5">Codes, stats & tools</p>
-                  </div>
+        {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ */}
+        {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
+          <section className="w-full animate-fade-up">
+            <button 
+              onClick={() => onNavigate('admin-panel')} 
+              className="w-full bg-zinc-900 text-white p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/20 group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 11h10"/><path d="M7 15h10"/><path d="M7 7h10"/></svg>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                <div className="text-left">
+                  <p className="text-white font-headline font-black text-base tracking-tight uppercase">Admin Panel</p>
+                  <p className="text-white/60 text-xs font-medium mt-0.5">Codes, stats & tools</p>
                 </div>
-              </button>
-            </section>
-          )}
-        
-        {/* 3. ШКАЛА УРОВНЯ */}
+              </div>
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </div>
+            </button>
+          </section>
+        )}
+
+        {/* 4. ШКАЛА УРОВНЯ */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
             <Trophy size={100} className="text-[#A50021]" />
@@ -293,7 +281,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </section>
 
-        {/* 4. КАРТА VIP-КЛУБА */}
+        {/* 5. КАРТА VIP-КЛУБА */}
         <section className="animate-fade-up delay-125">
           {isMaxLevel ? (
             <div className="bg-gradient-to-br from-zinc-900 to-[#A50021]/30 rounded-[2rem] p-6 border border-[#A50021]/50 relative overflow-hidden shadow-[0_10px_30px_rgba(165,0,33,0.2)]">
@@ -328,7 +316,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           )}
         </section>
 
-        {/* 5. СПИСОК ЗАДАНИЙ */}
+        {/* 6. СПИСОК ЗАДАНИЙ */}
         <section className="space-y-4 animate-fade-up delay-150">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">How to Earn XP</h3>
@@ -362,14 +350,17 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </div>
         </section>
 
-        {/* АДМИН ПАНЕЛЬ */}
+        {/* ✅ 7. ОТДЕЛЬНАЯ КНОПКА ДЛЯ СТАРОГО СКАНЕРА БИЛЕТОВ (Только для admin/hostess/scanner) */}
         {(userRole === 'admin' || userRole === 'hostess' || userRole === 'scanner') && (
           <section className="space-y-4 animate-fade-up delay-200">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Admin Panel</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Access Control</h3>
             <button onClick={() => onNavigate('admin')} className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-900 border border-zinc-100"><User size={24} /></div>
-                <div className="text-left"><p className="text-zinc-900 font-bold text-base tracking-tight">Ticket Scanner</p><p className="text-zinc-400 text-xs font-medium mt-0.5">Verify guest QR codes</p></div>
+                <div className="text-left">
+                  <p className="text-zinc-900 font-bold text-base tracking-tight">Ticket Scanner</p>
+                  <p className="text-zinc-400 text-xs font-medium mt-0.5">Verify guest QR codes</p>
+                </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center"><ShieldCheck className="text-zinc-900 w-5 h-5" /></div>
             </button>
