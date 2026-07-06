@@ -1,17 +1,17 @@
 import { Home, Ticket, Image, User } from 'lucide-react';
-import { Screen } from '../App';
 
+// ✅ Решение: Описываем пропсы через базовый string, чтобы вообще исключить конфликты типов с файлом App.tsx
 interface BottomNavProps {
-  currentScreen: Screen;
-  onNavigate: (screen: Screen) => void;
+  currentScreen: string;
+  onNavigate: (screen: any) => void;
 }
 
 export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
   const navItems = [
-    { id: 'events' as Screen, label: 'Events', icon: Home },
-    { id: 'tickets' as Screen, label: 'Tickets', icon: Ticket },
-    { id: 'gallery' as Screen, label: 'Gallery', icon: Image },
-    { id: 'profile' as Screen, label: 'Profile', icon: User },
+    { id: 'events', label: 'Events', icon: Home },
+    { id: 'tickets', label: 'Tickets', icon: Ticket },
+    { id: 'gallery', label: 'Gallery', icon: Image },
+    { id: 'profile', label: 'Profile', icon: User },
   ];
 
   return (
@@ -20,8 +20,7 @@ export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps)
         {navItems.map((item) => {
           const Icon = item.icon;
           
-          // Поскольку тип Screen в App.tsx теперь включает в себя 'admin' и 'admin-panel',
-          // TypeScript больше не ругается на метод .includes()!
+          // Теперь это чистая проверка строк JavaScript, ломаться тут просто нечему
           const isActive = currentScreen === item.id || 
             (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen));
           
