@@ -10,17 +10,16 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-// Убрали временные экраны. Теперь у нас единый 'event-details', который принимает ID ивента.
-export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'gallery';
+// ✅ ИСПРАВЛЕНО: Добавлен уникальный ключ 'admin-panel' для новой админки
+export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'admin-panel' | 'gallery';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
   
-  // НОВОЕ: Состояние для хранения ID выбранного ивента
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
-  // Синхронизация и авто-регистрация пользователя
+  // Synchronize and auto-register user
   useEffect(() => {
     async function syncUser() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -60,13 +59,14 @@ export default function App() {
     }
   }, []);
 
-  // Управление системной кнопкой "Назад" от Telegram
+  // Telegram BackButton controller
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
 
     const handleBackClick = () => {
-      if (currentScreen === 'admin') {
+      // ✅ ИСПРАВЛЕНО: Кнопка «Назад» корректно уводит из любого админ-экрана обратно в профиль
+      if (currentScreen === 'admin' || currentScreen === 'admin-panel') {
         setCurrentScreen('profile');
       } else {
         setCurrentScreen('events');
@@ -86,12 +86,10 @@ export default function App() {
     };
   }, [currentScreen]);
 
-  // Массив экранов, на которых НЕ нужно показывать нижнее меню BottomNav
   const hideBottomNav = ['event-details', 'about'].includes(currentScreen);
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
-      {/* Передаем функцию onEventSelect, чтобы Events мог сообщить App, какой ID открывать */}
       {currentScreen === 'events' && (
         <Events 
           onNavigate={setCurrentScreen} 
@@ -99,7 +97,6 @@ export default function App() {
         />
       )}
       
-      {/* Передаем выбранный eventId внутрь EventDetails */}
       {currentScreen === 'event-details' && (
         <EventDetails 
           onNavigate={setCurrentScreen} 
@@ -118,11 +115,16 @@ export default function App() {
         />
       )}
       
+      {/* ✅ ИСПРАВЛЕНО: Четкое разделение экранов. 'admin' открывает сканер, 'admin-panel' — промокоды */}
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
+      
+      {currentScreen === 'admin-panel' && (
+        <AdminPanel onNavigate={setCurrentScreen} userRole={userRole} />
+      )}
       
       {!hideBottomNav && (
         <BottomNav 
-          currentScreen={currentScreen === 'admin' ? 'profile' : currentScreen as any} 
+          currentScreen={['admin', 'admin-panel'].includes(currentScreen) ? 'profile' : (currentScreen as any)} 
           onNavigate={setCurrentScreen} 
         />
       )}
