@@ -8,10 +8,10 @@ interface BottomNavProps {
 
 export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
   const navItems = [
-    { id: 'events', label: 'Events', icon: Home },
-    { id: 'tickets', label: 'Tickets', icon: Ticket },
-    { id: 'gallery', label: 'Gallery', icon: Image },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'events' as Screen, label: 'Events', icon: Home },
+    { id: 'tickets' as Screen, label: 'Tickets', icon: Ticket },
+    { id: 'gallery' as Screen, label: 'Gallery', icon: Image },
+    { id: 'profile' as Screen, label: 'Profile', icon: User },
   ];
 
   return (
@@ -19,13 +19,15 @@ export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps)
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          // Если мы в админке, подсвечиваем кнопку профиля, так как вход в админку оттуда
-          const isActive = currentScreen === item.id || (item.id === 'profile' && currentScreen === 'admin');
+          
+          // ✅ ИСПРАВЛЕНО: Кнопка профиля подсвечивается и на экране сканера ('admin'), и на экране промокодов ('admin-panel')
+          const isActive = currentScreen === item.id || 
+            (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen));
           
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id as Screen)}
+              onClick={() => onNavigate(item.id)}
               className={`flex flex-col items-center gap-1 transition-all duration-300 ${
                 isActive ? 'text-zinc-900 scale-110' : 'text-zinc-400 hover:text-zinc-600'
               }`}
