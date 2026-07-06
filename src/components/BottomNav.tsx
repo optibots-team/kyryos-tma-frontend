@@ -17,15 +17,16 @@ export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps)
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-8 pt-4 bg-slate-50/80 backdrop-blur-xl border-t border-white/20">
       <div className="flex items-center justify-around max-w-md mx-auto">
-       {navItems.map((item) => {
-  const Icon = item.icon;
-  
-  // ✅ ОСТАЕТСЯ ТОЛЬКО ОДНА СТРОКА С ПРИВЕДЕНИЕМ ТИПА as string
-  const isActive = currentScreen === item.id || 
-    (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen as string));
-  
-  return (
-    <button
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          
+          // Поскольку тип Screen в App.tsx теперь включает в себя 'admin' и 'admin-panel',
+          // TypeScript больше не ругается на метод .includes()!
+          const isActive = currentScreen === item.id || 
+            (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen));
+          
+          return (
+            <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={`flex flex-col items-center gap-1 transition-all duration-300 ${
