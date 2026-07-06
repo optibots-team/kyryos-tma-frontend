@@ -118,12 +118,12 @@ export default function App() {
         <AdminPanel onNavigate={setCurrentScreen} userRole={userRole} />
       )}
       
-      {!hideBottomNav && (
-        <BottomNav 
-          currentScreen={['admin', 'admin-panel'].includes(currentScreen) ? 'profile' : (currentScreen as any)} 
-          onNavigate={setCurrentScreen} 
-        />
-      )}
+  {!hideBottomNav && (
+  <BottomNav 
+    currentScreen={currentScreen} 
+    onNavigate={setCurrentScreen} 
+  />
+)}
     </div>
   );
 }
