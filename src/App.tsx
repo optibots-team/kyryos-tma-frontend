@@ -3,6 +3,7 @@ import Events from './screens/Events';
 import EventDetails from './screens/EventDetails';
 import Profile from './screens/Profile';
 import Tickets from './screens/Tickets';
+import AdminPanel from './screens/AdminPanel';
 import AboutKyrios from './screens/AboutKyrios';
 import Gallery from './screens/Gallery';
 import { AdminScanner } from './AdminScanner';
