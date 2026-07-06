@@ -20,7 +20,7 @@ export default function BottomNav({ currentScreen, onNavigate }: BottomNavProps)
         {navItems.map((item) => {
           const Icon = item.icon;
           
-          // ✅ ИСПРАВЛЕНО: Кнопка профиля подсвечивается и на экране сканера ('admin'), и на экране промокодов ('admin-panel')
+          // Подсвечиваем профиль, если мы на экране профиля, сканера или админки
           const isActive = currentScreen === item.id || 
             (item.id === 'profile' && ['admin', 'admin-panel'].includes(currentScreen));
           
