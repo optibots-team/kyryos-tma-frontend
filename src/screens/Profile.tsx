@@ -222,6 +222,29 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
+        {/* ✅ КНОПКА ВХОДА В АДМИН-ПАНЕЛЬ */}
+          {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
+            <section className="w-full mt-6 animate-fade-up">
+              <button 
+                onClick={() => onNavigate('admin')} 
+                className="w-full bg-zinc-900 text-white p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/20 group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 11h10"/><path d="M7 15h10"/><path d="M7 7h10"/></svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white font-headline font-black text-base tracking-tight uppercase">Admin Panel</p>
+                    <p className="text-white/60 text-xs font-medium mt-0.5">Codes, stats & tools</p>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </div>
+              </button>
+            </section>
+          )}
+        
         {/* 3. ШКАЛА УРОВНЯ */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
