@@ -10,16 +10,14 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import { supabase } from './lib/supabaseClient';
 
-// ✅ ИСПРАВЛЕНО: Добавлен уникальный ключ 'admin-panel' для новой админки
 export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'admin-panel' | 'gallery';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
-  
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
-  // Synchronize and auto-register user
+  // Синхронизация и авто-регистрация пользователя
   useEffect(() => {
     async function syncUser() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -59,13 +57,12 @@ export default function App() {
     }
   }, []);
 
-  // Telegram BackButton controller
+  // Управление системной кнопкой "Назад" от Telegram
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg || !tg.BackButton) return;
 
     const handleBackClick = () => {
-      // ✅ ИСПРАВЛЕНО: Кнопка «Назад» корректно уводит из любого админ-экрана обратно в профиль
       if (currentScreen === 'admin' || currentScreen === 'admin-panel') {
         setCurrentScreen('profile');
       } else {
@@ -115,7 +112,6 @@ export default function App() {
         />
       )}
       
-      {/* ✅ ИСПРАВЛЕНО: Четкое разделение экранов. 'admin' открывает сканер, 'admin-panel' — промокоды */}
       {currentScreen === 'admin' && <AdminScanner userRole={userRole as any} />}
       
       {currentScreen === 'admin-panel' && (
