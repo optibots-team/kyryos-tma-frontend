@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+@import "tailwindcss";
+
 @theme {
   --color-secondary: #5e5e5e;
   --color-on-tertiary-fixed-variant: #e3e2e2;
@@ -54,24 +56,24 @@
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
+}
 
-  /* 🌓 НАСТРОЙКА ТЕМНОЙ ТЕМЫ ДЛЯ TAILWIND V4 */
-  &[data-theme="dark"] {
-    --color-background: #09090b; /* Глубокий темный фон */
-    --color-surface: #18181b;    /* Карточки и элементы */
-    --color-on-background: #f4f4f5;
-    --color-on-surface: #f4f4f5;
-    --color-surface-container: #27272a;
-    --color-surface-container-low: #202023;
-    --color-surface-container-lowest: #09090b;
-    --color-primary: #ffffff;
-    --color-primary-container: #27272a;
-    --color-secondary: #a1a1aa;
-    --color-secondary-container: #27272a;
-    --color-on-secondary-container: #f4f4f5;
-    --color-outline: #52525b;
-    --color-surface-variant: #27272a;
-  }
+/* 🌓 ПРАВИЛЬНОЕ ПЕРЕОПРЕДЕЛЕНИЕ ДЛЯ ТЕМНОЙ ТЕМЫ В TAILWIND V4 */
+[data-theme="dark"] {
+  --color-background: #09090b; 
+  --color-surface: #18181b;    
+  --color-on-background: #f4f4f5;
+  --color-on-surface: #f4f4f5;
+  --color-surface-container: #27272a;
+  --color-surface-container-low: #202023;
+  --color-surface-container-lowest: #09090b;
+  --color-primary: #ffffff;
+  --color-primary-container: #27272a;
+  --color-secondary: #a1a1aa;
+  --color-secondary-container: #27272a;
+  --color-on-secondary-container: #f4f4f5;
+  --color-outline: #52525b;
+  --color-surface-variant: #27272a;
 }
 @layer utilities {
   .chrome-button {
