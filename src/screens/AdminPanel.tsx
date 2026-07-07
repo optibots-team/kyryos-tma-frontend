@@ -575,17 +575,11 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
           </div>
         )}
 
-        {/* ЭТАПЫ 2-3: ЗАГЛУШКИ ДЛЯ АДМИН-ТАБОВ */}
-        {(activeTab === 'users' || activeTab === 'broadcast' || activeTab === 'live') && (
-          <section className="bg-white rounded-[2rem] p-12 border border-zinc-100 shadow-sm text-center space-y-3">
-            <div className="w-16 h-16 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
-              <Activity size={28} className="animate-pulse" />
-            </div>
-            <h4 className="text-sm font-black uppercase tracking-wider text-zinc-900">Module Locked</h4>
-            <p className="text-zinc-400 text-xs leading-relaxed max-w-[240px] mx-auto">
-              This panel tier is coming in Stage 2 & 3 updates. Stay tuned for real-time live metrics and multi-broadcast arrays.
-            </p>
-          </section>
+        {/* TAB: LIVE DASHBOARD */}
+        {activeTab === 'live' && (
+          <div className="space-y-6">
+            {/* ...код лайв-дашборда, который идет выше... */}
+          </div>
         )}
 
       </main>
