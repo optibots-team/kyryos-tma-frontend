@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   ArrowLeft, QrCode, BarChart3, Users, Radio, Activity,
   PlusCircle, RefreshCw, Share2, Save, AlertTriangle, CheckCircle2 
@@ -10,6 +10,23 @@ interface AdminPanelProps {
   userRole: string | null; // 'admin' | 'promoter' | 'scanner' и т.д.
 }
 
+// Интерфейсы для новой расширенной статистики
+interface AllEventsItem {
+  id: string;
+  title: string;
+  event_date: string;
+  is_upcoming: boolean;
+}
+
+interface DetailedEventStats {
+  event: { title: string; event_date: string };
+  total_issued: number;
+  total_scanned: number;
+  conversion: number;
+  by_series: Array<{ series: string; issued: number; scanned: number; conversion: number }>;
+  top_promoters: Array<{ username: string; first_name: string; generated: number; used: number; conversion: number }>;
+}
+
 export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
   const initData = window.Telegram?.WebApp?.initData || '';
   const BASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/admin-api';
@@ -19,13 +36,15 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   
+  // Новые состояния для вкладки расширенной статистики (Statistics)
+  const [allStatsEvents, setAllStatsEvents] = useState<AllEventsItem[]>([]);
+  const [selectedStatsEventId, setSelectedStatsEventId] = useState<string>('');
+  const [detailedStats, setDetailedStats] = useState<DetailedEventStats | null>(null);
+  
   // Состояния для вкладки Codes
   const [generateCount, setGenerateCount] = useState<number>(10);
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
   const [myCodesList, setMyCodesList] = useState<any[]>([]);
-  
-  // Состояние для вкладки Stats
-  const [statsList, setStatsList] = useState<any[]>([]);
 
   // Системные состояния
   const [loading, setLoading] = useState(false);
@@ -42,11 +61,26 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
     fetchEvents();
   }, []);
 
+  // Загрузка кодов для активного ивента
   useEffect(() => {
-    if (selectedEventId) {
-      fetchCodesAndStats();
+    if (selectedEventId && activeTab === 'codes') {
+      fetchCodesData();
     }
   }, [selectedEventId, activeTab]);
+
+  // Загрузка данных для вкладки статистики
+  useEffect(() => {
+    if (activeTab === 'stats') {
+      fetchAllStatsEvents();
+    }
+  }, [activeTab]);
+
+  // Загрузка конкретной метрики по выбранному ивенту во вкладке статистики
+  useEffect(() => {
+    if (activeTab === 'stats' && selectedStatsEventId) {
+      fetchEventDetailedStats(selectedStatsEventId);
+    }
+  }, [selectedStatsEventId, activeTab]);
 
   // Универсальный хэндлер запросов к Edge Function
   const apiRequest = async (action: string, payload: Record<string, any> = {}) => {
@@ -98,21 +132,58 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
     }
   };
 
-  const fetchCodesAndStats = async () => {
-    if (!selectedEventId) return;
+  const fetchAllStatsEvents = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'codes') {
-        const data = await apiRequest('my_codes', { event_id: selectedEventId });
-        setMyCodesList(data.codes || []);
-      } else if (activeTab === 'stats') {
-        const data = await apiRequest('promoter_stats', { event_id: selectedEventId });
-        setStatsList(data.promoters || []);
+      const data = await apiRequest('list_all_events');
+      if (data.events && data.events.length > 0) {
+        setAllStatsEvents(data.events);
+        // Если еще ничего не выбрано, ставим первый по умолчанию
+        if (!selectedStatsEventId) {
+          setSelectedStatsEventId(data.events[0].id);
+        }
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEventDetailedStats = async (eventId: string) => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('event_stats', { event_id: eventId });
+      if (data) {
+        setDetailedStats(data);
+      }
+    } catch (e) {
+      console.error(e);
+      setDetailedStats(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCodesData = async () => {
+    if (!selectedEventId) return;
+    setLoading(true);
+    try {
+      const data = await apiRequest('my_codes', { event_id: selectedEventId });
+      setMyCodesList(data.codes || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Метод для ручного рефреша текущего таба
+  const handleManualRefresh = () => {
+    if (activeTab === 'codes') {
+      fetchCodesData();
+    } else if (activeTab === 'stats' && selectedStatsEventId) {
+      fetchEventDetailedStats(selectedStatsEventId);
     }
   };
 
@@ -128,7 +199,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
       if (data.codes) {
         setGeneratedCodes(data.codes);
         showSuccess(`Successfully generated ${data.count} codes!`);
-        // Сразу обновляем таблицу кодов промоутера
         const updated = await apiRequest('my_codes', { event_id: selectedEventId });
         setMyCodesList(updated.codes || []);
       }
@@ -153,7 +223,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
         guest_instagram: tempGuestInstagram.replace('@', '').trim()
       });
       
-      // Обновляем локальный стейт без перезапроса всей таблицы
       setMyCodesList(prev => prev.map(item => {
         if (item.code === code) {
           return { ...item, guest_name: tempGuestName, guest_instagram: tempGuestInstagram };
@@ -175,7 +244,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
     window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent('https://t.me/kyrios_events_bot/app')}&text=${encodeURIComponent(text)}`);
   };
 
-  // Фильтрация видимости табов на основе роли
   const isAdmin = userRole === 'admin';
 
   return (
@@ -188,7 +256,7 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
         <h1 className="font-headline font-black text-lg uppercase tracking-wider text-zinc-900">
           {isAdmin ? 'Admin Station' : 'Promoter Hub'}
         </h1>
-        <button onClick={fetchCodesAndStats} className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 active:scale-95 transition-all">
+        <button onClick={handleManualRefresh} className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 active:scale-95 transition-all">
           <RefreshCw size={16} className={`text-zinc-700 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </header>
@@ -207,21 +275,23 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
         </div>
       )}
 
-      {/* ДРОПДАУН ВЫБОРА ИВЕНТА */}
-      <section className="px-6 pt-6">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2 px-1">Select Active Event</label>
-        <select 
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-          className="w-full bg-white border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none shadow-sm"
-        >
-          {events.map(ev => (
-            <option key={ev.id} value={ev.id}>
-              {ev.title} ({new Date(ev.event_date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})})
-            </option>
-          ))}
-        </select>
-      </section>
+      {/* ДРОПДАУН ВЫБОРА ИВЕНТА ДЛЯ ВКЛАДКИ CODES */}
+      {activeTab === 'codes' && (
+        <section className="px-6 pt-6">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2 px-1">Select Active Event</label>
+          <select 
+            value={selectedEventId}
+            onChange={(e) => setSelectedEventId(e.target.value)}
+            className="w-full bg-white border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none shadow-sm"
+          >
+            {events.map(ev => (
+              <option key={ev.id} value={ev.id}>
+                {ev.title} ({new Date(ev.event_date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})})
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
 
       {/* ВНУТРЕННЯЯ НАВИГАЦИЯ (ТАБЫ) */}
       <nav className="px-6 pt-6 flex gap-1 overflow-x-auto no-scrollbar">
@@ -238,7 +308,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
           <BarChart3 size={14} /> Stats
         </button>
 
-        {/* Заглушки только для роли Admin */}
         {isAdmin && (
           <>
             <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'users' ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-100 text-zinc-400'}`}>
@@ -254,14 +323,12 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
         )}
       </nav>
 
-      {/* ОСНОВНОЙ КОНТЕНТ В ЗАВИСИМОСТИ ОТ ТАБА */}
+      {/* ОСНОВНОЙ КОНТЕНТ */}
       <main className="px-6 py-6 space-y-6">
         
-        {/* TAB 1: CODES (ГЕНЕРАТОР + ТАБЛИЦА СВОИХ КОДОВ) */}
+        {/* TAB 1: CODES */}
         {activeTab === 'codes' && (
           <div className="space-y-6">
-            
-            {/* Панель генерации */}
             <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4">
               <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Generate Invites</h3>
               <div className="flex gap-3">
@@ -282,7 +349,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
                 </button>
               </div>
 
-              {/* Быстрый показ только что сгенерированного пула */}
               {generatedCodes.length > 0 && (
                 <div className="pt-3 border-t border-zinc-100">
                   <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2">Fresh pool created:</p>
@@ -295,7 +361,6 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
               )}
             </section>
 
-            {/* Таблица кодов промоутера */}
             <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">My Promo Codes</h3>
@@ -392,47 +457,122 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
           </div>
         )}
 
-        {/* TAB 2: STATS (КОНВЕРСИЯ ПРОМОУТЕРОВ) */}
+        {/* TAB 2: STATS */}
         {activeTab === 'stats' && (
-          <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                {isAdmin ? 'All Promoters Standing' : 'My Performance Statistics'}
-              </h3>
-            </div>
+          <div className="space-y-6 animate-fade-up">
+            
+            {/* СЕЛЕКТОР "VIEW STATS EVENT" (ВСЕ МЕРОПРИЯТИЯ) */}
+            <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block px-1">View Stats Event</label>
+              <select 
+                value={selectedStatsEventId}
+                onChange={(e) => setSelectedStatsEventId(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none shadow-sm"
+              >
+                {allStatsEvents.map(ev => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.title} ({new Date(ev.event_date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}) {ev.is_upcoming ? ' [Upcoming]' : ''}
+                  </option>
+                ))}
+              </select>
+            </section>
 
-            <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[400px]">
-                <thead>
-                  <tr className="border-b border-zinc-100 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    <th className="pb-3 font-medium">Promoter</th>
-                    <th className="pb-3 font-medium text-center">Generated</th>
-                    <th className="pb-3 font-medium text-center">Used</th>
-                    <th className="pb-3 text-right font-medium">Conversion</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-50 text-xs font-bold text-zinc-800">
-                  {statsList.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
-                      <td className="py-4 text-zinc-900 font-black">@{p.username || 'unknown'}</td>
-                      <td className="py-4 text-center font-mono text-zinc-600">{p.codes_generated}</td>
-                      <td className="py-4 text-center font-mono text-[#A50021]">{p.codes_used}</td>
-                      <td className="py-4 text-right">
-                        <span className="px-2.5 py-1 bg-zinc-900 text-white rounded-lg font-mono text-[11px] font-black">
-                          {p.conversion || '0%'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {statsList.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-zinc-400 font-medium">No conversion stats available.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            {/* ОСНОВНЫЕ МЕТРИКИ ВЫБРАННОГО ИВЕНТА */}
+            {detailedStats ? (
+              <>
+                {/* Карточки Overview */}
+                <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm">
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="space-y-1">
+                      <p className="text-2xl font-black text-zinc-950 font-mono">{detailedStats.total_issued}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Issued</p>
+                    </div>
+                    <div className="space-y-1 border-x border-zinc-100">
+                      <p className="text-2xl font-black text-[#A50021] font-mono">{detailedStats.total_scanned}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Scanned</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-2xl font-black bg-zinc-900 text-white rounded-xl py-0.5 inline-block px-2.5 font-mono">
+                        {detailedStats.conversion}%
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block pt-0.5">Conversion</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* ТАБЛИЦА: BY SERIES */}
+                <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">By Series</h3>
+                  <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-zinc-100 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                          <th className="pb-3 font-medium">Series</th>
+                          <th className="pb-3 font-medium text-center">Issued</th>
+                          <th className="pb-3 font-medium text-center">Scanned</th>
+                          <th className="pb-3 text-right font-medium">Conversion</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-50 text-xs font-bold text-zinc-800">
+                        {detailedStats.by_series?.map((s, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
+                            <td className="py-3.5 text-zinc-900 font-black font-mono">{s.series}</td>
+                            <td className="py-3.5 text-center font-mono text-zinc-500">{s.issued}</td>
+                            <td className="py-3.5 text-center font-mono text-zinc-900">{s.scanned}</td>
+                            <td className="py-3.5 text-right font-mono text-zinc-950">{s.conversion}%</td>
+                          </tr>
+                        ))}
+                        {(!detailedStats.by_series || detailedStats.by_series.length === 0) && (
+                          <tr>
+                            <td colSpan={4} className="py-4 text-center text-zinc-400 font-medium">No series metrics found.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* ТАБЛИЦА: TOP PROMOTERS */}
+                <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Top Promoters</h3>
+                  <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-zinc-100 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                          <th className="pb-3 font-medium">Username</th>
+                          <th className="pb-3 font-medium text-center">Generated</th>
+                          <th className="pb-3 font-medium text-center">Used</th>
+                          <th className="pb-3 text-right font-medium">Conversion</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-50 text-xs font-bold text-zinc-800">
+                        {detailedStats.top_promoters?.map((p, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
+                            <td className="py-3.5 text-zinc-900 font-black">
+                              @{p.username || 'unknown'}
+                              {p.first_name && <span className="text-[10px] font-normal text-zinc-400 block">{p.first_name}</span>}
+                            </td>
+                            <td className="py-3.5 text-center font-mono text-zinc-500">{p.generated}</td>
+                            <td className="py-3.5 text-center font-mono text-[#A50021]">{p.used}</td>
+                            <td className="py-3.5 text-right font-mono text-zinc-950">{p.conversion}%</td>
+                          </tr>
+                        ))}
+                        {(!detailedStats.top_promoters || detailedStats.top_promoters.length === 0) && (
+                          <tr>
+                            <td colSpan={4} className="py-4 text-center text-zinc-400 font-medium">No active data for promoters.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </>
+            ) : (
+              <div className="bg-white rounded-[2rem] p-12 border border-zinc-100 text-center text-zinc-400 font-medium shadow-sm">
+                No statistics loadout available for this event tier.
+              </div>
+            )}
+          </div>
         )}
 
         {/* ЭТАПЫ 2-3: ЗАГЛУШКИ ДЛЯ АДМИН-ТАБОВ */}
