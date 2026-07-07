@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "events": "Events",
+    "tickets": "Tickets",
+    "gallery": "Gallery",
+    "profile": "Profile"
+  },
+  "actions": {
+    "get_ticket": "Get Ticket",
+    "share": "Share Event"
+  },
+  "placeholders": {
+    "promo": "Enter promo code"
+  }
+}
