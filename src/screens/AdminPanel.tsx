@@ -575,14 +575,94 @@ export default function AdminPanel({ onNavigate, userRole }: AdminPanelProps) {
           </div>
         )}
 
-        {/* TAB: LIVE DASHBOARD */}
+       {/* TAB: LIVE DASHBOARD */}
         {activeTab === 'live' && (
           <div className="space-y-6">
-            {/* ...код лайв-дашборда, который идет выше... */}
+            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block px-1">Hook Target Live Stream</label>
+              <select value={selectedLiveEventId} onChange={(e) => { setSelectedLiveEventId(e.target.value); startLivePolling(e.target.value); }} className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none">
+                {activeEvents.map(ev => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
+                ))}
+              </select>
+            </section>
+
+            {liveData ? (
+              <>
+                <section className="grid grid-cols-2 gap-3">
+                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
+                    <p className="text-2xl font-black font-mono text-zinc-900">{liveData.total_issued}</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Issued Pool</p>
+                  </div>
+                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
+                    <p className="text-2xl font-black font-mono text-[#A50021]">{liveData.total_scanned}</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Scanned Guard</p>
+                  </div>
+                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
+                    <p className="text-2xl font-black font-mono text-zinc-600">{liveData.remaining}</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Remaining Outside</p>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-900 rounded-[1.5rem] p-4 text-center text-white">
+                    <p className="text-2xl font-black font-mono text-emerald-400">{liveData.conversion}%</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Gate Conversion</p>
+                  </div>
+                </section>
+
+                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1"><Clock size={12} /> Hourly Scan Influx</h3>
+                  <div className="flex items-end justify-between h-24 pt-4 border-b border-zinc-100 px-2">
+                    {liveData.hourly?.map((h, i) => {
+                      const maxCount = Math.max(...liveData.hourly.map(o => o.count), 1);
+                      const barHeight = (h.count / maxCount) * 100;
+                      return (
+                        <div key={i} className="flex flex-col items-center flex-1 group">
+                          <span className="text-[8px] font-mono font-black opacity-0 group-hover:opacity-100 transition-opacity text-zinc-900 mb-1">{h.count}</span>
+                          <div className="w-4 bg-zinc-900 group-hover:bg-[#A50021] rounded-t transition-all duration-500" style={{ height: `${Math.max(barHeight, 8)}%` }} />
+                          <span className="text-[8px] font-mono font-bold text-zinc-400 mt-1.5">{h.hour}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1"><Flame size={12} className="text-orange-500 animate-pulse" /> Live Scan Feed</h3>
+                    <span className="text-[8px] font-mono text-zinc-400">Sync: {liveData.updated_at ? new Date(liveData.updated_at).toLocaleTimeString() : '...'}</span>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {liveData.recent_scans?.map((scan, idx) => (
+                      <div key={idx} className="p-3 bg-zinc-50 border border-zinc-100 rounded-2xl flex justify-between items-center animate-fade-down">
+                        <div>
+                          <p className="text-xs font-black text-zinc-950">{scan.first_name || 'Guest'}</p>
+                          <p className="text-[10px] font-bold text-blue-600" onClick={() => openTgUser(scan.username)}>@{scan.username || 'unknown'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-mono font-black bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded">{scan.ticket_code}</p>
+                          <p className="text-[8px] font-mono text-zinc-400 mt-1">{new Date(scan.scanned_at).toLocaleTimeString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
+            ) : (
+              <div className="bg-white rounded-[2rem] p-12 text-center text-zinc-400 text-xs">Awaiting gate stream arrays...</div>
+            )}
           </div>
         )}
 
       </main>
     </div>
   );
+
+  // Вспомогательная функция ручного рефреша
+  function handleManualRefresh() {
+    fetchCurrentRole();
+    if (activeTab === 'codes') fetchCodesData();
+    if (activeTab === 'stats') fetchAllStatsEvents();
+    if (activeTab === 'users') fetchUsersList();
+    if (activeTab === 'broadcast') fetchBroadcastHistory();
+    if (activeTab === 'live' && selectedLiveEventId) startLivePolling(selectedLiveEventId);
+  }
 }
