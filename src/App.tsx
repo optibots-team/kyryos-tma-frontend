@@ -118,12 +118,13 @@ export default function App() {
         <AdminPanel onNavigate={setCurrentScreen} userRole={userRole} />
       )}
       
-  {!hideBottomNav && (
-  <BottomNav 
-    currentScreen={currentScreen} 
-    onNavigate={setCurrentScreen} 
-  />
-)}
+      {/* ✅ Навигация теперь принимает чистый currentScreen без подмен строк */}
+      {!hideBottomNav && (
+        <BottomNav 
+          currentScreen={currentScreen} 
+          onNavigate={setCurrentScreen} 
+        />
+      )}
     </div>
   );
 }
