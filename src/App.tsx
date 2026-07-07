@@ -8,6 +8,7 @@ import AboutKyrios from './screens/AboutKyrios';
 import Gallery from './screens/Gallery';
 import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
+import TopCurtain from './components/TopCurtain'; // 🌟 Импортируем верхнюю шторку Этапа 4
 import { supabase } from './lib/supabaseClient';
 
 export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'admin-panel' | 'gallery';
@@ -16,6 +17,21 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
+  // 1. Обработка Deep Linking (start_param) из Telegram при старте приложения
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
+
+    const startParam = tg.initDataUnsafe?.start_param;
+    if (startParam && startParam.startsWith('event_')) {
+      const eventId = startParam.replace('event_', '');
+      
+      // Моментально перенаправляем на детальный экран ивента
+      setSelectedEventId(eventId);
+      setCurrentScreen('event-details');
+    }
+  }, []);
 
   // Синхронизация и авто-регистрация пользователя
   useEffect(() => {
@@ -87,6 +103,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
+      {/* 🌟 2. Верхняя сквозная шторка (RU/UA/EN, Light/Dark, Нативный TG чат) */}
+      <TopCurtain />
+
       {currentScreen === 'events' && (
         <Events 
           onNavigate={setCurrentScreen} 
@@ -118,7 +137,6 @@ export default function App() {
         <AdminPanel onNavigate={setCurrentScreen} userRole={userRole} />
       )}
       
-      {/* ✅ Навигация теперь принимает чистый currentScreen без подмен строк */}
       {!hideBottomNav && (
         <BottomNav 
           currentScreen={currentScreen} 
