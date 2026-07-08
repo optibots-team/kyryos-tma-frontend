@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Ticket as TicketIcon, Info } from 'lucide-react';
+import { ChevronRight, Ticket as TicketIcon, Info, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -65,6 +65,14 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     onNavigate('event-details');
   };
 
+  const openChat = () => {
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink('https://t.me/kyrios_chat');
+    } else {
+      window.open('https://t.me/kyrios_chat', '_blank');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -76,7 +84,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
   return (
     <div className="min-h-screen bg-background pb-32">
       <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-outline-variant/30">
-        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
+        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
       </header>
 
       <main className="px-6 py-8 space-y-8">
@@ -91,6 +99,15 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             />
           ))}
         </div>
+
+        {/* Secret Chat — тонкий баннер на всю ширину, прямо над Quick Check-in */}
+        <button
+          onClick={openChat}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-xs uppercase tracking-widest shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all animate-fade-up"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {t('events_screen.secret_chat')}
+        </button>
 
         {/* Quick Check-in */}
         {hasTicket && (
