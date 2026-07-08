@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-@import "tailwindcss";
-
-@import "tailwindcss";
+/* 🌓 Синхронизируем Tailwind-вариант dark: с нашим ручным переключателем (data-theme),
+   а не с системной темой устройства (prefers-color-scheme) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   --color-secondary: #5e5e5e;
