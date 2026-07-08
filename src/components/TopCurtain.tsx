@@ -5,15 +5,20 @@ import { Sun, Moon, MessageCircle, Languages } from 'lucide-react';
 export default function TopCurtain() {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState<ConfigTheme>(
-    (localStorage.getItem('theme') as ConfigTheme) || 'light'
-  );
 
   type ConfigTheme = 'light' | 'dark';
 
+  const getInitialTheme = (): ConfigTheme => {
+    const saved = localStorage.getItem('theme') as ConfigTheme | null;
+    if (saved === 'light' || saved === 'dark') return saved;
+    // Если пользователь ещё не выбирал тему вручную — уважаем тему самого Telegram
+    return window.Telegram?.WebApp?.colorScheme === 'dark' ? 'dark' : 'light';
+  };
+
+  const [theme, setTheme] = useState<ConfigTheme>(getInitialTheme);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const changeLang = (code: string) => {
@@ -22,7 +27,13 @@ export default function TopCurtain() {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      // Сохраняем в localStorage только когда пользователь САМ явно переключил тему —
+      // до этого момента приложение должно продолжать следовать теме самого Telegram
+      localStorage.setItem('theme', next);
+      return next;
+    });
   };
 
   const openChat = () => {
