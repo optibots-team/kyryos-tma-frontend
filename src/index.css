@@ -60,20 +60,25 @@
 
 /* 🌓 ПРАВИЛЬНОЕ ПЕРЕОПРЕДЕЛЕНИЕ ДЛЯ ТЕМНОЙ ТЕМЫ В TAILWIND V4 */
 [data-theme="dark"] {
-  --color-background: #09090b; 
-  --color-surface: #18181b;    
+  --color-background: #121214;
+  --color-surface: #1c1c1f;
   --color-on-background: #f4f4f5;
   --color-on-surface: #f4f4f5;
-  --color-surface-container: #27272a;
-  --color-surface-container-low: #202023;
-  --color-surface-container-lowest: #09090b;
+  --color-surface-container: #232327;
+  --color-surface-container-low: #1a1a1d;
+  --color-surface-container-lowest: #0d0d0f;
   --color-primary: #ffffff;
-  --color-primary-container: #27272a;
-  --color-secondary: #a1a1aa;
-  --color-secondary-container: #27272a;
+  --color-primary-container: #2a2a2e;
+  --color-secondary: #b4b4ba;
+  --color-secondary-container: #2a2a2e;
   --color-on-secondary-container: #f4f4f5;
-  --color-outline: #52525b;
-  --color-surface-variant: #27272a;
+  --color-outline: #5a5a60;
+  --color-outline-variant: #3a3a3e;
+  --color-surface-variant: #232327;
+  /* 🌓 Раньше не были переопределены — из-за этого неактивные элементы (например,
+     иконки нижней навигации) оставались тёмно-серыми и были еле видны на тёмном фоне */
+  --color-on-surface-variant: #c7c7cc;
+  --color-on-primary: #18181b;
 }
 @layer utilities {
   .chrome-button {
