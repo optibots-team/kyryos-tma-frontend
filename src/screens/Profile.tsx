@@ -3,6 +3,7 @@ import {
   Share2, Trophy, User, ShieldCheck, QrCode,
   Flame, Lock, CreditCard, Crown, Instagram 
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
@@ -12,6 +13,7 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, userRole }: ProfileProps) {
+  const { t } = useTranslation();
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const photoUrl = tgUser?.photo_url;
 
@@ -108,20 +110,20 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   const pointsToNextLevel = isMaxLevel ? 0 : POINTS_PER_LEVEL - pointsInCurrentLevel;
 
   const getRankName = (lvl: number) => {
-    if (lvl <= 2) return "Dancer";
-    if (lvl <= 4) return "Insider";
-    if (lvl <= 7) return "Headliner";
-    if (lvl <= 9) return "Legend";
-    return "Kyrios VIP";
+    if (lvl <= 2) return t('profile_screen.rank_dancer');
+    if (lvl <= 4) return t('profile_screen.rank_insider');
+    if (lvl <= 7) return t('profile_screen.rank_headliner');
+    if (lvl <= 9) return t('profile_screen.rank_legend');
+    return t('profile_screen.rank_vip');
   };
 
   const displayName = fullName || tgUser?.first_name || tgUser?.username || 'Guest';
   const isProfileComplete = isNameFilled && isInstaFilled;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
-      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
-        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
+    <div className="min-h-screen bg-background pb-32">
+      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-outline-variant/30">
+        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
       </header>
 
       {xpNotify.show && (
@@ -135,20 +137,20 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         {/* 1. ШАПКА: АВАТАРКА, ИМЯ И ИНСТАГРАМ */}
         <div className="pt-4 flex flex-col items-center justify-center text-center animate-fade-up">
           {photoUrl ? (
-            <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white mb-4" />
+            <img src={photoUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-surface mb-4" />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-[#A50021] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white mb-4">
+            <div className="w-24 h-24 rounded-full bg-[#A50021] flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-surface mb-4">
               {displayName.charAt(0)}
             </div>
           )}
-          <h2 className="text-zinc-900 font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
+          <h2 className="text-on-surface font-headline font-bold text-2xl tracking-tight leading-none">{displayName}</h2>
           
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-zinc-500 text-sm font-medium mt-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-on-surface-variant text-sm font-medium mt-1.5">
             <span>tg: @{tgUser?.username || 'unknown'}</span>
             
             {isInstaFilled && (
               <>
-                <span className="text-zinc-300">•</span>
+                <span className="text-on-surface-variant/50">•</span>
                 <div className="flex items-center gap-1">
                   <Instagram size={14} className="text-[#A50021]" />
                   <span>@{instaHandle.replace('@', '')}</span>
@@ -160,15 +162,15 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
         {/* 2. ЗАПОЛНЕНИЕ ПРОФИЛЯ */}
         {!isProfileComplete && (
-          <section className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm space-y-4 animate-fade-up delay-75">
+          <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4 animate-fade-up delay-75">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Complete Your Profile</h3>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('profile_screen.complete_profile')}</h3>
               <button 
                 onClick={handleSaveProfile}
                 disabled={saveLoading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 shadow-md shadow-zinc-200"
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:opacity-90 text-on-primary rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 shadow-md shadow-zinc-200 dark:shadow-black/30"
               >
-                {saveLoading ? '...' : 'Save'}
+                {saveLoading ? '...' : t('profile_screen.save')}
               </button>
             </div>
 
@@ -177,10 +179,10 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="Enter Name & Surname"
+                    placeholder={t('profile_screen.name_placeholder')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+                    className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-5 py-3.5 text-sm font-bold text-on-surface focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
@@ -194,10 +196,10 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="@your_instagram"
+                    placeholder={t('profile_screen.instagram_placeholder')}
                     value={instaHandle.startsWith('@') || !instaHandle ? instaHandle : `@${instaHandle}`}
                     onChange={(e) => setInstaHandle(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-900 focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
+                    className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-5 py-3.5 text-sm font-bold text-on-surface focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
@@ -210,7 +212,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
-        {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ */}
+        {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ (карточка намеренно всегда тёмная — акцентный блок) */}
         {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
           <section className="w-full animate-fade-up">
             <button 
@@ -222,8 +224,8 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 11h10"/><path d="M7 15h10"/><path d="M7 7h10"/></svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-white font-headline font-black text-base tracking-tight uppercase">Admin Panel</p>
-                  <p className="text-white/60 text-xs font-medium mt-0.5">Codes, stats & tools</p>
+                  <p className="text-white font-headline font-black text-base tracking-tight uppercase">{t('profile_screen.admin_panel')}</p>
+                  <p className="text-white/60 text-xs font-medium mt-0.5">{t('profile_screen.admin_panel_desc')}</p>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300">
@@ -233,7 +235,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
-        {/* 4. ШКАЛА УРОВНЯ */}
+        {/* 4. ШКАЛА УРОВНЯ (карточка намеренно всегда тёмная — акцентный блок с прогресс-баром) */}
         <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
             <Trophy size={100} className="text-[#A50021]" />
@@ -242,24 +244,24 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <p className="text-[#A50021] text-[10px] font-bold uppercase tracking-widest mb-1">Current Rank</p>
+                <p className="text-[#A50021] text-[10px] font-bold uppercase tracking-widest mb-1">{t('profile_screen.current_rank')}</p>
                 <h3 className="text-white font-headline font-black text-3xl tracking-tight">
-                  {getRankName(currentLevel)} <span className="text-zinc-500 text-xl font-medium">Lvl {currentLevel}</span>
+                  {getRankName(currentLevel)} <span className="text-zinc-500 text-xl font-medium">{t('profile_screen.level_short')} {currentLevel}</span>
                 </h3>
               </div>
               {streak > 0 && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-xl">
                   <Flame size={14} className="text-orange-500" />
-                  <span className="text-orange-500 font-bold text-xs">{streak} Streak</span>
+                  <span className="text-orange-500 font-bold text-xs">{streak} {t('profile_screen.streak')}</span>
                 </div>
               )}
             </div>
 
             <div className="mt-6 space-y-3">
               <div className="flex justify-between items-end">
-                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Progress</span>
+                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">{t('profile_screen.progress')}</span>
                 <span className="text-white font-bold text-sm">
-                  {isMaxLevel ? 'MAX' : pointsInCurrentLevel} <span className="text-zinc-500 font-normal">/ {POINTS_PER_LEVEL} XP</span>
+                  {isMaxLevel ? t('profile_screen.max') : pointsInCurrentLevel} <span className="text-zinc-500 font-normal">/ {POINTS_PER_LEVEL} XP</span>
                 </span>
               </div>
               <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
@@ -271,10 +273,10 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
               
               <div className="flex justify-between items-center pt-1">
                 <span className="text-[9px] font-bold text-[#A50021] tracking-wide bg-[#A50021]/10 px-2 py-0.5 rounded-md">
-                  ✨ Get 10,000 XP for Auto-VIP
+                  ✨ {t('profile_screen.auto_vip_hint')}
                 </span>
                 <p className="text-zinc-500 text-[10px] font-medium">
-                  {isMaxLevel ? 'Maximum level reached!' : `${pointsToNextLevel} XP left to Level ${currentLevel + 1}`}
+                  {isMaxLevel ? t('profile_screen.max_level_reached') : t('profile_screen.xp_left_to_level', { xp: pointsToNextLevel, level: currentLevel + 1 })}
                 </p>
               </div>
             </div>
@@ -293,23 +295,23 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                   <CreditCard className="text-white w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-headline font-bold text-white text-lg tracking-tight">Kyrios VIP Membership</h4>
-                  <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">Status: Active · Unlimited Perks</p>
+                  <h4 className="font-headline font-bold text-white text-lg tracking-tight">{t('profile_screen.vip_membership')}</h4>
+                  <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">{t('profile_screen.vip_status_active')}</p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-white to-zinc-50/50 rounded-[2rem] p-6 border border-zinc-200/60 shadow-sm relative overflow-hidden flex gap-5 items-start">
-              <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center border border-zinc-200 shrink-0 mt-0.5">
-                <Lock className="text-zinc-400 w-5 h-5" />
+            <div className="bg-gradient-to-br from-surface to-surface-container/50 rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm relative overflow-hidden flex gap-5 items-start">
+              <div className="w-12 h-12 bg-surface-container rounded-2xl flex items-center justify-center border border-outline-variant/40 shrink-0 mt-0.5">
+                <Lock className="text-on-surface-variant/60 w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-headline font-bold text-zinc-900 text-base flex items-center gap-1.5">
-                  Kyrios VIP Card
-                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>
+                <h4 className="font-headline font-bold text-on-surface text-base flex items-center gap-1.5">
+                  {t('profile_screen.vip_card')}
+                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">{t('profile_screen.locked')}</span>
                 </h4>
-                <p className="text-zinc-500 text-xs leading-relaxed font-medium">
-                  Unlock Level 10 to activate your VIP membership: exclusive token rewards, free access to selected events, and priority guestlist slots.
+                <p className="text-on-surface-variant text-xs leading-relaxed font-medium">
+                  {t('profile_screen.vip_card_desc')}
                 </p>
               </div>
             </div>
@@ -319,33 +321,33 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         {/* 6. СПИСОК ЗАДАНИЙ */}
         <section className="space-y-4 animate-fade-up delay-150">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">How to Earn XP</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60">{t('profile_screen.how_to_earn_xp')}</h3>
           </div>
           <div className="grid grid-cols-1 gap-2">
-            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
+            <div className="bg-surface rounded-2xl p-4 border border-outline-variant/40 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-                  <Share2 className="text-blue-500 w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/30">
+                  <Share2 className="text-blue-500 dark:text-blue-400 w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-zinc-900 text-xs">Invite a Friend</h4>
-                  <p className="text-blue-500 font-bold text-[10px] mt-0.5">+500 XP</p>
+                  <h4 className="font-bold text-on-surface text-xs">{t('profile_screen.invite_friend')}</h4>
+                  <p className="text-blue-500 dark:text-blue-400 font-bold text-[10px] mt-0.5">+500 XP</p>
                 </div>
               </div>
-              <button onClick={handleInvite} className="px-4 py-2 bg-zinc-900 text-white font-bold text-[10px] uppercase rounded-xl active:scale-95 transition-all">Share</button>
+              <button onClick={handleInvite} className="px-4 py-2 bg-primary text-on-primary font-bold text-[10px] uppercase rounded-xl active:scale-95 transition-all">{t('profile_screen.share')}</button>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex items-center justify-between">
+            <div className="bg-surface rounded-2xl p-4 border border-outline-variant/40 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
-                  <QrCode className="text-emerald-500 w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/30">
+                  <QrCode className="text-emerald-500 dark:text-emerald-400 w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-zinc-900 text-xs">Attend an Event</h4>
-                  <p className="text-emerald-500 font-bold text-[10px] mt-0.5">+250 XP</p>
+                  <h4 className="font-bold text-on-surface text-xs">{t('profile_screen.attend_event')}</h4>
+                  <p className="text-emerald-500 dark:text-emerald-400 font-bold text-[10px] mt-0.5">+250 XP</p>
                 </div>
               </div>
-              <div className="px-3 py-1.5 bg-zinc-100 text-zinc-400 font-bold text-[9px] uppercase tracking-wider rounded-lg">Auto</div>
+              <div className="px-3 py-1.5 bg-surface-container text-on-surface-variant/70 font-bold text-[9px] uppercase tracking-wider rounded-lg">{t('profile_screen.auto')}</div>
             </div>
           </div>
         </section>
@@ -353,16 +355,16 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         {/* ✅ 7. ОТДЕЛЬНАЯ КНОПКА ДЛЯ СТАРОГО СКАНЕРА БИЛЕТОВ (Только для admin/hostess/scanner) */}
         {(userRole === 'admin' || userRole === 'hostess' || userRole === 'scanner') && (
           <section className="space-y-4 animate-fade-up delay-200">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 ml-2">Access Control</h3>
-            <button onClick={() => onNavigate('admin')} className="w-full bg-white border border-zinc-100 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60 ml-2">{t('profile_screen.access_control')}</h3>
+            <button onClick={() => onNavigate('admin')} className="w-full bg-surface border border-outline-variant/40 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-900 border border-zinc-100"><User size={24} /></div>
+                <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface border border-outline-variant/40"><User size={24} /></div>
                 <div className="text-left">
-                  <p className="text-zinc-900 font-bold text-base tracking-tight">Ticket Scanner</p>
-                  <p className="text-zinc-400 text-xs font-medium mt-0.5">Verify guest QR codes</p>
+                  <p className="text-on-surface font-bold text-base tracking-tight">{t('profile_screen.ticket_scanner')}</p>
+                  <p className="text-on-surface-variant/70 text-xs font-medium mt-0.5">{t('profile_screen.ticket_scanner_desc')}</p>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center"><ShieldCheck className="text-zinc-900 w-5 h-5" /></div>
+              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center"><ShieldCheck className="text-on-surface w-5 h-5" /></div>
             </button>
           </section>
         )}
