@@ -11,5 +11,18 @@
   },
   "placeholders": {
     "promo": "Enter promo code"
+  },
+  "events_screen": {
+    "quick_checkin_title": "Quick check-in",
+    "quick_checkin_desc": "Show your ticket at entrance",
+    "about_agency_label": "About Agency",
+    "about_title": "About Kyrios",
+    "about_desc": "Discover the vision and core values of our creative agency."
+  },
+  "ticket_status": {
+    "sales_paused": "Sales Paused",
+    "sold_out": "Sold Out",
+    "get_ticket": "Get Ticket",
+    "buy_ticket": "Buy Ticket"
   }
 }
