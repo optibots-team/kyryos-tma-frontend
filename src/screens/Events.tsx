@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, Ticket as TicketIcon, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
@@ -9,6 +10,7 @@ interface EventsProps {
 }
 
 export default function Events({ onNavigate, onEventSelect }: EventsProps) {
+  const { t } = useTranslation();
   // 🎯 ТЕПЕРЬ ХРАНИМ МАССИВ ИВЕНТОВ
   const [events, setEvents] = useState<any[]>([]);
   const [hasTicket, setHasTicket] = useState(false);
@@ -65,15 +67,15 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#A50021]/20 border-t-[#A50021] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
-      <header className="w-full sticky top-0 z-50 bg-zinc-300/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-zinc-400/30">
+    <div className="min-h-screen bg-background pb-32">
+      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-outline-variant/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain" />
       </header>
 
@@ -94,38 +96,38 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
         {hasTicket && (
           <section 
             onClick={() => onNavigate('tickets')}
-            className="w-full bg-emerald-50 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 transition-all active:scale-[0.98] shadow-sm animate-fade-up"
+            className="w-full bg-emerald-50 dark:bg-emerald-500/10 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 dark:border-emerald-500/20 transition-all active:scale-[0.98] shadow-sm animate-fade-up"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-                <TicketIcon className="text-emerald-600 w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center">
+                <TicketIcon className="text-emerald-600 dark:text-emerald-400 w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-emerald-900 font-bold text-base tracking-tight">Quick check-in</h3>
-                <p className="text-emerald-600/70 text-xs font-medium">Show your ticket at entrance</p>
+                <h3 className="text-emerald-900 dark:text-emerald-300 font-bold text-base tracking-tight">{t('events_screen.quick_checkin_title')}</h3>
+                <p className="text-emerald-600/70 dark:text-emerald-400/70 text-xs font-medium">{t('events_screen.quick_checkin_desc')}</p>
               </div>
             </div>
-            <ChevronRight className="text-emerald-600 w-4 h-4" />
+            <ChevronRight className="text-emerald-600 dark:text-emerald-400 w-4 h-4" />
           </section>
         )}
 
         {/* ABOUT KYRIOS */}
         <section className="space-y-4 animate-fade-up">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">About Agency</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60">{t('events_screen.about_agency_label')}</h3>
           </div>
           <div 
             onClick={() => onNavigate('about')}
-            className="bg-white rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-zinc-100 shadow-sm active:scale-[0.98] transition-all"
+            className="bg-surface rounded-[2rem] p-8 relative overflow-hidden h-[240px] flex flex-col justify-end group cursor-pointer border border-outline-variant/40 shadow-sm active:scale-[0.98] transition-all"
           >
             <div className="absolute top-0 right-0 p-8">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-900">
+              <div className="w-12 h-12 rounded-2xl bg-surface-container border border-outline-variant/40 flex items-center justify-center text-on-surface">
                 <Info className="w-6 h-6" />
               </div>
             </div>
             <div className="relative z-10">
-              <h4 className="text-zinc-900 font-headline font-bold text-2xl mb-2 tracking-tight">About Kyrios</h4>
-              <p className="text-zinc-500 text-sm leading-relaxed max-w-[200px]">Discover the vision and core values of our creative agency.</p>
+              <h4 className="text-on-surface font-headline font-bold text-2xl mb-2 tracking-tight">{t('events_screen.about_title')}</h4>
+              <p className="text-on-surface-variant text-sm leading-relaxed max-w-[200px]">{t('events_screen.about_desc')}</p>
             </div>
           </div>
         </section>
@@ -137,24 +139,25 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
 // ── ВНУТРЕННИЙ КОМПОНЕНТ КАРТОЧКИ ДЛЯ ИСКЛЮЧЕНИЯ ДУБЛИРОВАНИЯ КОДА ──
 function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: string) => void }) {
+  const { t } = useTranslation();
   const isGuestlist = event?.ticket_mode === 'guestlist';
   const placesLeft = event?.available !== null && event?.available !== undefined ? event.available : (event?.capacity || 400);
   const isSoldOut = !isGuestlist && placesLeft === 0 && (!event?.batches || !event.batches.some((b: any) => !b.is_sold_out && b.available > 0));
 
   const centerButtonText = event?.sales_paused 
-    ? 'SALES PAUSED' 
+    ? t('ticket_status.sales_paused')
     : isSoldOut 
-      ? 'SOLD OUT' 
+      ? t('ticket_status.sold_out')
       : isGuestlist 
-        ? 'GET TICKET' 
-        : 'BUY TICKET';
+        ? t('ticket_status.get_ticket')
+        : t('ticket_status.buy_ticket');
 
   const isVideo = event?.image_url?.match(/\.(mp4|webm)$/i);
 
   return (
     <section 
       onClick={() => onCardClick(event.id)}
-      className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 animate-fade-up block"
+      className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up block"
     >
       {isVideo ? (
         <video
