@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, MessageCircle, Settings } from 'lucide-react';
+import { Sun, Moon, MessageCircle, Languages } from 'lucide-react';
 
-export default function TopCurtain() {
+interface TopCurtainProps {
+  // Есть ли сейчас на экране нижняя навигация — влияет на отступ кнопки чата снизу
+  hasBottomNav?: boolean;
+}
+
+export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -45,65 +50,63 @@ export default function TopCurtain() {
   };
 
   return (
-    // Фиксируем всю панель на самом верхнем слое (выше любых шапок экранов, у которых z-50)
-    // с отступом сверху, чтобы не перекрывать статус-бар
-    <div className="fixed top-3 left-0 right-0 z-[70] px-4 pointer-events-none">
-      <div className="max-w-md mx-auto flex flex-col items-end gap-2">
-        
-        {/* КНОПКИ НА ГЛАВНОМ ЭКРАНЕ (ЯЗЫКИ + ТЕМА) */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Кнопка изменения ТЕМЫ (вынесена на главный экран) */}
-          <button 
-            onClick={toggleTheme}
-            className="w-11 h-11 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-md flex items-center justify-center active:scale-95 transition-all text-zinc-800 dark:text-zinc-200"
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
+    <>
+      {/* top-[30px] подобран так, чтобы центр круглых кнопок (34px) совпадал
+          с центром логотипа в шапке экранов (padding-top 24px + высота лого 55px) */}
 
-          {/* Кнопка вызова дополнительных настроек ЯЗЫКА (шире и крупнее) */}
-          <button 
-            onClick={() => setIsOpen(!isOpen)} 
-            className="px-4 h-11 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-md flex items-center gap-2 font-black text-xs uppercase tracking-wider active:scale-95 transition-all text-zinc-800 dark:text-zinc-200"
-          >
-            <Settings size={16} className={isOpen ? 'rotate-45 transition-transform' : 'transition-transform'} />
-            {i18n.language}
-          </button>
-        </div>
+      {/* Кнопка ТЕМЫ — левый верхний угол */}
+      <div className="fixed top-[30px] left-4 z-[70]">
+        <button
+          onClick={toggleTheme}
+          className="p-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm"
+        >
+          {theme === 'light' ? <Moon size={18} className="text-zinc-700 dark:text-zinc-200" /> : <Sun size={18} className="text-zinc-700 dark:text-zinc-200" />}
+        </button>
+      </div>
 
-        {/* СДВИГАЮЩАЯСЯ ПАНЕЛЬ ЯЗЫКОВ И ДОП. ФУНКЦИЙ */}
+      {/* Кнопка ЯЗЫКА — правый верхний угол, та же форма, что и кнопка темы */}
+      <div className="fixed top-[30px] right-4 z-[70]">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm"
+        >
+          <Languages size={18} className="text-zinc-700 dark:text-zinc-200" />
+        </button>
+
+        {/* Выпадающее меню — теперь только выбор языка */}
         {isOpen && (
-          <div className="w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-4 shadow-xl pointer-events-auto animate-fade-down space-y-4">
-            {/* Выбор языков — увеличенные кнопки */}
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Select Language</p>
-              <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-xl">
-                {['en', 'ru', 'ua'].map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => changeLang(l)}
-                    className={`py-2.5 rounded-lg text-xs font-black uppercase transition-all ${
-                      i18n.language === l 
-                        ? 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-md scale-105' 
-                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
+          <div className="absolute top-12 right-0 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-3 shadow-xl animate-fade-down">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1 pb-1.5">Language</p>
+            <div className="grid grid-cols-3 gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+              {['en', 'ru', 'ua'].map((l) => (
+                <button
+                  key={l}
+                  onClick={() => changeLang(l)}
+                  className={`py-1.5 rounded-lg text-xs font-black uppercase transition-all ${
+                    i18n.language === l
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
             </div>
-
-            {/* Быстрая ссылка на чат поддержки */}
-            <button 
-              onClick={openChat}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors rounded-xl text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300"
-            >
-              <MessageCircle size={14} />
-              Support Chat
-            </button>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Плавающая кнопка ЧАТА — отдельно, справа снизу, над нижней навигацией.
+          Акцентный бордовый цвет отличает её от нейтральных иконок темы/языка сверху. */}
+      <button
+        onClick={openChat}
+        className={`fixed right-4 z-[70] w-14 h-14 rounded-full bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.4)] flex items-center justify-center active:scale-95 transition-all ${
+          hasBottomNav ? 'bottom-24' : 'bottom-6'
+        }`}
+        aria-label="Chat"
+      >
+        <MessageCircle size={22} className="text-white" />
+      </button>
+    </>
   );
 }
