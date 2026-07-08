@@ -100,11 +100,13 @@ export default function App() {
   }, [currentScreen]);
 
   const hideBottomNav = ['event-details', 'about'].includes(currentScreen);
+  // Шторка (тема/язык) видна только на 4 основных вкладках — не на AdminPanel, AboutKyrios, EventDetails, сканере
+  const showTopCurtain = ['events', 'gallery', 'tickets', 'profile'].includes(currentScreen);
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
-      {/* 🌟 2. Верхняя сквозная шторка (RU/UA/EN, Light/Dark) */}
-      <TopCurtain />
+      {/* 🌟 2. Верхняя сквозная шторка (RU/UA/EN, Light/Dark) — только на основных вкладках */}
+      {showTopCurtain && <TopCurtain />}
 
       {currentScreen === 'events' && (
         <Events 
