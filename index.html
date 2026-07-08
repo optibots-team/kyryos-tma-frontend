@@ -8,10 +8,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      // Ставим data-theme ДО первой отрисовки, чтобы не было мигания светлой темой.
+      // Приоритет: сохранённый выбор пользователя -> тема самого Telegram -> light.
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var theme = saved;
+          if (!theme) {
+            var tgScheme = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme;
+            theme = tgScheme === 'dark' ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
