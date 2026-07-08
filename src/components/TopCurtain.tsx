@@ -45,7 +45,7 @@ export default function TopCurtain() {
   };
 
  return (
-  <div className="fixed top-0 right-0 z-50">
+  <div className="fixed top-0 right-0 z-[70]">
       {/* Кнопка открытия шторки/триггер */}
       <div className="flex justify-end p-4 bg-transparent absolute right-0 top-0">
         <button 
