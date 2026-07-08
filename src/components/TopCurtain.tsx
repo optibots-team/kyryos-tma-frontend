@@ -1,24 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, MessageCircle, Languages } from 'lucide-react';
+import { Sun, Moon, MessageCircle, Settings } from 'lucide-react';
 
 export default function TopCurtain() {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-
-  type ConfigTheme = 'light' | 'dark';
-
-  const getInitialTheme = (): ConfigTheme => {
-    const saved = localStorage.getItem('theme') as ConfigTheme | null;
-    if (saved === 'light' || saved === 'dark') return saved;
-    // Если пользователь ещё не выбирал тему вручную — уважаем тему самого Telegram
-    return window.Telegram?.WebApp?.colorScheme === 'dark' ? 'dark' : 'light';
-  };
-
-  const [theme, setTheme] = useState<ConfigTheme>(getInitialTheme);
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  );
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const changeLang = (code: string) => {
@@ -27,13 +20,7 @@ export default function TopCurtain() {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      // Сохраняем в localStorage только когда пользователь САМ явно переключил тему —
-      // до этого момента приложение должно продолжать следовать теме самого Telegram
-      localStorage.setItem('theme', next);
-      return next;
-    });
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const openChat = () => {
@@ -44,61 +31,65 @@ export default function TopCurtain() {
     }
   };
 
- return (
-  <div className="fixed top-0 right-0 z-[70]">
-      {/* Кнопка открытия шторки/триггер */}
-      <div className="flex justify-end p-4 bg-transparent absolute right-0 top-0">
-        <button 
-          onClick={() => setIsOpen(!isOpen)} 
-          className="p-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm"
-        >
-          <Languages size={18} className="text-zinc-700 dark:text-zinc-200" />
-        </button>
-      </div>
+  return (
+    // Фиксируем всю панель на самом верхнем слое (z-50) с отступом сверху, чтобы не перекрывать статус-бар
+    <div className="fixed top-3 left-0 right-0 z-50 px-4 pointer-events-none">
+      <div className="max-w-md mx-auto flex flex-col items-end gap-2">
+        
+        {/* КНОПКИ НА ГЛАВНОМ ЭКРАНЕ (ЯЗЫКИ + ТЕМА) */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Кнопка изменения ТЕМЫ (вынесена на главный экран) */}
+          <button 
+            onClick={toggleTheme}
+            className="w-11 h-11 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-md flex items-center justify-center active:scale-95 transition-all text-zinc-800 dark:text-zinc-200"
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
 
-      {/* Выпадающее меню шторки */}
-      {isOpen && (
-        <div className="absolute top-16 right-4 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 shadow-xl animate-fade-up space-y-4">
-          {/* Языки */}
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Language</p>
-            <div className="grid grid-cols-3 gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
-              {['en', 'ru', 'ua'].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => changeLang(l)}
-                  className={`py-1.5 rounded-lg text-xs font-black uppercase transition-all ${
-                    i18n.language === l 
-                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm' 
-                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
+          {/* Кнопка вызова дополнительных настроек ЯЗЫКА (шире и крупнее) */}
+          <button 
+            onClick={() => setIsOpen(!isOpen)} 
+            className="px-4 h-11 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-md flex items-center gap-2 font-black text-xs uppercase tracking-wider active:scale-95 transition-all text-zinc-800 dark:text-zinc-200"
+          >
+            <Settings size={16} className={isOpen ? 'rotate-45 transition-transform' : 'transition-transform'} />
+            {i18n.language}
+          </button>
+        </div>
+
+        {/* СДВИГАЮЩАЯСЯ ПАНЕЛЬ ЯЗЫКОВ И ДОП. ФУНКЦИЙ */}
+        {isOpen && (
+          <div className="w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-4 shadow-xl pointer-events-auto animate-fade-down space-y-4">
+            {/* Выбор языков — увеличенные кнопки */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Select Language</p>
+              <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-xl">
+                {['en', 'ru', 'ua'].map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => changeLang(l)}
+                    className={`py-2.5 rounded-lg text-xs font-black uppercase transition-all ${
+                      i18n.language === l 
+                        ? 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-md scale-105' 
+                        : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Тема и Чат */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <button 
-              onClick={toggleTheme}
-              className="flex items-center justify-center gap-2 py-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300"
-            >
-              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
-              {theme === 'light' ? 'Dark' : 'Light'}
-            </button>
-
+            {/* Быстрая ссылка на чат поддержки */}
             <button 
               onClick={openChat}
-              className="flex items-center justify-center gap-2 py-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors rounded-xl text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300"
             >
               <MessageCircle size={14} />
-              Chat
+              Support Chat
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
