@@ -212,45 +212,46 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
-        {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ (карточка намеренно всегда тёмная — акцентный блок) */}
+        {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ — светлая карточка с фирменным красным акцентом */}
         {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
           <section className="w-full animate-fade-up">
             <button 
               onClick={() => onNavigate('admin-panel')} 
-              className="w-full bg-zinc-900 text-white p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/20 group"
+              className="w-full bg-surface border-2 border-[#A50021]/20 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-[0_8px_30px_rgba(165,0,33,0.08)] group relative overflow-hidden"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 text-white">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/5 to-transparent pointer-events-none"></div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[#A50021]/10 flex items-center justify-center border border-[#A50021]/20 text-[#A50021]">
                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 11h10"/><path d="M7 15h10"/><path d="M7 7h10"/></svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-white font-headline font-black text-base tracking-tight uppercase">{t('profile_screen.admin_panel')}</p>
-                  <p className="text-white/60 text-xs font-medium mt-0.5">{t('profile_screen.admin_panel_desc')}</p>
+                  <p className="text-on-surface font-headline font-black text-base tracking-tight uppercase">{t('profile_screen.admin_panel')}</p>
+                  <p className="text-on-surface-variant text-xs font-medium mt-0.5">{t('profile_screen.admin_panel_desc')}</p>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <div className="w-10 h-10 rounded-full bg-[#A50021]/10 flex items-center justify-center group-hover:bg-[#A50021] transition-colors duration-300 relative z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#A50021] group-hover:text-white transition-colors"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </div>
             </button>
           </section>
         )}
 
-        {/* 4. ШКАЛА УРОВНЯ (карточка намеренно всегда тёмная — акцентный блок с прогресс-баром) */}
-        <section className="bg-zinc-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden animate-fade-up delay-100 border border-zinc-800">
+        {/* 4. ШКАЛА УРОВНЯ — светлая карточка с фиолетовым акцентом */}
+        <section className="bg-gradient-to-br from-surface to-purple-50/60 dark:to-purple-500/5 rounded-[2rem] p-6 shadow-sm relative overflow-hidden animate-fade-up delay-100 border border-purple-100 dark:border-purple-500/20">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-            <Trophy size={100} className="text-[#A50021]" />
+            <Trophy size={100} className="text-purple-600 dark:text-purple-400" />
           </div>
           
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <p className="text-[#A50021] text-[10px] font-bold uppercase tracking-widest mb-1">{t('profile_screen.current_rank')}</p>
-                <h3 className="text-white font-headline font-black text-3xl tracking-tight">
-                  {getRankName(currentLevel)} <span className="text-zinc-500 text-xl font-medium">{t('profile_screen.level_short')} {currentLevel}</span>
+                <p className="text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-1">{t('profile_screen.current_rank')}</p>
+                <h3 className="text-on-surface font-headline font-black text-3xl tracking-tight">
+                  {getRankName(currentLevel)} <span className="text-on-surface-variant text-xl font-medium">{t('profile_screen.level_short')} {currentLevel}</span>
                 </h3>
               </div>
               {streak > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-xl">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/20 dark:border-orange-500/30 rounded-xl">
                   <Flame size={14} className="text-orange-500" />
                   <span className="text-orange-500 font-bold text-xs">{streak} {t('profile_screen.streak')}</span>
                 </div>
@@ -259,23 +260,23 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
 
             <div className="mt-6 space-y-3">
               <div className="flex justify-between items-end">
-                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">{t('profile_screen.progress')}</span>
-                <span className="text-white font-bold text-sm">
-                  {isMaxLevel ? t('profile_screen.max') : pointsInCurrentLevel} <span className="text-zinc-500 font-normal">/ {POINTS_PER_LEVEL} XP</span>
+                <span className="text-on-surface-variant/70 text-[10px] font-bold uppercase tracking-widest">{t('profile_screen.progress')}</span>
+                <span className="text-on-surface font-bold text-sm">
+                  {isMaxLevel ? t('profile_screen.max') : pointsInCurrentLevel} <span className="text-on-surface-variant font-normal">/ {POINTS_PER_LEVEL} XP</span>
                 </span>
               </div>
-              <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
+              <div className="w-full h-2.5 bg-surface-container rounded-full overflow-hidden shadow-inner">
                 <div 
-                  className="h-full bg-[#A50021] rounded-full shadow-[0_0_15px_rgba(165,0,33,0.5)] transition-all duration-1000 ease-out"
+                  className="h-full bg-purple-600 dark:bg-purple-500 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.4)] transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
               
               <div className="flex justify-between items-center pt-1">
-                <span className="text-[9px] font-bold text-[#A50021] tracking-wide bg-[#A50021]/10 px-2 py-0.5 rounded-md">
+                <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 tracking-wide bg-purple-50 dark:bg-purple-500/10 px-2 py-0.5 rounded-md">
                   ✨ {t('profile_screen.auto_vip_hint')}
                 </span>
-                <p className="text-zinc-500 text-[10px] font-medium">
+                <p className="text-on-surface-variant/70 text-[10px] font-medium">
                   {isMaxLevel ? t('profile_screen.max_level_reached') : t('profile_screen.xp_left_to_level', { xp: pointsToNextLevel, level: currentLevel + 1 })}
                 </p>
               </div>
