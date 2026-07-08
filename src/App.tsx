@@ -103,8 +103,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
-      {/* 🌟 2. Верхняя сквозная шторка (RU/UA/EN, Light/Dark, Нативный TG чат) */}
-      <TopCurtain />
+      {/* 🌟 2. Верхняя сквозная шторка (RU/UA/EN, Light/Dark, чат) */}
+      <TopCurtain hasBottomNav={!hideBottomNav} />
 
       {currentScreen === 'events' && (
         <Events 
