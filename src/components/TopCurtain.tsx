@@ -5,13 +5,20 @@ import { Sun, Moon, MessageCircle, Settings } from 'lucide-react';
 export default function TopCurtain() {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(
-    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
-  );
+
+  type ConfigTheme = 'light' | 'dark';
+
+  const getInitialTheme = (): ConfigTheme => {
+    const saved = localStorage.getItem('theme') as ConfigTheme | null;
+    if (saved === 'light' || saved === 'dark') return saved;
+    // Если пользователь ещё не выбирал тему вручную — уважаем тему самого Telegram
+    return window.Telegram?.WebApp?.colorScheme === 'dark' ? 'dark' : 'light';
+  };
+
+  const [theme, setTheme] = useState<ConfigTheme>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const changeLang = (code: string) => {
@@ -20,7 +27,13 @@ export default function TopCurtain() {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      // Сохраняем в localStorage только когда пользователь САМ явно переключил тему —
+      // до этого момента приложение должно продолжать следовать теме самого Telegram
+      localStorage.setItem('theme', next);
+      return next;
+    });
   };
 
   const openChat = () => {
@@ -32,8 +45,9 @@ export default function TopCurtain() {
   };
 
   return (
-    // Фиксируем всю панель на самом верхнем слое (z-50) с отступом сверху, чтобы не перекрывать статус-бар
-    <div className="fixed top-3 left-0 right-0 z-50 px-4 pointer-events-none">
+    // Фиксируем всю панель на самом верхнем слое (выше любых шапок экранов, у которых z-50)
+    // с отступом сверху, чтобы не перекрывать статус-бар
+    <div className="fixed top-3 left-0 right-0 z-[70] px-4 pointer-events-none">
       <div className="max-w-md mx-auto flex flex-col items-end gap-2">
         
         {/* КНОПКИ НА ГЛАВНОМ ЭКРАНЕ (ЯЗЫКИ + ТЕМА) */}
