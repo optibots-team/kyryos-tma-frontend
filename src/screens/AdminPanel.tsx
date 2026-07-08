@@ -4,6 +4,7 @@ import {
   PlusCircle, RefreshCw, Share2, Save, AlertTriangle, CheckCircle2,
   UserX, UserCheck, Send, Image, Flame, Clock, ChevronLeft, ChevronRight, Smile
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 
 interface AdminPanelProps {
@@ -24,6 +25,7 @@ interface LiveData {
 }
 
 export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminPanelProps) {
+  const { t } = useTranslation();
   const initData = window.Telegram?.WebApp?.initData || '';
   const BASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/admin-api';
 
@@ -164,7 +166,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       const data = await apiRequest('generate_codes', { event_id: selectedActiveEventId, count: generateCount });
       if (data.codes) {
         setGeneratedCodes(data.codes);
-        showSuccess(`Generated ${data.count} codes!`);
+        showSuccess(t('admin_panel_screen.generated_toast', { count: data.count }));
         fetchCodesData();
       }
     } catch (e) { console.error(e); } finally { setLoading(false); }
@@ -179,7 +181,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       });
       setMyCodesList(prev => prev.map(item => item.code === code ? { ...item, guest_name: tempGuestName, guest_instagram: tempGuestInstagram } : item));
       setEditingRow(null);
-      showSuccess("Saved!");
+      showSuccess(t('admin_panel_screen.saved_toast'));
     } catch (e) { console.error(e); }
   };
 
@@ -231,7 +233,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
     try {
       await apiRequest('toggle_blacklist', { telegram_id: tgId, is_blacklisted: !currentStatus });
       setUsersList(prev => prev.map(u => u.telegram_id === tgId ? { ...u, is_blacklisted: !currentStatus } : u));
-      showSuccess("User security status updated");
+      showSuccess(t('admin_panel_screen.security_status_updated'));
     } catch (e) { console.error(e); }
   };
 
@@ -243,7 +245,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
   };
 
   const handleBroadcast = async (isTest: boolean) => {
-    if (!broadcastText.trim()) return showError("Message text cannot be empty");
+    if (!broadcastText.trim()) return showError(t('admin_panel_screen.message_empty_error'));
     setLoading(true);
     try {
       const payload: Record<string, any> = {
@@ -255,11 +257,11 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       if (isTest) {
         payload.test_only = true;
         await apiRequest('create_broadcast', payload);
-        showSuccess("Test broadcast sent successfully!");
+        showSuccess(t('admin_panel_screen.test_broadcast_sent'));
       } else {
         const data = await apiRequest('create_broadcast', payload);
         if (data.job_id) {
-          showSuccess(`Job created for ${data.total_recipients} recipients.`);
+          showSuccess(t('admin_panel_screen.job_created', { count: data.total_recipients }));
           setBroadcastText('');
           setBroadcastImg('');
           processJob(data.job_id);
@@ -277,12 +279,12 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       if (!data.done) {
         return processJob(jobId);
       } else {
-        showSuccess(`Broadcast complete! Sent: ${data.total_sent}`);
+        showSuccess(t('admin_panel_screen.broadcast_complete', { count: data.total_sent }));
         setWorkerProgress(null);
         fetchBroadcastHistory();
       }
     } catch (err: any) {
-      showError(`Worker failed: ${err.message}`);
+      showError(t('admin_panel_screen.worker_failed', { msg: err.message }));
       setWorkerProgress(null);
     }
   };
@@ -330,29 +332,29 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
   const totalPages = Math.ceil(userTotal / USERS_LIMIT) || 1;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32 select-none text-zinc-900 font-sans">
+    <div className="min-h-screen bg-background pb-32 select-none text-on-surface font-sans">
       {/* HEADER */}
-      <header className="w-full sticky top-0 z-50 bg-zinc-300/80 backdrop-blur-xl flex items-center justify-between px-6 pt-6 pb-4 border-b border-zinc-400/20">
-        <button onClick={() => onNavigate('profile')} className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 active:scale-95 transition-all">
-          <ArrowLeft size={18} className="text-zinc-700" />
+      <header className="w-full sticky top-0 z-50 bg-surface-variant/80 backdrop-blur-xl flex items-center justify-between px-6 pt-6 pb-4 border-b border-outline-variant/30">
+        <button onClick={() => onNavigate('profile')} className="w-10 h-10 rounded-full bg-surface flex items-center justify-center border border-outline-variant/40 active:scale-95 transition-all">
+          <ArrowLeft size={18} className="text-on-surface-variant" />
         </button>
-        <h1 className="font-black text-sm uppercase tracking-wider text-zinc-900">
-          Terminal : <span className="text-red-700 font-mono">{role || 'Syncing'}</span>
+        <h1 className="font-black text-sm uppercase tracking-wider text-on-surface">
+          {t('admin_panel_screen.terminal')} : <span className="text-[#A50021] dark:text-red-400 font-mono">{role || t('admin_panel_screen.syncing')}</span>
         </h1>
-        <button onClick={handleManualRefresh} className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 active:scale-95 transition-all">
-          <RefreshCw size={16} className={`text-zinc-700 ${loading ? 'animate-spin' : ''}`} />
+        <button onClick={handleManualRefresh} className="w-10 h-10 rounded-full bg-surface flex items-center justify-center border border-outline-variant/40 active:scale-95 transition-all">
+          <RefreshCw size={16} className={`text-on-surface-variant ${loading ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
       {/* NOTIFICATIONS */}
       {errorMsg && (
-        <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 animate-bounce">
+        <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-2xl flex items-start gap-3 text-red-700 dark:text-red-400 animate-bounce">
           <AlertTriangle size={18} className="shrink-0 mt-0.5" />
           <p className="text-xs font-black leading-relaxed">{errorMsg}</p>
         </div>
       )}
       {successMsg && (
-        <div className="mx-6 mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3 text-emerald-800">
+        <div className="mx-6 mt-4 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl flex items-start gap-3 text-emerald-800 dark:text-emerald-400">
           <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
           <p className="text-xs font-bold leading-relaxed">{successMsg}</p>
         </div>
@@ -362,41 +364,41 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       {workerProgress && (
         <div className="mx-6 mt-4 p-4 bg-zinc-900 text-white rounded-2xl space-y-2">
           <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-zinc-400">
-            <span>Pipeline Broadcasting Arrays</span>
+            <span>{t('admin_panel_screen.pipeline_broadcasting')}</span>
             <span>{Math.round((workerProgress.current / workerProgress.total) * 100)}%</span>
           </div>
           <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
             <div className="bg-red-600 h-full transition-all duration-300" style={{ width: `${(workerProgress.current / workerProgress.total) * 100}%` }} />
           </div>
-          <p className="text-[10px] font-mono text-center text-zinc-500">{workerProgress.current} / {workerProgress.total} profiles arrayed.</p>
+          <p className="text-[10px] font-mono text-center text-zinc-500">{t('admin_panel_screen.profiles_arrayed', { current: workerProgress.current, total: workerProgress.total })}</p>
         </div>
       )}
 
       {/* TABS */}
       <nav className="px-6 pt-6 flex gap-1 overflow-x-auto no-scrollbar">
         {!isHostess && (
-          <button onClick={() => setActiveTab('codes')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'codes' ? 'bg-zinc-900 text-white shadow-md' : 'bg-white border border-zinc-200 text-zinc-500'}`}>
-            <QrCode size={14} /> Codes
+          <button onClick={() => setActiveTab('codes')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'codes' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <QrCode size={14} /> {t('admin_panel_screen.tab_codes')}
           </button>
         )}
         {!isHostess && (
-          <button onClick={() => setActiveTab('stats')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'stats' ? 'bg-zinc-900 text-white shadow-md' : 'bg-white border border-zinc-200 text-zinc-500'}`}>
-            <BarChart3 size={14} /> Stats
+          <button onClick={() => setActiveTab('stats')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'stats' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <BarChart3 size={14} /> {t('admin_panel_screen.tab_stats')}
           </button>
         )}
         {isAdmin && (
-          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'users' ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-500'}`}>
-            <Users size={14} /> Users
+          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'users' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <Users size={14} /> {t('admin_panel_screen.tab_users')}
           </button>
         )}
         {isAdmin && (
-          <button onClick={() => setActiveTab('broadcast')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'broadcast' ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-500'}`}>
-            <Radio size={14} /> Broadcast
+          <button onClick={() => setActiveTab('broadcast')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'broadcast' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <Radio size={14} /> {t('admin_panel_screen.tab_broadcast')}
           </button>
         )}
         {(isAdmin || isPromoter || isHostess) && (
-          <button onClick={() => setActiveTab('live')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'live' ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-500'}`}>
-            <Activity size={14} /> Live Terminal
+          <button onClick={() => setActiveTab('live')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'live' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <Activity size={14} /> {t('admin_panel_screen.tab_live')}
           </button>
         )}
       </nav>
@@ -407,23 +409,23 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
         {/* TAB: CODES */}
         {activeTab === 'codes' && !isHostess && (
           <div className="space-y-6">
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Active Pool Registry</h3>
-              <select value={selectedActiveEventId} onChange={(e) => setSelectedActiveEventId(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none">
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.active_pool_registry')}</h3>
+              <select value={selectedActiveEventId} onChange={(e) => setSelectedActiveEventId(e.target.value)} className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-5 py-4 text-sm font-black text-on-surface focus:outline-none">
                 {activeEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.title}</option>
                 ))}
               </select>
               
               <div className="flex gap-3 pt-2">
-                <input type="number" min="1" max="500" value={generateCount} onChange={(e) => setGenerateCount(Number(e.target.value))} className="w-1/3 bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3.5 text-center font-black text-sm" />
+                <input type="number" min="1" max="500" value={generateCount} onChange={(e) => setGenerateCount(Number(e.target.value))} className="w-1/3 bg-surface-container border border-outline-variant/40 rounded-2xl px-4 py-3.5 text-center font-black text-sm text-on-surface" />
                 <button onClick={handleGenerate} disabled={loading || !selectedActiveEventId} className="flex-1 bg-[#A50021] text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50">
-                  <PlusCircle size={16} /> Generate Array
+                  <PlusCircle size={16} /> {t('admin_panel_screen.generate_array')}
                 </button>
               </div>
 
               {generatedCodes.length > 0 && (
-                <div className="pt-3 border-t border-zinc-100 flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                <div className="pt-3 border-t border-outline-variant/40 flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                   {generatedCodes.map((c, i) => (
                     <span key={i} className="text-[9px] font-mono font-black px-2 py-0.5 bg-zinc-900 text-white rounded">{c}</span>
                   ))}
@@ -431,54 +433,54 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
               )}
             </section>
 
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">My Pool Allocations</h3>
-                <span className="text-[10px] font-black bg-zinc-100 text-zinc-600 px-2.5 py-1 rounded-full">Size: {myCodesList.length}</span>
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.my_pool_allocations')}</h3>
+                <span className="text-[10px] font-black bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-full">{t('admin_panel_screen.size_label', { count: myCodesList.length })}</span>
               </div>
               <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
                 <table className="w-full text-left border-collapse min-w-[500px]">
                   <thead>
-                    <tr className="border-b border-zinc-100 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                      <th className="pb-3 font-medium">Code</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Guest Identity</th>
-                      <th className="pb-3 font-medium">Instagram</th>
-                      <th className="pb-3 text-right font-medium">Action</th>
+                    <tr className="border-b border-outline-variant/30 text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-wider">
+                      <th className="pb-3 font-medium">{t('admin_panel_screen.col_code')}</th>
+                      <th className="pb-3 font-medium">{t('admin_panel_screen.col_status')}</th>
+                      <th className="pb-3 font-medium">{t('admin_panel_screen.col_guest_identity')}</th>
+                      <th className="pb-3 font-medium">{t('admin_panel_screen.col_instagram')}</th>
+                      <th className="pb-3 text-right font-medium">{t('admin_panel_screen.col_action')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-50 text-xs font-bold">
+                  <tbody className="divide-y divide-outline-variant/20 text-xs font-bold">
                     {myCodesList.map((row) => {
                       const isEditing = editingRow === row.code;
                       return (
-                        <tr key={row.code} className="hover:bg-zinc-50/40">
-                          <td className="py-3.5 font-mono font-black text-sm text-zinc-950">{row.code}</td>
+                        <tr key={row.code} className="hover:bg-surface-container/40">
+                          <td className="py-3.5 font-mono font-black text-sm text-on-surface">{row.code}</td>
                           <td className="py-3.5">
                             {row.used_count > 0 ? (
-                              <span className="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-md uppercase font-black">Used</span>
+                              <span className="text-[9px] bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30 px-2 py-0.5 rounded-md uppercase font-black">{t('admin_panel_screen.status_used')}</span>
                             ) : (
-                              <span className="text-[9px] bg-zinc-100 text-zinc-400 px-2 py-0.5 rounded-md uppercase">Idle</span>
+                              <span className="text-[9px] bg-surface-container text-on-surface-variant/60 px-2 py-0.5 rounded-md uppercase">{t('admin_panel_screen.status_idle')}</span>
                             )}
                           </td>
                           <td className="py-3.5">
                             {isEditing ? (
-                              <input type="text" value={tempGuestName} onChange={(e) => setTempGuestName(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs w-28" />
+                              <input type="text" value={tempGuestName} onChange={(e) => setTempGuestName(e.target.value)} className="bg-surface-container border border-outline-variant/40 rounded-lg px-2 py-1 text-xs w-28 text-on-surface" />
                             ) : (
-                              <span onClick={() => { setEditingRow(row.code); setTempGuestName(row.guest_name || ''); setTempGuestInstagram(row.guest_instagram || ''); }} className="border-b border-dashed border-zinc-300 cursor-pointer block text-zinc-700">{row.guest_name || '—'}</span>
+                              <span onClick={() => { setEditingRow(row.code); setTempGuestName(row.guest_name || ''); setTempGuestInstagram(row.guest_instagram || ''); }} className="border-b border-dashed border-outline-variant/60 cursor-pointer block text-on-surface-variant">{row.guest_name || '—'}</span>
                             )}
                           </td>
                           <td className="py-3.5">
                             {isEditing ? (
-                              <input type="text" value={tempGuestInstagram} onChange={(e) => setTempGuestInstagram(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs w-24" />
+                              <input type="text" value={tempGuestInstagram} onChange={(e) => setTempGuestInstagram(e.target.value)} className="bg-surface-container border border-outline-variant/40 rounded-lg px-2 py-1 text-xs w-24 text-on-surface" />
                             ) : (
-                              <span onClick={() => { setEditingRow(row.code); setTempGuestName(row.guest_name || ''); setTempGuestInstagram(row.guest_instagram || ''); }} className="border-b border-dashed border-zinc-300 cursor-pointer block text-zinc-500">{row.guest_instagram ? `@${row.guest_instagram}` : '—'}</span>
+                              <span onClick={() => { setEditingRow(row.code); setTempGuestName(row.guest_name || ''); setTempGuestInstagram(row.guest_instagram || ''); }} className="border-b border-dashed border-outline-variant/60 cursor-pointer block text-on-surface-variant/70">{row.guest_instagram ? `@${row.guest_instagram}` : '—'}</span>
                             )}
                           </td>
                           <td className="py-3.5 text-right">
                             {isEditing ? (
-                              <button onClick={() => handleSaveGuest(row.code)} className="p-2 bg-zinc-900 text-white rounded-lg"><Save size={12} /></button>
+                              <button onClick={() => handleSaveGuest(row.code)} className="p-2 bg-primary text-on-primary rounded-lg"><Save size={12} /></button>
                             ) : (
-                              <button onClick={() => handleShareCode(row.code)} className="p-2 bg-zinc-100 text-zinc-600 rounded-lg"><Share2 size={12} /></button>
+                              <button onClick={() => handleShareCode(row.code)} className="p-2 bg-surface-container text-on-surface-variant rounded-lg"><Share2 size={12} /></button>
                             )}
                           </td>
                         </tr>
@@ -494,12 +496,12 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
         {/* TAB: STATS */}
         {activeTab === 'stats' && !isHostess && (
           <div className="space-y-6">
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block px-1">View Stats Event</label>
-              <select value={selectedStatsEventId} onChange={(e) => { setSelectedStatsEventId(e.target.value); fetchDetailedStats(e.target.value); }} className="w-full bg-white border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none">
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 block px-1">{t('admin_panel_screen.view_stats_event')}</label>
+              <select value={selectedStatsEventId} onChange={(e) => { setSelectedStatsEventId(e.target.value); fetchDetailedStats(e.target.value); }} className="w-full bg-surface border border-outline-variant/40 rounded-2xl px-5 py-4 text-sm font-black text-on-surface focus:outline-none">
                 {allEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>
-                    {ev.title} {ev.is_upcoming ? '🔥 [Upcoming]' : '⏳ [Past]'}
+                    {ev.title} {ev.is_upcoming ? t('admin_panel_screen.upcoming_tag') : t('admin_panel_screen.past_tag')}
                   </option>
                 ))}
               </select>
@@ -507,65 +509,65 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
             {detailedStats ? (
               <>
-                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm">
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm">
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                      <p className="text-2xl font-black font-mono">{detailedStats.total_issued}</p>
-                      <p className="text-[10px] font-black uppercase text-zinc-400">Issued</p>
+                      <p className="text-2xl font-black font-mono text-on-surface">{detailedStats.total_issued}</p>
+                      <p className="text-[10px] font-black uppercase text-on-surface-variant/60">{t('admin_panel_screen.issued')}</p>
                     </div>
-                    <div className="border-x border-zinc-100">
+                    <div className="border-x border-outline-variant/30">
                       <p className="text-2xl font-black text-[#A50021] font-mono">{detailedStats.total_scanned}</p>
-                      <p className="text-[10px] font-black uppercase text-zinc-400">Scanned</p>
+                      <p className="text-[10px] font-black uppercase text-on-surface-variant/60">{t('admin_panel_screen.scanned')}</p>
                     </div>
                     <div>
                       <p className="text-2xl font-black bg-zinc-900 text-white rounded-xl px-2 inline-block font-mono">{detailedStats.conversion}%</p>
-                      <p className="text-[10px] font-black uppercase text-zinc-400 block mt-1">Conversion</p>
+                      <p className="text-[10px] font-black uppercase text-on-surface-variant/60 block mt-1">{t('admin_panel_screen.conversion')}</p>
                     </div>
                   </div>
                 </section>
 
-                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">By Series</h3>
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.by_series')}</h3>
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="border-b text-[10px] font-black uppercase text-zinc-400">
-                        <th className="pb-2">Series</th>
-                        <th className="pb-2 text-center">Issued</th>
-                        <th className="pb-2 text-center">Scanned</th>
-                        <th className="pb-2 text-right">Conversion</th>
+                      <tr className="border-b border-outline-variant/30 text-[10px] font-black uppercase text-on-surface-variant/60">
+                        <th className="pb-2">{t('admin_panel_screen.col_series')}</th>
+                        <th className="pb-2 text-center">{t('admin_panel_screen.issued')}</th>
+                        <th className="pb-2 text-center">{t('admin_panel_screen.scanned')}</th>
+                        <th className="pb-2 text-right">{t('admin_panel_screen.conversion')}</th>
                       </tr>
                     </thead>
-                    <tbody className="text-xs font-bold divide-y divide-zinc-50">
+                    <tbody className="text-xs font-bold divide-y divide-outline-variant/20">
                       {detailedStats.by_series?.map((s: any, idx: number) => (
                         <tr key={idx}>
-                          <td className="py-3 font-mono font-black">{s.series}</td>
-                          <td className="py-3 text-center text-zinc-500 font-mono">{s.issued}</td>
-                          <td className="py-3 text-center text-zinc-950 font-mono">{s.scanned}</td>
-                          <td className="py-3 text-right font-mono">{s.conversion}%</td>
+                          <td className="py-3 font-mono font-black text-on-surface">{s.series}</td>
+                          <td className="py-3 text-center text-on-surface-variant font-mono">{s.issued}</td>
+                          <td className="py-3 text-center text-on-surface font-mono">{s.scanned}</td>
+                          <td className="py-3 text-right font-mono text-on-surface">{s.conversion}%</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </section>
 
-                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Top Promoters</h3>
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.top_promoters')}</h3>
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="border-b text-[10px] font-black uppercase text-zinc-400">
-                        <th className="pb-2">Promoter</th>
-                        <th className="pb-2 text-center">Generated</th>
-                        <th className="pb-2 text-center">Used</th>
-                        <th className="pb-2 text-right">Conversion</th>
+                      <tr className="border-b border-outline-variant/30 text-[10px] font-black uppercase text-on-surface-variant/60">
+                        <th className="pb-2">{t('admin_panel_screen.col_promoter')}</th>
+                        <th className="pb-2 text-center">{t('admin_panel_screen.col_generated')}</th>
+                        <th className="pb-2 text-center">{t('admin_panel_screen.col_used')}</th>
+                        <th className="pb-2 text-right">{t('admin_panel_screen.conversion')}</th>
                       </tr>
                     </thead>
-                    <tbody className="text-xs font-bold divide-y divide-zinc-50">
+                    <tbody className="text-xs font-bold divide-y divide-outline-variant/20">
                       {detailedStats.top_promoters?.map((p: any, idx: number) => (
                         <tr key={idx} className="cursor-pointer" onClick={() => openTgUser(p.username)}>
-                          <td className="py-3 font-black text-blue-600">@{p.username || 'unknown'}</td>
-                          <td className="py-3 text-center font-mono text-zinc-500">{p.generated}</td>
+                          <td className="py-3 font-black text-blue-600 dark:text-blue-400">@{p.username || 'unknown'}</td>
+                          <td className="py-3 text-center font-mono text-on-surface-variant">{p.generated}</td>
                           <td className="py-3 text-center font-mono text-[#A50021]">{p.used}</td>
-                          <td className="py-3 text-right font-mono">{p.conversion}%</td>
+                          <td className="py-3 text-right font-mono text-on-surface">{p.conversion}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -573,38 +575,38 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
                 </section>
               </>
             ) : (
-              <div className="bg-white rounded-[2rem] p-8 text-center text-zinc-400 text-xs">No analytics data streamed.</div>
+              <div className="bg-surface rounded-[2rem] p-8 text-center text-on-surface-variant/60 text-xs">{t('admin_panel_screen.no_analytics')}</div>
             )}
           </div>
         )}
 
         {/* TAB: USERS */}
         {activeTab === 'users' && isAdmin && (
-          <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4 animate-fade-up">
+          <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4 animate-fade-up">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
-              <input type="text" placeholder="Search profiles..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold focus:outline-none" />
-              <button type="submit" className="bg-zinc-900 text-white px-5 rounded-xl text-xs font-bold active:scale-95 transition-all">Query</button>
+              <input type="text" placeholder={t('admin_panel_screen.search_profiles')} value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="flex-1 bg-surface-container border border-outline-variant/40 rounded-xl px-4 py-3 text-xs font-bold text-on-surface focus:outline-none" />
+              <button type="submit" className="bg-primary text-on-primary px-5 rounded-xl text-xs font-bold active:scale-95 transition-all">{t('admin_panel_screen.query')}</button>
             </form>
 
             <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
               <table className="w-full text-left min-w-[450px]">
                 <thead>
-                  <tr className="border-b text-[10px] text-zinc-400 uppercase font-black">
-                    <th className="pb-2">Identity</th>
-                    <th className="pb-2">Access Tier</th>
-                    <th className="pb-2 text-right">Security Action</th>
+                  <tr className="border-b border-outline-variant/30 text-[10px] text-on-surface-variant/60 uppercase font-black">
+                    <th className="pb-2">{t('admin_panel_screen.col_identity')}</th>
+                    <th className="pb-2">{t('admin_panel_screen.col_access_tier')}</th>
+                    <th className="pb-2 text-right">{t('admin_panel_screen.col_security_action')}</th>
                   </tr>
                 </thead>
-                <tbody className="text-xs font-bold divide-y divide-zinc-50">
+                <tbody className="text-xs font-bold divide-y divide-outline-variant/20">
                   {usersList.map(u => (
-                    <tr key={u.id} className={u.is_blacklisted ? 'opacity-40 bg-red-50/30' : ''}>
+                    <tr key={u.id} className={u.is_blacklisted ? 'opacity-40 bg-red-50/30 dark:bg-red-500/5' : ''}>
                       <td className="py-3">
-                        <span onClick={() => openTgUser(u.username)} className="text-zinc-950 font-black cursor-pointer hover:underline block">@{u.username || 'null'}</span>
-                        <span className="text-[10px] text-zinc-400 block font-normal">{u.first_name} {u.last_name}</span>
+                        <span onClick={() => openTgUser(u.username)} className="text-on-surface font-black cursor-pointer hover:underline block">@{u.username || 'null'}</span>
+                        <span className="text-[10px] text-on-surface-variant/60 block font-normal">{u.first_name} {u.last_name}</span>
                       </td>
-                      <td className="py-3 font-mono text-[11px] uppercase tracking-wider">{u.role}</td>
+                      <td className="py-3 font-mono text-[11px] uppercase tracking-wider text-on-surface">{u.role}</td>
                       <td className="py-3 text-right">
-                        <button onClick={() => handleToggleBlacklist(u.telegram_id, u.is_blacklisted)} className={`p-2 rounded-xl transition-all ${u.is_blacklisted ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                        <button onClick={() => handleToggleBlacklist(u.telegram_id, u.is_blacklisted)} className={`p-2 rounded-xl transition-all ${u.is_blacklisted ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
                           {u.is_blacklisted ? <UserCheck size={14} /> : <UserX size={14} />}
                         </button>
                       </td>
@@ -615,12 +617,12 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-zinc-100 pt-4 text-xs">
-                <span className="font-mono text-zinc-400 font-bold">Total: {userTotal}</span>
+              <div className="flex items-center justify-between border-t border-outline-variant/30 pt-4 text-xs">
+                <span className="font-mono text-on-surface-variant/60 font-bold">{t('admin_panel_screen.total_label', { count: userTotal })}</span>
                 <div className="flex items-center gap-1.5">
-                  <button type="button" disabled={userPage === 1 || loading} onClick={() => setUserPage(prev => Math.max(prev - 1, 1))} className="w-8 h-8 rounded-lg border border-zinc-200 flex items-center justify-center bg-white disabled:opacity-40"><ChevronLeft size={14} /></button>
-                  <span className="font-mono font-black px-3 py-1 bg-zinc-100 rounded-md text-zinc-800">{userPage} / {totalPages}</span>
-                  <button type="button" disabled={userPage === totalPages || loading} onClick={() => setUserPage(prev => Math.min(prev + 1, totalPages))} className="w-8 h-8 rounded-lg border border-zinc-200 flex items-center justify-center bg-white disabled:opacity-40"><ChevronRight size={14} /></button>
+                  <button type="button" disabled={userPage === 1 || loading} onClick={() => setUserPage(prev => Math.max(prev - 1, 1))} className="w-8 h-8 rounded-lg border border-outline-variant/40 flex items-center justify-center bg-surface disabled:opacity-40 text-on-surface"><ChevronLeft size={14} /></button>
+                  <span className="font-mono font-black px-3 py-1 bg-surface-container rounded-md text-on-surface">{userPage} / {totalPages}</span>
+                  <button type="button" disabled={userPage === totalPages || loading} onClick={() => setUserPage(prev => Math.min(prev + 1, totalPages))} className="w-8 h-8 rounded-lg border border-outline-variant/40 flex items-center justify-center bg-surface disabled:opacity-40 text-on-surface"><ChevronRight size={14} /></button>
                 </div>
               </div>
             )}
@@ -630,57 +632,57 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
         {/* TAB: BROADCAST */}
         {activeTab === 'broadcast' && isAdmin && (
           <div className="space-y-6">
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Compose Global Broadcast</h3>
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.compose_broadcast')}</h3>
               
               <div className="space-y-2 relative">
                 <div className="relative">
-                  <textarea placeholder="Write text message array..." value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="w-full min-h-[120px] bg-zinc-50 border border-zinc-200 rounded-2xl p-4 pr-12 text-xs font-bold focus:outline-none" />
-                  <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="absolute right-4 top-4 p-1 text-zinc-400"><Smile size={18} /></button>
+                  <textarea placeholder={t('admin_panel_screen.write_message_placeholder')} value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="w-full min-h-[120px] bg-surface-container border border-outline-variant/40 rounded-2xl p-4 pr-12 text-xs font-bold text-on-surface focus:outline-none" />
+                  <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="absolute right-4 top-4 p-1 text-on-surface-variant/60"><Smile size={18} /></button>
                 </div>
 
                 {showEmojiPicker && (
-                  <div ref={emojiPickerRef} className="absolute right-0 top-[130px] z-50 bg-white border border-zinc-200 rounded-2xl p-3 shadow-xl max-w-[240px]">
+                  <div ref={emojiPickerRef} className="absolute right-0 top-[130px] z-50 bg-surface border border-outline-variant/40 rounded-2xl p-3 shadow-xl max-w-[240px]">
                     <div className="grid grid-cols-6 gap-2">
                       {quickEmojis.map(emoji => (
-                        <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="w-7 h-7 flex items-center justify-center text-sm rounded-lg hover:bg-zinc-100">{emoji}</button>
+                        <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="w-7 h-7 flex items-center justify-center text-sm rounded-lg hover:bg-surface-container">{emoji}</button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3">
-                  <Image size={14} className="text-zinc-400" />
-                  <input type="text" placeholder="Optional image CDN URL..." value={broadcastImg} onChange={(e) => setBroadcastImg(e.target.value)} className="bg-transparent w-full text-xs font-bold focus:outline-none" />
+                <div className="flex items-center gap-2 bg-surface-container border border-outline-variant/40 rounded-2xl px-4 py-3">
+                  <Image size={14} className="text-on-surface-variant/60" />
+                  <input type="text" placeholder={t('admin_panel_screen.image_url_placeholder')} value={broadcastImg} onChange={(e) => setBroadcastImg(e.target.value)} className="bg-transparent w-full text-xs font-bold text-on-surface focus:outline-none" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-1.5 pt-2">
                 {['all', 'event_buyers'].map((type) => (
-                  <button key={type} onClick={() => setAudienceType(type as any)} className={`py-2.5 px-1 rounded-xl font-bold text-[10px] uppercase tracking-wider border ${audienceType === type ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-zinc-50 text-zinc-400 border-zinc-200'}`}>
-                    {type === 'all' ? 'All System' : 'Event Buyers'}
+                  <button key={type} onClick={() => setAudienceType(type as any)} className={`py-2.5 px-1 rounded-xl font-bold text-[10px] uppercase tracking-wider border ${audienceType === type ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container text-on-surface-variant/60 border-outline-variant/40'}`}>
+                    {type === 'all' ? t('admin_panel_screen.audience_all') : t('admin_panel_screen.audience_event_buyers')}
                   </button>
                 ))}
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button onClick={() => handleBroadcast(true)} className="w-1/3 border border-zinc-300 rounded-2xl py-3.5 text-[11px] font-black uppercase tracking-wider text-zinc-700">Test Run</button>
-                <button onClick={() => handleBroadcast(false)} className="flex-1 bg-[#A50021] text-white rounded-2xl py-3.5 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all shadow-md"><Send size={12} /> Blast Matrix</button>
+                <button onClick={() => handleBroadcast(true)} className="w-1/3 border border-outline-variant/60 rounded-2xl py-3.5 text-[11px] font-black uppercase tracking-wider text-on-surface-variant">{t('admin_panel_screen.test_run')}</button>
+                <button onClick={() => handleBroadcast(false)} className="flex-1 bg-[#A50021] text-white rounded-2xl py-3.5 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all shadow-md"><Send size={12} /> {t('admin_panel_screen.blast_matrix')}</button>
               </div>
             </section>
 
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-3">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Broadcast Pipeline History</h3>
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-3">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.broadcast_pipeline_history')}</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {broadcastHistory.map(job => (
-                  <div key={job.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl flex justify-between items-center text-xs">
+                  <div key={job.id} className="p-3 bg-surface-container border border-outline-variant/30 rounded-xl flex justify-between items-center text-xs">
                     <div className="max-w-[70%]">
-                      <p className="font-bold text-zinc-900 truncate">{job.message_text}</p>
-                      <p className="text-[9px] font-mono text-zinc-400">{new Date(job.created_at).toLocaleDateString()}</p>
+                      <p className="font-bold text-on-surface truncate">{job.message_text}</p>
+                      <p className="text-[9px] font-mono text-on-surface-variant/60">{new Date(job.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
                       <span className="text-[9px] font-mono bg-zinc-900 text-white px-2 py-0.5 rounded uppercase font-black">{job.status}</span>
-                      <span className="text-[9px] text-zinc-400 font-bold block mt-0.5">{job.total_recipients} prf</span>
+                      <span className="text-[9px] text-on-surface-variant/60 font-bold block mt-0.5">{job.total_recipients} {t('admin_panel_screen.recipients_short')}</span>
                     </div>
                   </div>
                 ))}
@@ -692,9 +694,9 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
         {/* TAB: LIVE DASHBOARD */}
         {activeTab === 'live' && (
           <div className="space-y-6">
-            <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block px-1">Hook Target Live Stream</label>
-              <select value={selectedLiveEventId} onChange={(e) => { setSelectedLiveEventId(e.target.value); startLivePolling(e.target.value); }} className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm font-black text-zinc-900 focus:outline-none">
+            <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 block px-1">{t('admin_panel_screen.hook_target_stream')}</label>
+              <select value={selectedLiveEventId} onChange={(e) => { setSelectedLiveEventId(e.target.value); startLivePolling(e.target.value); }} className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-5 py-4 text-sm font-black text-on-surface focus:outline-none">
                 {activeEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.title}</option>
                 ))}
@@ -704,56 +706,56 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
             {liveData ? (
               <>
                 <section className="grid grid-cols-2 gap-3">
-                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
-                    <p className="text-2xl font-black font-mono text-zinc-900">{liveData.total_issued}</p>
-                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Issued Pool</p>
+                  <div className="bg-surface border border-outline-variant/40 rounded-[1.5rem] p-4 text-center">
+                    <p className="text-2xl font-black font-mono text-on-surface">{liveData.total_issued}</p>
+                    <p className="text-[9px] font-black uppercase text-on-surface-variant/60 tracking-wider">{t('admin_panel_screen.issued_pool')}</p>
                   </div>
-                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
+                  <div className="bg-surface border border-outline-variant/40 rounded-[1.5rem] p-4 text-center">
                     <p className="text-2xl font-black font-mono text-[#A50021]">{liveData.total_scanned}</p>
-                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Scanned Guard</p>
+                    <p className="text-[9px] font-black uppercase text-on-surface-variant/60 tracking-wider">{t('admin_panel_screen.scanned_guard')}</p>
                   </div>
-                  <div className="bg-white border border-zinc-200 rounded-[1.5rem] p-4 text-center">
-                    <p className="text-2xl font-black font-mono text-zinc-600">{liveData.remaining}</p>
-                    <p className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Remaining Outside</p>
+                  <div className="bg-surface border border-outline-variant/40 rounded-[1.5rem] p-4 text-center">
+                    <p className="text-2xl font-black font-mono text-on-surface-variant">{liveData.remaining}</p>
+                    <p className="text-[9px] font-black uppercase text-on-surface-variant/60 tracking-wider">{t('admin_panel_screen.remaining_outside')}</p>
                   </div>
                   <div className="bg-zinc-900 border border-zinc-900 rounded-[1.5rem] p-4 text-center text-white">
                     <p className="text-2xl font-black font-mono text-emerald-400">{liveData.conversion}%</p>
-                    <p className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Gate Conversion</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">{t('admin_panel_screen.gate_conversion')}</p>
                   </div>
                 </section>
 
-                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1"><Clock size={12} /> Hourly Scan Influx</h3>
-                  <div className="flex items-end justify-between h-24 pt-4 border-b border-zinc-100 px-2">
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 flex items-center gap-1"><Clock size={12} /> {t('admin_panel_screen.hourly_scan_influx')}</h3>
+                  <div className="flex items-end justify-between h-24 pt-4 border-b border-outline-variant/30 px-2">
                     {liveData.hourly?.map((h, i) => {
                       const maxCount = Math.max(...liveData.hourly.map(o => o.count), 1);
                       const barHeight = (h.count / maxCount) * 100;
                       return (
                         <div key={i} className="flex flex-col items-center flex-1 group">
-                          <span className="text-[8px] font-mono font-black opacity-0 group-hover:opacity-100 text-zinc-900 mb-1">{h.count}</span>
-                          <div className="w-4 bg-zinc-900 group-hover:bg-[#A50021] rounded-t transition-all duration-500" style={{ height: `${Math.max(barHeight, 8)}%` }} />
-                          <span className="text-[8px] font-mono font-bold text-zinc-400 mt-1.5">{h.hour}</span>
+                          <span className="text-[8px] font-mono font-black opacity-0 group-hover:opacity-100 text-on-surface mb-1">{h.count}</span>
+                          <div className="w-4 bg-zinc-900 dark:bg-zinc-600 group-hover:bg-[#A50021] rounded-t transition-all duration-500" style={{ height: `${Math.max(barHeight, 8)}%` }} />
+                          <span className="text-[8px] font-mono font-bold text-on-surface-variant/60 mt-1.5">{h.hour}</span>
                         </div>
                       );
                     })}
                   </div>
                 </section>
 
-                <section className="bg-white rounded-[2rem] p-6 border border-zinc-200 shadow-sm space-y-4">
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1"><Flame size={12} className="text-orange-500 animate-pulse" /> Live Scan Feed</h3>
-                    <span className="text-[8px] font-mono text-zinc-400">Sync: {liveData.updated_at ? new Date(liveData.updated_at).toLocaleTimeString() : '...'}</span>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 flex items-center gap-1"><Flame size={12} className="text-orange-500 animate-pulse" /> {t('admin_panel_screen.live_scan_feed')}</h3>
+                    <span className="text-[8px] font-mono text-on-surface-variant/60">{t('admin_panel_screen.sync_label', { time: liveData.updated_at ? new Date(liveData.updated_at).toLocaleTimeString() : '...' })}</span>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {liveData.recent_scans?.map((scan, idx) => (
-                      <div key={idx} className="p-3 bg-zinc-50 border border-zinc-100 rounded-2xl flex justify-between items-center">
+                      <div key={idx} className="p-3 bg-surface-container border border-outline-variant/30 rounded-2xl flex justify-between items-center">
                         <div>
-                          <p className="text-xs font-black text-zinc-950">{scan.first_name || 'Guest'}</p>
-                          <p className="text-[10px] font-bold text-blue-600" onClick={() => openTgUser(scan.username)}>@{scan.username || 'unknown'}</p>
+                          <p className="text-xs font-black text-on-surface">{scan.first_name || 'Guest'}</p>
+                          <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400" onClick={() => openTgUser(scan.username)}>@{scan.username || 'unknown'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-mono font-black bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded">{scan.ticket_code}</p>
-                          <p className="text-[8px] font-mono text-zinc-400 mt-1">{new Date(scan.scanned_at).toLocaleTimeString()}</p>
+                          <p className="text-[10px] font-mono font-black bg-surface-container-high dark:bg-zinc-700 text-on-surface px-2 py-0.5 rounded">{scan.ticket_code}</p>
+                          <p className="text-[8px] font-mono text-on-surface-variant/60 mt-1">{new Date(scan.scanned_at).toLocaleTimeString()}</p>
                         </div>
                       </div>
                     ))}
@@ -761,7 +763,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
                 </section>
               </>
             ) : (
-              <div className="bg-white rounded-[2rem] p-12 text-center text-zinc-400 text-xs">Awaiting gate stream arrays...</div>
+              <div className="bg-surface rounded-[2rem] p-12 text-center text-on-surface-variant/60 text-xs">{t('admin_panel_screen.awaiting_gate_stream')}</div>
             )}
           </div>
         )}
