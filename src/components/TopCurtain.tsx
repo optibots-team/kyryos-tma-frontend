@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, MessageCircle, Languages } from 'lucide-react';
+import { Sun, Moon, Languages } from 'lucide-react';
 
-interface TopCurtainProps {
-  // Есть ли сейчас на экране нижняя навигация — влияет на отступ кнопки чата снизу
-  hasBottomNav?: boolean;
-}
-
-export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
+export default function TopCurtain() {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -29,6 +24,8 @@ export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
   const changeLang = (code: string) => {
     i18n.changeLanguage(code);
     localStorage.setItem('lang', code);
+    // Сразу закрываем панель после выбора языка — не нужно её отдельно закрывать руками
+    setIsOpen(false);
   };
 
   const toggleTheme = () => {
@@ -39,14 +36,6 @@ export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
       localStorage.setItem('theme', next);
       return next;
     });
-  };
-
-  const openChat = () => {
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink('https://t.me/kyrios_chat');
-    } else {
-      window.open('https://t.me/kyrios_chat', '_blank');
-    }
   };
 
   return (
@@ -73,7 +62,7 @@ export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
           <Languages size={18} className="text-zinc-700 dark:text-zinc-200" />
         </button>
 
-        {/* Выпадающее меню — теперь только выбор языка */}
+        {/* Выпадающее меню — выбор языка. Закрывается сразу после клика по языку (см. changeLang) */}
         {isOpen && (
           <div className="absolute top-12 right-0 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-3 shadow-xl animate-fade-down">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1 pb-1.5">Language</p>
@@ -95,18 +84,6 @@ export default function TopCurtain({ hasBottomNav = true }: TopCurtainProps) {
           </div>
         )}
       </div>
-
-      {/* Плавающая кнопка ЧАТА — отдельно, справа снизу, над нижней навигацией.
-          Акцентный бордовый цвет отличает её от нейтральных иконок темы/языка сверху. */}
-      <button
-        onClick={openChat}
-        className={`fixed right-4 z-[70] w-14 h-14 rounded-full bg-[#A50021] shadow-[0_4px_16px_rgba(165,0,33,0.4)] flex items-center justify-center active:scale-95 transition-all ${
-          hasBottomNav ? 'bottom-24' : 'bottom-6'
-        }`}
-        aria-label="Chat"
-      >
-        <MessageCircle size={22} className="text-white" />
-      </button>
     </>
   );
 }
