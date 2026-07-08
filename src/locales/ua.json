@@ -11,5 +11,18 @@
   },
   "placeholders": {
     "promo": "Введіть промокод"
+  },
+  "events_screen": {
+    "quick_checkin_title": "Швидкий чек-ін",
+    "quick_checkin_desc": "Покажіть квиток на вході",
+    "about_agency_label": "Про агентство",
+    "about_title": "Про Kyrios",
+    "about_desc": "Дізнайтеся про наші цінності та бачення творчого агентства."
+  },
+  "ticket_status": {
+    "sales_paused": "Продаж призупинено",
+    "sold_out": "Квитків немає",
+    "get_ticket": "Отримати квиток",
+    "buy_ticket": "Купити квиток"
   }
 }
