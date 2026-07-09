@@ -201,4 +201,10 @@
     "issued_pool": "Выдано билетов",
     "scanned_guard": "Отсканировано на входе",
     "remaining_outside": "Осталось снаружи",
-    "gate_conversion": "Конверсия на
+    "gate_conversion": "Конверсия на входе",
+    "hourly_scan_influx": "Сканирования по часам",
+    "live_scan_feed": "Лента сканирований в реальном времени",
+    "sync_label": "Синхр.: {{time}}",
+    "awaiting_gate_stream": "Ожидание данных с точки входа..."
+  }
+}
