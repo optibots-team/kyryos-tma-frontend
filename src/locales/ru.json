@@ -54,12 +54,15 @@
     "expanded_hint_swipe": "(Смахните, чтобы закрыть)",
     "back": "НАЗАД"
   },
-  "gallery_screen": {
-    "title": "Галерея",
-    "subtitle": "Архив",
-    "memories_coming_soon": "ВОСПОМИНАНИЯ СКОРО ПОЯВЯТСЯ",
-    "photos_updating_soon": "ФОТО ОБНОВЛЯЮТСЯ"
-  },
+ "gallery_screen": {
+  "title": "Галерея",
+  "subtitle": "Архив",
+  "memories_coming_soon": "ВОСПОМИНАНИЯ СКОРО ПОЯВЯТСЯ",
+  "photos_updating_soon": "ФОТО ОБНОВЛЯЮТСЯ",
+  "no_past_events": "Пока нет прошедших мероприятий с фото",
+  "no_photos": "Для этого мероприятия пока нет фото",
+  "download": "Скачать"
+},
   "profile_screen": {
     "rank_dancer": "Танцор",
     "rank_insider": "Инсайдер",
