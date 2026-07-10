@@ -54,12 +54,15 @@
     "expanded_hint_swipe": "(Swipe to close)",
     "back": "BACK"
   },
-  "gallery_screen": {
-    "title": "Gallery",
-    "subtitle": "The Archive",
-    "memories_coming_soon": "MEMORIES COMING SOON",
-    "photos_updating_soon": "PHOTOS UPDATING SOON"
-  },
+ "gallery_screen": {
+  "title": "Gallery",
+  "subtitle": "The Archive",
+  "memories_coming_soon": "MEMORIES COMING SOON",
+  "photos_updating_soon": "PHOTOS UPDATING SOON",
+  "no_past_events": "No past events with photos yet",
+  "no_photos": "No photos for this event yet",
+  "download": "Download"
+},
   "profile_screen": {
     "rank_dancer": "Dancer",
     "rank_insider": "Insider",
