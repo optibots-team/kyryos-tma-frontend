@@ -18,6 +18,18 @@ export default function App() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
+  // 0. Разворачиваем приложение на весь экран и отключаем свайп-вниз для сворачивания —
+  // иначе скролл длинных списков (юзеры, коды в админке и т.д.) закрывает Mini App
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
+    tg.ready();
+    tg.expand();
+    if (typeof tg.disableVerticalSwipes === 'function') {
+      tg.disableVerticalSwipes();
+    }
+  }, []);
+
   // 1. Обработка Deep Linking (start_param) из Telegram при старте приложения
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
