@@ -49,7 +49,19 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
           .eq('is_past', true)
           .order('event_date', { ascending: false });
 
-        if (data) setPastEvents(data);
+        if (data) {
+          setPastEvents(data);
+
+          // Пока в базе только один реальный фотоотчёт — Bohemian OKO — открываем его сразу
+          // при заходе в галерею, минуя список. Ищем по названию (без учёта регистра),
+          // на случай будущих ивентов просто убери/поправь эту автоподстановку.
+          const defaultEvent = data.find((e: EventItem) =>
+            e.title.toLowerCase().includes('bohemian oko')
+          );
+          if (defaultEvent) {
+            openEventGallery(defaultEvent);
+          }
+        }
       } catch (err) {
         console.error('Error fetching past events:', err);
       } finally {
