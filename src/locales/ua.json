@@ -55,11 +55,14 @@
     "back": "НАЗАД"
   },
   "gallery_screen": {
-    "title": "Галерея",
-    "subtitle": "Архив",
-    "memories_coming_soon": "ВОСПОМИНАНИЯ СКОРО ПОЯВЯТСЯ",
-    "photos_updating_soon": "ФОТО ОБНОВЛЯЮТСЯ"
-  },
+  "title": "Галерея",
+  "subtitle": "Архів",
+  "memories_coming_soon": "СПОГАДИ СКОРО З'ЯВЛЯТЬСЯ",
+  "photos_updating_soon": "ФОТО ОНОВЛЮЮТЬСЯ",
+  "no_past_events": "Поки немає минулих подій з фото",
+  "no_photos": "Для цієї події поки немає фото",
+  "download": "Завантажити"
+},
   "profile_screen": {
     "rank_dancer": "Танцор",
     "rank_insider": "Инсайдер",
