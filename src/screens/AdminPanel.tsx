@@ -29,10 +29,28 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
   const initData = window.Telegram?.WebApp?.initData || '';
   const BASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/admin-api';
 
-  const [role, setRole] = useState<string | null>(initialRole);
-  const [activeTab, setActiveTab] = useState<'codes' | 'stats' | 'users' | 'broadcast' | 'live'>('codes');
-  const [loading, setLoading] = useState(false);
+  // Порядок вкладок: Live-терминал теперь первый (виден сразу при открытии),
+  // Codes — в конце. getAccessibleTabs подбирает первую доступную вкладку под роль,
+  // чтобы hostess (у которой нет Codes/Stats) не попадала на пустой экран.
+  const getAccessibleTabs = (r: string | null): Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes'> => {
+    const admin = r === 'admin';
+    const promoter = r === 'promoter';
+    const hostess = r === 'hostess';
+    const tabs: Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes'> = [];
+    if (admin || promoter || hostess) tabs.push('live');
+    if (!hostess) tabs.push('stats');
+    if (admin) tabs.push('users');
+    if (admin) tabs.push('broadcast');
+    if (!hostess) tabs.push('codes');
+    return tabs;
+  };
 
+  const [role, setRole] = useState<string | null>(initialRole);
+  const [activeTab, setActiveTab] = useState<'codes' | 'stats' | 'users' | 'broadcast' | 'live'>(
+    () => getAccessibleTabs(initialRole)[0] || 'live'
+  );
+  const [userChangedTab, setUserChangedTab] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -79,6 +97,21 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
   const isHostess = role === 'hostess';
 
   const quickEmojis = ['🔥', '✨', '⚡', '🎉', '🎫', '🚀', '⚠️', '👀', '🥂', '🔊', '🔴', '✅'];
+
+  // Если пользователь ещё не кликал по вкладкам сам, а роль только что подгрузилась
+  // (изначально могла быть null) — переставляем на первую реально доступную вкладку
+  useEffect(() => {
+    if (userChangedTab) return;
+    const tabs = getAccessibleTabs(role);
+    if (tabs.length && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [role]);
+
+  const handleTabClick = (tab: 'codes' | 'stats' | 'users' | 'broadcast' | 'live') => {
+    setUserChangedTab(true);
+    setActiveTab(tab);
+  };
 
   useEffect(() => {
     async function initPanel() {
@@ -376,29 +409,29 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
       {/* TABS */}
       <nav className="px-6 pt-6 flex gap-1 overflow-x-auto no-scrollbar">
-        {!isHostess && (
-          <button onClick={() => setActiveTab('codes')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'codes' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
-            <QrCode size={14} /> {t('admin_panel_screen.tab_codes')}
+        {(isAdmin || isPromoter || isHostess) && (
+          <button onClick={() => handleTabClick('live')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'live' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <Activity size={14} /> {t('admin_panel_screen.tab_live')}
           </button>
         )}
         {!isHostess && (
-          <button onClick={() => setActiveTab('stats')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'stats' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+          <button onClick={() => handleTabClick('stats')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'stats' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <BarChart3 size={14} /> {t('admin_panel_screen.tab_stats')}
           </button>
         )}
         {isAdmin && (
-          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'users' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+          <button onClick={() => handleTabClick('users')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'users' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <Users size={14} /> {t('admin_panel_screen.tab_users')}
           </button>
         )}
         {isAdmin && (
-          <button onClick={() => setActiveTab('broadcast')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'broadcast' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+          <button onClick={() => handleTabClick('broadcast')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'broadcast' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <Radio size={14} /> {t('admin_panel_screen.tab_broadcast')}
           </button>
         )}
-        {(isAdmin || isPromoter || isHostess) && (
-          <button onClick={() => setActiveTab('live')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'live' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
-            <Activity size={14} /> {t('admin_panel_screen.tab_live')}
+        {!isHostess && (
+          <button onClick={() => handleTabClick('codes')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'codes' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <QrCode size={14} /> {t('admin_panel_screen.tab_codes')}
           </button>
         )}
       </nav>
