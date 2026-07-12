@@ -21,10 +21,6 @@ interface Photo {
 
 const GALLERY_ENDPOINT = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/gallery-upload';
 
-// 🔒 ВРЕМЕННО: жёсткая привязка к конкретному ивенту с реальными фото (Bohemian OKO - Armina 03.07).
-// Если позже понадобится показывать другое мероприятие по умолчанию — просто поменяй ID здесь.
-const FEATURED_EVENT_ID = '7bd014e5-68a5-4e9d-a6d7-feb6653b8005';
-
 export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { t } = useTranslation();
 
@@ -44,41 +40,23 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    async function init() {
+    async function fetchPastEvents() {
       setLoadingEvents(true);
       try {
-        // 1. Список прошедших мероприятий (для экрана со списком / кнопки "назад")
-        const { data: pastData } = await supabase
+        const { data } = await supabase
           .from('events')
           .select('id, title, event_date, image_url')
           .eq('is_past', true)
           .order('event_date', { ascending: false });
 
-        if (pastData) setPastEvents(pastData);
-
-        // 2. Featured-мероприятие открываем НАПРЯМУЮ по ID, отдельным запросом —
-        // не полагаемся на флаг is_past (он может быть ещё не проставлен в базе),
-        // так что это надёжно сработает вне зависимости от того, в списке ли оно выше.
-        const { data: featured } = await supabase
-          .from('events')
-          .select('id, title, event_date, image_url')
-          .eq('id', FEATURED_EVENT_ID)
-          .maybeSingle();
-
-        if (featured) {
-          openEventGallery(featured);
-        } else if (pastData && pastData.length > 0) {
-          // Фоллбэк на всякий случай — если вдруг ID неверный, ищем по названию
-          const byTitle = pastData.find((e: EventItem) => e.title.toLowerCase().includes('bohemian'));
-          if (byTitle) openEventGallery(byTitle);
-        }
+        if (data) setPastEvents(data);
       } catch (err) {
-        console.error('Error fetching events:', err);
+        console.error('Error fetching past events:', err);
       } finally {
         setLoadingEvents(false);
       }
     }
-    init();
+    fetchPastEvents();
   }, []);
 
   const openEventGallery = async (event: EventItem) => {
