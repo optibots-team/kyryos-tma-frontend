@@ -21,6 +21,10 @@ interface Photo {
 
 const GALLERY_ENDPOINT = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/gallery-upload';
 
+// 🔒 ВРЕМЕННО: жёсткая привязка к конкретному ивенту с реальными фото (Bohemian OKO - Armina 03.07).
+// Если позже понадобится показывать другое мероприятие по умолчанию — просто поменяй ID здесь.
+const FEATURED_EVENT_ID = '7bd014e5-68a5-4e9d-a6d7-feb6653b8005';
+
 export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { t } = useTranslation();
 
@@ -52,12 +56,12 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
         if (data) {
           setPastEvents(data);
 
-          // Пока в базе только один реальный фотоотчёт — Bohemian OKO — открываем его сразу
-          // при заходе в галерею, минуя список. Ищем по названию (без учёта регистра),
-          // на случай будущих ивентов просто убери/поправь эту автоподстановку.
-          const defaultEvent = data.find((e: EventItem) =>
-            e.title.toLowerCase().includes('bohemian oko')
-          );
+          // Открываем сразу при заходе в галерею, минуя список.
+          // Приоритет: точный event_id (FEATURED_EVENT_ID), фоллбэк — поиск по названию.
+          const defaultEvent =
+            data.find((e: EventItem) => e.id === FEATURED_EVENT_ID) ||
+            data.find((e: EventItem) => e.title.toLowerCase().includes('bohemian'));
+
           if (defaultEvent) {
             openEventGallery(defaultEvent);
           }
