@@ -44,35 +44,41 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    async function fetchPastEvents() {
+    async function init() {
       setLoadingEvents(true);
       try {
-        const { data } = await supabase
+        // 1. Список прошедших мероприятий (для экрана со списком / кнопки "назад")
+        const { data: pastData } = await supabase
           .from('events')
           .select('id, title, event_date, image_url')
           .eq('is_past', true)
           .order('event_date', { ascending: false });
 
-        if (data) {
-          setPastEvents(data);
+        if (pastData) setPastEvents(pastData);
 
-          // Открываем сразу при заходе в галерею, минуя список.
-          // Приоритет: точный event_id (FEATURED_EVENT_ID), фоллбэк — поиск по названию.
-          const defaultEvent =
-            data.find((e: EventItem) => e.id === FEATURED_EVENT_ID) ||
-            data.find((e: EventItem) => e.title.toLowerCase().includes('bohemian'));
+        // 2. Featured-мероприятие открываем НАПРЯМУЮ по ID, отдельным запросом —
+        // не полагаемся на флаг is_past (он может быть ещё не проставлен в базе),
+        // так что это надёжно сработает вне зависимости от того, в списке ли оно выше.
+        const { data: featured } = await supabase
+          .from('events')
+          .select('id, title, event_date, image_url')
+          .eq('id', FEATURED_EVENT_ID)
+          .maybeSingle();
 
-          if (defaultEvent) {
-            openEventGallery(defaultEvent);
-          }
+        if (featured) {
+          openEventGallery(featured);
+        } else if (pastData && pastData.length > 0) {
+          // Фоллбэк на всякий случай — если вдруг ID неверный, ищем по названию
+          const byTitle = pastData.find((e: EventItem) => e.title.toLowerCase().includes('bohemian'));
+          if (byTitle) openEventGallery(byTitle);
         }
       } catch (err) {
-        console.error('Error fetching past events:', err);
+        console.error('Error fetching events:', err);
       } finally {
         setLoadingEvents(false);
       }
     }
-    fetchPastEvents();
+    init();
   }, []);
 
   const openEventGallery = async (event: EventItem) => {
