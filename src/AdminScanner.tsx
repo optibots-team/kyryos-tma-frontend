@@ -44,7 +44,7 @@ function ScannerView() {
           // передаем анонимный ключ клиента
           'Authorization': `Bearer ${(supabase as any).supabaseKey}`
         },
-        body: JSON.stringify({ ticket_code: scannedCode })
+        body: JSON.stringify({ ticket_code: scannedCode, init_data: window.Telegram?.WebApp?.initData || '' })
       });
 
       // Если Edge Function вернула ошибку уровня сервера (500, 403, 404)
