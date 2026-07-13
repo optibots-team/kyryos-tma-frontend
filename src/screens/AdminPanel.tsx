@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { 
   ArrowLeft, QrCode, BarChart3, Users, Radio, Activity,
   PlusCircle, RefreshCw, Share2, Save, AlertTriangle, CheckCircle2,
-  UserX, UserCheck, Send, Image, Flame, Clock, ChevronLeft, ChevronRight, Smile
+  UserX, UserCheck, Send, Image, Flame, Clock, ChevronLeft, ChevronRight, Smile,
+  ShieldQuestion
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
@@ -29,25 +30,27 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
   const initData = window.Telegram?.WebApp?.initData || '';
   const BASE_URL = 'https://uuxgtpzfxymhyekeuryf.supabase.co/functions/v1/admin-api';
 
-  // Порядок вкладок: Live-терминал теперь первый (виден сразу при открытии),
-  // Codes — в конце. getAccessibleTabs подбирает первую доступную вкладку под роль,
-  // чтобы hostess (у которой нет Codes/Stats) не попадала на пустой экран.
-  const getAccessibleTabs = (r: string | null): Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes'> => {
+  // Новая модель ролей:
+  // admin — полный доступ (все вкладки + Manage Access)
+  // promoter — урезанная панель: только Codes + Stats (свои)
+  // hostess — вообще не должна попадать в Admin Panel (у неё только Scanner,
+  // см. Profile.tsx), но на всякий случай оставляем defensive-редирект ниже
+  const getAccessibleTabs = (r: string | null): Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes' | 'access'> => {
     const admin = r === 'admin';
     const promoter = r === 'promoter';
-    const hostess = r === 'hostess';
-    const tabs: Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes'> = [];
-    if (admin || promoter || hostess) tabs.push('live');
-    if (!hostess) tabs.push('stats');
+    const tabs: Array<'live' | 'stats' | 'users' | 'broadcast' | 'codes' | 'access'> = [];
+    if (admin) tabs.push('live');
+    if (admin || promoter) tabs.push('stats');
     if (admin) tabs.push('users');
     if (admin) tabs.push('broadcast');
-    if (!hostess) tabs.push('codes');
+    if (admin || promoter) tabs.push('codes');
+    if (admin) tabs.push('access');
     return tabs;
   };
 
   const [role, setRole] = useState<string | null>(initialRole);
-  const [activeTab, setActiveTab] = useState<'codes' | 'stats' | 'users' | 'broadcast' | 'live'>(
-    () => getAccessibleTabs(initialRole)[0] || 'live'
+  const [activeTab, setActiveTab] = useState<'codes' | 'stats' | 'users' | 'broadcast' | 'live' | 'access'>(
+    () => getAccessibleTabs(initialRole)[0] || 'codes'
   );
   const [userChangedTab, setUserChangedTab] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -71,6 +74,12 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
   // === ТАБ: STATS ===
   const [detailedStats, setDetailedStats] = useState<any>(null);
+  const [scannerStats, setScannerStats] = useState<{ scanners: any[]; total_scanned: number } | null>(null);
+
+  // === ТАБ: MANAGE ACCESS ===
+  const [adminsList, setAdminsList] = useState<any[]>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
 
   // === ТАБ: USERS ===
   const [usersList, setUsersList] = useState<UserItem[]>([]);
@@ -98,6 +107,14 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
   const quickEmojis = ['🔥', '✨', '⚡', '🎉', '🎫', '🚀', '⚠️', '👀', '🥂', '🔊', '🔴', '✅'];
 
+  // Defensive: hostess вообще не должна попадать в Admin Panel (у неё только Scanner
+  // через Profile.tsx) — если всё же оказалась тут, сразу отправляем в профиль
+  useEffect(() => {
+    if (isHostess) {
+      onNavigate('profile');
+    }
+  }, [isHostess]);
+
   // Если пользователь ещё не кликал по вкладкам сам, а роль только что подгрузилась
   // (изначально могла быть null) — переставляем на первую реально доступную вкладку
   useEffect(() => {
@@ -108,9 +125,10 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
     }
   }, [role]);
 
-  const handleTabClick = (tab: 'codes' | 'stats' | 'users' | 'broadcast' | 'live') => {
+  const handleTabClick = (tab: 'codes' | 'stats' | 'users' | 'broadcast' | 'live' | 'access') => {
     setUserChangedTab(true);
     setActiveTab(tab);
+    if (tab === 'access') fetchAdmins();
   };
 
   useEffect(() => {
@@ -129,6 +147,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
     if (activeTab === 'stats') fetchAllStatsEvents();
     if (activeTab === 'users') fetchUsersList();
     if (activeTab === 'broadcast') fetchBroadcastHistory();
+    if (activeTab === 'access') fetchAdmins();
     if (activeTab === 'live' && selectedLiveEventId) startLivePolling(selectedLiveEventId);
   }, [activeTab, selectedActiveEventId, selectedStatsEventId, selectedLiveEventId, userPage]);
 
@@ -240,6 +259,28 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       const data = await apiRequest('event_stats', { event_id: id });
       setDetailedStats(data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
+    // Секция "Кто сканировал" — отдельный запрос, чтобы не блокировать основную статистику
+    try {
+      const scanData = await apiRequest('scanner_stats', { event_id: id });
+      setScannerStats(scanData);
+    } catch (e) { console.error(e); setScannerStats(null); }
+  };
+
+  const fetchAdmins = async () => {
+    setLoadingAdmins(true);
+    try {
+      const data = await apiRequest('list_admins');
+      setAdminsList(data.admins || []);
+    } catch (e) { console.error(e); } finally { setLoadingAdmins(false); }
+  };
+
+  const handleSetRole = async (telegramId: string, newRole: string) => {
+    setUpdatingRoleId(telegramId);
+    try {
+      await apiRequest('set_role', { telegram_id: telegramId, new_role: newRole });
+      setAdminsList(prev => prev.map(a => a.telegram_id === telegramId ? { ...a, role: newRole } : a));
+      showSuccess(t('admin_panel_screen.role_updated'));
+    } catch (e) { console.error(e); } finally { setUpdatingRoleId(null); }
   };
 
   const fetchUsersList = async () => {
@@ -359,6 +400,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
     if (activeTab === 'stats') fetchAllStatsEvents();
     if (activeTab === 'users') fetchUsersList();
     if (activeTab === 'broadcast') fetchBroadcastHistory();
+    if (activeTab === 'access') fetchAdmins();
     if (activeTab === 'live' && selectedLiveEventId) startLivePolling(selectedLiveEventId);
   };
 
@@ -409,12 +451,12 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
       {/* TABS */}
       <nav className="px-6 pt-6 flex gap-1 overflow-x-auto no-scrollbar">
-        {(isAdmin || isPromoter || isHostess) && (
+        {isAdmin && (
           <button onClick={() => handleTabClick('live')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'live' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <Activity size={14} /> {t('admin_panel_screen.tab_live')}
           </button>
         )}
-        {!isHostess && (
+        {(isAdmin || isPromoter) && (
           <button onClick={() => handleTabClick('stats')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'stats' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <BarChart3 size={14} /> {t('admin_panel_screen.tab_stats')}
           </button>
@@ -429,9 +471,14 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
             <Radio size={14} /> {t('admin_panel_screen.tab_broadcast')}
           </button>
         )}
-        {!isHostess && (
+        {(isAdmin || isPromoter) && (
           <button onClick={() => handleTabClick('codes')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'codes' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
             <QrCode size={14} /> {t('admin_panel_screen.tab_codes')}
+          </button>
+        )}
+        {isAdmin && (
+          <button onClick={() => handleTabClick('access')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all ${activeTab === 'access' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-outline-variant/40 text-on-surface-variant'}`}>
+            <ShieldQuestion size={14} /> {t('admin_panel_screen.tab_access')}
           </button>
         )}
       </nav>
@@ -440,7 +487,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
       <main className="px-6 py-6 space-y-6">
         
         {/* TAB: CODES */}
-        {activeTab === 'codes' && !isHostess && (
+        {activeTab === 'codes' && (isAdmin || isPromoter) && (
           <div className="space-y-6">
             <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4">
               <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.active_pool_registry')}</h3>
@@ -527,7 +574,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
         )}
 
         {/* TAB: STATS */}
-        {activeTab === 'stats' && !isHostess && (
+        {activeTab === 'stats' && (isAdmin || isPromoter) && (
           <div className="space-y-6">
             <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 block px-1">{t('admin_panel_screen.view_stats_event')}</label>
@@ -606,11 +653,72 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
                     </tbody>
                   </table>
                 </section>
+
+                {/* Кто сканировал — новая секция */}
+                <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.who_scanned')}</h3>
+                    {scannerStats && (
+                      <span className="text-[10px] font-black bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-full">{scannerStats.total_scanned}</span>
+                    )}
+                  </div>
+                  {scannerStats && scannerStats.scanners.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {scannerStats.scanners.map((s: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between py-2 px-3 bg-surface-container rounded-xl">
+                          <span className="text-xs font-bold text-on-surface">
+                            {s.label || (s.username ? `@${s.username}` : t('admin_panel_screen.unknown_scanner'))}
+                          </span>
+                          <span className="text-xs font-mono font-black text-[#A50021]">{s.scanned_count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-on-surface-variant/60 text-xs text-center py-4">{t('admin_panel_screen.no_scanner_data')}</p>
+                  )}
+                </section>
               </>
             ) : (
               <div className="bg-surface rounded-[2rem] p-8 text-center text-on-surface-variant/60 text-xs">{t('admin_panel_screen.no_analytics')}</div>
             )}
           </div>
+        )}
+
+        {/* TAB: MANAGE ACCESS — только admin */}
+        {activeTab === 'access' && isAdmin && (
+          <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4 animate-fade-up">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">{t('admin_panel_screen.manage_access')}</h3>
+
+            {loadingAdmins ? (
+              <div className="space-y-2">
+                {[0, 1, 2].map(i => <div key={i} className="h-14 bg-surface-container rounded-xl animate-pulse" />)}
+              </div>
+            ) : adminsList.length === 0 ? (
+              <p className="text-on-surface-variant/60 text-xs text-center py-4">{t('admin_panel_screen.no_admins')}</p>
+            ) : (
+              <div className="space-y-2">
+                {adminsList.map((a: any) => (
+                  <div key={a.telegram_id} className="flex items-center justify-between gap-3 p-3 bg-surface-container rounded-xl">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-on-surface truncate">@{a.username || 'unknown'}</p>
+                      <p className="text-[10px] text-on-surface-variant/60 truncate">{a.first_name}</p>
+                    </div>
+                    <select
+                      value={a.role}
+                      disabled={updatingRoleId === a.telegram_id}
+                      onChange={(e) => handleSetRole(a.telegram_id, e.target.value)}
+                      className="bg-surface border border-outline-variant/40 rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase text-on-surface shrink-0 focus:outline-none disabled:opacity-50"
+                    >
+                      <option value="admin">{t('admin_panel_screen.role_admin')}</option>
+                      <option value="promoter">{t('admin_panel_screen.role_promoter')}</option>
+                      <option value="hostess">{t('admin_panel_screen.role_hostess')}</option>
+                      <option value="user">{t('admin_panel_screen.role_user')}</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {/* TAB: USERS */}
