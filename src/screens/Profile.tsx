@@ -250,12 +250,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                   {getRankName(currentLevel)} <span className="text-on-surface-variant text-xl font-medium">{t('profile_screen.level_short')} {currentLevel}</span>
                 </h3>
               </div>
-              {streak > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/20 dark:border-orange-500/30 rounded-xl">
-                  <Flame size={14} className="text-orange-500" />
-                  <span className="text-orange-500 font-bold text-xs">{streak} {t('profile_screen.streak')}</span>
-                </div>
-              )}
+             
             </div>
 
             <div className="mt-6 space-y-3">
@@ -276,9 +271,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
                 <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 tracking-wide bg-purple-50 dark:bg-purple-500/10 px-2 py-0.5 rounded-md">
                   ✨ {t('profile_screen.auto_vip_hint')}
                 </span>
-                <p className="text-on-surface-variant/70 text-[10px] font-medium">
-                  {isMaxLevel ? t('profile_screen.max_level_reached') : t('profile_screen.xp_left_to_level', { xp: pointsToNextLevel, level: currentLevel + 1 })}
-                </p>
+             
               </div>
             </div>
           </div>
