@@ -213,7 +213,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         )}
 
         {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ — светлая карточка с фирменным красным акцентом */}
-        {(userRole === 'admin' || userRole === 'promoter' || userRole === 'hostess' || userRole === 'scanner') && (
+       {(userRole === 'admin' || userRole === 'promoter') && (
           <section className="w-full animate-fade-up">
             <button 
               onClick={() => onNavigate('admin-panel')} 
@@ -347,7 +347,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         </section>
 
         {/* ✅ 7. ОТДЕЛЬНАЯ КНОПКА ДЛЯ СТАРОГО СКАНЕРА БИЛЕТОВ (Только для admin/hostess/scanner) */}
-        {(userRole === 'admin' || userRole === 'hostess' || userRole === 'scanner') && (
+        {(userRole === 'admin' || userRole === 'hostess') && (
           <section className="space-y-4 animate-fade-up delay-200">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60 ml-2">{t('profile_screen.access_control')}</h3>
             <button onClick={() => onNavigate('admin')} className="w-full bg-surface border border-outline-variant/40 p-5 rounded-[2rem] flex items-center justify-between active:scale-[0.98] transition-all shadow-sm">
