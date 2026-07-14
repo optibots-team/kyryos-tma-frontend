@@ -100,14 +100,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           ))}
         </div>
 
-        {/* Secret Chat — тонкий баннер на всю ширину, прямо над Quick Check-in */}
-        <button
-          onClick={openChat}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-xs uppercase tracking-widest shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all animate-fade-up"
-        >
-          <MessageCircle className="w-4 h-4" />
-          {t('events_screen.secret_chat')}
-        </button>
 
         {/* Quick Check-in */}
         {hasTicket && (
@@ -148,6 +140,15 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             </div>
           </div>
         </section>
+
+        {/* Secret Chat — тонкий баннер на всю ширину, прямо над Quick Check-in */}
+        <button
+          onClick={openChat}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-xs uppercase tracking-widest shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all animate-fade-up"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {t('events_screen.secret_chat')}
+        </button>
 
       </main>
     </div>
