@@ -386,8 +386,8 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
 
   const handleShareCode = (code: string) => {
     const activeEvent = activeEvents.find(e => e.id === selectedActiveEventId);
-    const text = `Твой промокод на ${activeEvent?.title || 'Kyrios Event'}: ${code}\nВведи его в приложении: https://t.me/kyrios_events_bot/app`;
-    window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent('https://t.me/kyrios_events_bot/app')}&text=${encodeURIComponent(text)}`);
+    const text = `Привет, как дела?\n\nУже совсем скоро состоится наше следующее мероприятие, и мы будем очень рады тебя видеть!\n\nТвой промокод на бесплатный билет ${activeEvent?.title || 'Kyrios Event'}: ${code}\n\nВведи его в приложении: https://t.me/kyrios_events_bot`;
+    window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent('https://t.me/kyrios_events_bot')}&text=${encodeURIComponent(text)}`);
   };
 
   const openTgUser = (username: string) => {
