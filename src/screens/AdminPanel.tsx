@@ -394,6 +394,13 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
     if (username) window.Telegram?.WebApp?.openTelegramLink(`https://t.me/${username.replace('@', '')}`);
   };
 
+  // Формат "18 Jul — BABYLON GRAND HOTEL" — чтобы отличать одноимённые ивенты в дропдауне статистики
+  const formatEventOption = (event: EventItem) => {
+    const date = new Date(event.event_date);
+    const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return `${dateStr} — ${event.title}`;
+  };
+
   const handleManualRefresh = () => {
     fetchCurrentRole();
     if (activeTab === 'codes') fetchCodesData();
@@ -581,7 +588,7 @@ export default function AdminPanel({ onNavigate, userRole: initialRole }: AdminP
               <select value={selectedStatsEventId} onChange={(e) => { setSelectedStatsEventId(e.target.value); fetchDetailedStats(e.target.value); }} className="w-full bg-surface border border-outline-variant/40 rounded-2xl px-5 py-4 text-sm font-black text-on-surface focus:outline-none">
                 {allEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>
-                    {ev.title} {ev.is_upcoming ? t('admin_panel_screen.upcoming_tag') : t('admin_panel_screen.past_tag')}
+                    {formatEventOption(ev)} {ev.is_upcoming ? t('admin_panel_screen.upcoming_tag') : t('admin_panel_screen.past_tag')}
                   </option>
                 ))}
               </select>
