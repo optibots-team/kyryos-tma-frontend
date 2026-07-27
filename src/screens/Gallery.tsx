@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, X, Download, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, X, Download, Image as ImageIcon, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -146,6 +146,16 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
     }
   };
 
+  // Поделиться с другом — открывает нативный пикер контактов Telegram (t.me/share/url),
+  // отправляет короткий текст со ссылкой на бота (без прямого прикрепления самого фото —
+  // Telegram share/url так не умеет, зато мотивирует друга открыть бота и подписаться)
+  const shareWithFriend = () => {
+    const text = 'Привет! Увидел твоё фото в новом фотоотчёте — переходи в бота, чтобы посмотреть: https://t.me/kyrios_events_bot';
+    window.Telegram?.WebApp?.openTelegramLink(
+      `https://t.me/share/url?url=${encodeURIComponent('https://t.me/kyrios_events_bot')}&text=${encodeURIComponent(text)}`
+    );
+  };
+
   const activePhoto = activeIndex !== null ? photos[activeIndex] : null;
 
   return (
@@ -269,17 +279,26 @@ export default function Gallery({ onNavigate }: { onNavigate: (s: Screen) => voi
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Верхняя панель: счётчик + закрыть */}
+          {/* Верхняя панель: счётчик + поделиться + закрыть */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
             <span className="text-white/70 text-xs font-mono font-bold">
               {(activeIndex ?? 0) + 1} / {photos.length}
             </span>
-            <button
-              onClick={closeFullscreen}
-              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white active:scale-95 transition-all"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={shareWithFriend}
+                aria-label={t('gallery_screen.share_photo')}
+                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white active:scale-95 transition-all"
+              >
+                <Share2 size={18} />
+              </button>
+              <button
+                onClick={closeFullscreen}
+                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white active:scale-95 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Изображение: миниатюра как мгновенный блюр-плейсхолдер, full_url догружается поверх */}
