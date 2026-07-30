@@ -175,7 +175,7 @@ function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: strin
   return (
     <section 
       onClick={() => onCardClick(event.id)}
-      className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up block"
+      className="relative w-full aspect-[3/4] rounded-[2rem] overflow-hidden cursor-pointer group shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up block"
     >
       {isVideo ? (
         <video
