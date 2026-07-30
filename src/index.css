@@ -7,6 +7,13 @@
   --safe-top: env(safe-area-inset-top, 0px);
 }
 
+/* 🖥️ В режиме fullscreen Telegram (Bot API 8.0+) его кнопки "Закрыть"/меню становятся
+   плавающими чипами поверх контента вместо отдельной полосы — добавляем запас сверху,
+   чтобы наша шторка и шапки экранов их не перекрывали. См. App.tsx (data-tg-fullscreen). */
+[data-tg-fullscreen="true"] {
+  --safe-top: calc(env(safe-area-inset-top, 0px) + 44px);
+}
+
 /* 🌓 Синхронизируем Tailwind-вариант dark: с нашим ручным переключателем (data-theme),
    а не с системной темой устройства (prefers-color-scheme) */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
