@@ -40,11 +40,11 @@ export default function TopCurtain() {
 
   return (
     <>
-      {/* top-[30px] подобран так, чтобы центр круглых кнопок (34px) совпадал
+      {/* top: 30px + safe-area-inset-top — подобрано так, чтобы центр круглых кнопок (34px) совпадал
           с центром логотипа в шапке экранов (padding-top 24px + высота лого 55px) */}
 
       {/* Кнопка ТЕМЫ — левый верхний угол */}
-      <div className="fixed top-[30px] left-4 z-[70]">
+      <div className="fixed top-[calc(30px+var(--safe-top))] left-4 z-[70]">
         <button
           onClick={toggleTheme}
           className="p-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm"
@@ -54,7 +54,7 @@ export default function TopCurtain() {
       </div>
 
       {/* Кнопка ЯЗЫКА — правый верхний угол, та же форма, что и кнопка темы */}
-      <div className="fixed top-[30px] right-4 z-[70]">
+      <div className="fixed top-[calc(30px+var(--safe-top))] right-4 z-[70]">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm"
