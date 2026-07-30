@@ -11,7 +11,7 @@
    плавающими чипами поверх контента вместо отдельной полосы — добавляем запас сверху,
    чтобы наша шторка и шапки экранов их не перекрывали. См. App.tsx (data-tg-fullscreen). */
 [data-tg-fullscreen="true"] {
-  --safe-top: calc(env(safe-area-inset-top, 0px) + 44px);
+  --safe-top: calc(env(safe-area-inset-top, 0px) + 24px);
 }
 
 /* 🌓 Синхронизируем Tailwind-вариант dark: с нашим ручным переключателем (data-theme),
