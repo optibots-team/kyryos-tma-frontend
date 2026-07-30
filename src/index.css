@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
+/* 🛡️ Safe-area учитывается только при viewport-fit=cover (см. index.html).
+   Используется в шапках экранов и в TopCurtain, чтобы кнопки/лого не заезжали
+   под системный статус-бар (время/батарея) в Telegram Mini App */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
 /* 🌓 Синхронизируем Tailwind-вариант dark: с нашим ручным переключателем (data-theme),
-   а не с системной темой устройства (prefers-color-scheme) */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
