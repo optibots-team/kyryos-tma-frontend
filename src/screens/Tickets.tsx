@@ -78,7 +78,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-6 pb-2 border-b border-outline-variant/30">
+      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-[calc(1.5rem+var(--safe-top))] pb-2 border-b border-outline-variant/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
       </header>
 
