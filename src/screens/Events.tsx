@@ -102,7 +102,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
 
         {/* Quick Check-in */}
-        {hasTicket && (
+        {false && hasTicket && (
           <section 
             onClick={() => onNavigate('tickets')}
             className="w-full bg-emerald-50 dark:bg-emerald-500/10 rounded-[2rem] p-6 flex items-center justify-between cursor-pointer border border-emerald-100 dark:border-emerald-500/20 transition-all active:scale-[0.98] shadow-sm animate-fade-up"
