@@ -28,6 +28,20 @@ export default function App() {
     if (typeof tg.disableVerticalSwipes === 'function') {
       tg.disableVerticalSwipes();
     }
+
+    // 🖥️ Telegram сам решает, открывать ли Mini App в режиме "fullscreen" (Bot API 8.0+) —
+    // тогда его собственные кнопки (Закрыть/меню) превращаются в плавающие чипы поверх
+    // контента, а не остаются отдельной полосой. В этом режиме нашей шторке и шапкам
+    // нужен дополнительный отступ сверху, чтобы не перекрываться с этими чипами.
+    const applyFullscreenAttr = () => {
+      document.documentElement.setAttribute('data-tg-fullscreen', tg.isFullscreen ? 'true' : 'false');
+    };
+    applyFullscreenAttr();
+    tg.onEvent?.('fullscreenChanged', applyFullscreenAttr);
+
+    return () => {
+      tg.offEvent?.('fullscreenChanged', applyFullscreenAttr);
+    };
   }, []);
 
   // 1. Обработка Deep Linking (start_param) из Telegram при старте приложения
