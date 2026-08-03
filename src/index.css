@@ -140,7 +140,12 @@
   }
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   min-height: max(884px, 100dvh);
   background-color: var(--color-background);
+  overflow-x: hidden;
 }
