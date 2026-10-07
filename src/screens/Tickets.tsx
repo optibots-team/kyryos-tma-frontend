@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Ticket as TicketIcon, MapPin, Calendar, Clock, User, Tag } from 'lucide-react';
+import { Ticket as TicketIcon, MapPin, Calendar, Clock, User, Tag, CheckCircle2, CalendarX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -67,6 +67,186 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     setTouchStart(null);
   };
 
+  // Использованные и прошедшие (is_expired) билеты выносим в отдельный блок «Прошедшие»
+  const isTicketPast = (tk: any) => tk.status === 'used' || tk.is_expired === true;
+  const activeTickets = tickets.filter(tk => !isTicketPast(tk));
+  const pastTickets = tickets
+    .filter(isTicketPast)
+    .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+
+  // Карточка одного билета (используется и для актуальных, и для прошедших)
+  const renderTicketCard = (ticket: any, index: number) => {
+    const eventDate = new Date(ticket.event_date);
+    const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const isUsed = ticket.status === 'used';
+    // is_expired приходит из tickets_full: мероприятие прошло, а человек не пришёл
+    const isExpired = !isUsed && ticket.is_expired === true;
+    const isActive = !isUsed && !isExpired;
+
+    return (
+      <div 
+        key={ticket.id}
+        className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-outline-variant/40 animate-fade-up ${isExpired ? 'opacity-75' : ''}`}
+        style={{ animationDelay: `${index * 100}ms` }}
+      >
+        {/* Тёмная "билетная" секция с QR — намеренно всегда тёмная в обеих темах,
+            т.к. QR-код должен оставаться чёрным на белом для надёжного сканирования */}
+        <div className="relative p-8 text-center bg-zinc-900 overflow-hidden">
+          {ticket.event_image_url && (
+            <div 
+              className={`absolute inset-0 bg-cover bg-center opacity-40 blur-md scale-110 ${isExpired ? 'grayscale' : ''}`}
+              style={{ backgroundImage: `url(${ticket.event_image_url})` }}
+            ></div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-zinc-900/95 pointer-events-none"></div>
+          
+          <div className="relative z-10 flex flex-col items-center">
+            <p className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest mb-4">
+              {isUsed ? t('tickets_screen.verified_hint') : isExpired ? t('tickets_screen.past_hint') : t('tickets_screen.tap_qr_hint')}
+            </p>
+
+            {/* QR показываем только у актуальных билетов. У посещённых и прошедших он больше не нужен */}
+            {isActive ? (
+              <div
+                onClick={() => setExpandedQr(ticket.ticket_code)}
+                className="relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] cursor-pointer active:scale-95"
+              >
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}&color=000000&bgcolor=ffffff`}
+                  alt="QR Code"
+                  className="w-full h-full object-contain mix-blend-multiply"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center mb-6">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center border-2 mb-3 ${isUsed ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-zinc-500/20 border-zinc-500/40'}`}>
+                  {isUsed
+                    ? <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+                    : <CalendarX className="w-12 h-12 text-zinc-400" />}
+                </div>
+                <p className={`font-headline font-black text-base tracking-wide text-center ${isUsed ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                  {isUsed ? t('tickets_screen.status_attended') : t('tickets_screen.status_past')}
+                </p>
+              </div>
+            )}
+
+            <p className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 font-bold">{t('tickets_screen.ticket_id')}</p>
+            <p className="text-white font-mono text-sm opacity-90">{ticket.ticket_code}</p>
+          </div>
+        </div>
+
+        <div className="relative h-8 flex items-center justify-between px-4 -my-4 z-20">
+          <div className="w-6 h-6 rounded-full bg-background border border-outline-variant/40 absolute -left-3"></div>
+          <div className="w-full border-t-2 border-dashed border-outline-variant/50"></div>
+          <div className="w-6 h-6 rounded-full bg-background border border-outline-variant/40 absolute -right-3"></div>
+        </div>
+
+        <div className="p-8 pt-10 space-y-6 relative bg-surface">
+          <div className="flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/40">
+            <div className="w-10 h-10 bg-surface-container-high dark:bg-zinc-700 rounded-xl flex items-center justify-center text-on-surface-variant">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('tickets_screen.guest_name')}</p>
+              <p className="font-bold text-on-surface text-base">{guestName}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-outline-variant/40"></div>
+
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 mb-1">{t('tickets_screen.event_label')}</p>
+            <h3 className="font-headline font-black text-2xl tracking-tight text-on-surface">
+              {ticket.event_title || t('tickets_screen.default_event_title')}
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-on-surface-variant/70">
+                <Calendar className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.date_label')}</span>
+              </div>
+              <p className="font-bold text-on-surface text-sm leading-tight">{dateString}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-on-surface-variant/70">
+                <Clock className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.time_label')}</span>
+              </div>
+              <p className="font-bold text-on-surface text-sm leading-tight">{timeString}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-on-surface-variant/70">
+              <MapPin className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.location_label')}</span>
+            </div>
+            <p className="font-bold text-on-surface text-base leading-tight">
+              {ticket.event_location_name || t('tickets_screen.default_location_name')}
+            </p>
+            <p className="text-on-surface-variant text-sm font-medium">
+              {ticket.event_location_address || t('tickets_screen.default_location_address')}
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-outline-variant/40 flex justify-between items-start">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('tickets_screen.status_label')}</span>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit ${
+                  isActive
+                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
+                    : 'bg-surface-container text-on-surface-variant'
+                }`}>
+                  {isUsed ? `${t('tickets_screen.status_attended')} ✅` : isExpired ? t('tickets_screen.status_past') : t('tickets_screen.status_valid')}
+                </span>
+              </div>
+
+              {/* Новые бейджи типов оплаты (заполняются бэкендом) */}
+              {ticket.payment_type && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {ticket.payment_type === 'promocode100' && (
+                    <span className="text-[10px] font-mono bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/30 font-bold uppercase">
+                      🎁 {t('tickets_screen.badge_free_promo')}
+                    </span>
+                  )}
+                  {ticket.payment_type === 'Stripe50' && (
+                    <span className="text-[10px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-500/30 font-bold uppercase">
+                      🎟 {t('tickets_screen.badge_promo_discount')}
+                    </span>
+                  )}
+                  {ticket.payment_type === 'early_bird30' && (
+                    <span className="text-[10px] font-mono bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/30 font-bold uppercase">
+                      ⚡ {t('tickets_screen.badge_early_bird')}
+                    </span>
+                  )}
+                  {ticket.payment_type === 'Stripe100' && (
+                    <span className="text-[10px] font-mono bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full border border-outline-variant/40 font-bold uppercase">
+                      💳 {t('tickets_screen.badge_standard_paid')}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Сам текст промокода */}
+              {ticket.promo_code && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                   <span className="text-[10px] font-mono bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400
+                                   px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30 font-bold uppercase">
+                    🏷 {ticket.promo_code} (−{ticket.promo_discount_percent}%)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
@@ -106,174 +286,20 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
           </div>
         ) : (
           <div className="space-y-6">
-            {tickets.map((ticket, index) => {
-              const eventDate = new Date(ticket.event_date);
-              const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-              const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-              const isUsed = ticket.status === 'used';
+            {activeTickets.map(renderTicketCard)}
 
-              return (
-                <div 
-                  key={ticket.id}
-                  className="bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-outline-variant/40 animate-fade-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {/* Тёмная "билетная" секция с QR — намеренно всегда тёмная в обеих темах,
-                      т.к. QR-код должен оставаться чёрным на белом для надёжного сканирования */}
-                  <div className="relative p-8 text-center bg-zinc-900 overflow-hidden">
-                    {ticket.event_image_url && (
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-40 blur-md scale-110"
-                        style={{ backgroundImage: `url(${ticket.event_image_url})` }}
-                      ></div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-zinc-900/95 pointer-events-none"></div>
-                    
-                    <div className="relative z-10 flex flex-col items-center">
-                      <p className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest mb-4">
-                        {isUsed ? t('tickets_screen.verified_hint') : t('tickets_screen.tap_qr_hint')}
-                      </p>
-                      
-                      <div 
-                        onClick={() => !isUsed && setExpandedQr(ticket.ticket_code)}
-                        className={`relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all ${
-                          isUsed 
-                            ? 'opacity-40 grayscale pointer-events-none' 
-                            : 'shadow-[0_0_30px_rgba(255,255,255,0.15)] cursor-pointer active:scale-95'
-                        }`}
-                      >
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}&color=000000&bgcolor=ffffff`}
-                          alt="QR Code" 
-                          className={`w-full h-full object-contain ${isUsed ? 'blur-[2px]' : 'mix-blend-multiply'}`}
-                        />
-                        
-                        {isUsed && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded-3xl overflow-hidden">
-                            <div className="absolute w-[140%] h-1.5 bg-red-600 transform -rotate-45 shadow-sm"></div>
-                            <div className="absolute w-[140%] h-1.5 bg-red-600 transform rotate-45 shadow-sm"></div>
-                            <div className="z-10 transform -rotate-12 bg-white/95 px-5 py-2 rounded-xl border-4 border-red-600 text-red-600 font-black text-2xl tracking-widest shadow-xl backdrop-blur-sm">
-                              {t('tickets_screen.status_scanned')}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <p className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 font-bold">{t('tickets_screen.ticket_id')}</p>
-                      <p className="text-white font-mono text-sm opacity-90">{ticket.ticket_code}</p>
-                    </div>
-                  </div>
-
-                  <div className="relative h-8 flex items-center justify-between px-4 -my-4 z-20">
-                    <div className="w-6 h-6 rounded-full bg-background border border-outline-variant/40 absolute -left-3"></div>
-                    <div className="w-full border-t-2 border-dashed border-outline-variant/50"></div>
-                    <div className="w-6 h-6 rounded-full bg-background border border-outline-variant/40 absolute -right-3"></div>
-                  </div>
-
-                  <div className="p-8 pt-10 space-y-6 relative bg-surface">
-                    <div className="flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/40">
-                      <div className="w-10 h-10 bg-surface-container-high dark:bg-zinc-700 rounded-xl flex items-center justify-center text-on-surface-variant">
-                        <User className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('tickets_screen.guest_name')}</p>
-                        <p className="font-bold text-on-surface text-base">{guestName}</p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-outline-variant/40"></div>
-
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 mb-1">{t('tickets_screen.event_label')}</p>
-                      <h3 className="font-headline font-black text-2xl tracking-tight text-on-surface">
-                        {ticket.event_title || t('tickets_screen.default_event_title')}
-                      </h3>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-on-surface-variant/70">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.date_label')}</span>
-                        </div>
-                        <p className="font-bold text-on-surface text-sm leading-tight">{dateString}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-on-surface-variant/70">
-                          <Clock className="w-4 h-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.time_label')}</span>
-                        </div>
-                        <p className="font-bold text-on-surface text-sm leading-tight">{timeString}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-on-surface-variant/70">
-                        <MapPin className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{t('tickets_screen.location_label')}</span>
-                      </div>
-                      <p className="font-bold text-on-surface text-base leading-tight">
-                        {ticket.event_location_name || t('tickets_screen.default_location_name')}
-                      </p>
-                      <p className="text-on-surface-variant text-sm font-medium">
-                        {ticket.event_location_address || t('tickets_screen.default_location_address')}
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-outline-variant/40 flex justify-between items-start">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{t('tickets_screen.status_label')}</span>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest w-fit ${
-                            isUsed 
-                              ? 'bg-surface-container text-on-surface-variant' 
-                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
-                          }`}>
-                            {isUsed ? t('tickets_screen.status_scanned') : t('tickets_screen.status_valid')}
-                          </span>
-                        </div>
-
-                        {/* Новые бейджи типов оплаты (заполняются бэкендом) */}
-                        {ticket.payment_type && (
-                          <div className="flex flex-wrap gap-1.5 mt-1">
-                            {ticket.payment_type === 'promocode100' && (
-                              <span className="text-[10px] font-mono bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/30 font-bold uppercase">
-                                🎁 {t('tickets_screen.badge_free_promo')}
-                              </span>
-                            )}
-                            {ticket.payment_type === 'Stripe50' && (
-                              <span className="text-[10px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-500/30 font-bold uppercase">
-                                🎟 {t('tickets_screen.badge_promo_discount')}
-                              </span>
-                            )}
-                            {ticket.payment_type === 'early_bird30' && (
-                              <span className="text-[10px] font-mono bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/30 font-bold uppercase">
-                                ⚡ {t('tickets_screen.badge_early_bird')}
-                              </span>
-                            )}
-                            {ticket.payment_type === 'Stripe100' && (
-                              <span className="text-[10px] font-mono bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full border border-outline-variant/40 font-bold uppercase">
-                                💳 {t('tickets_screen.badge_standard_paid')}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Сам текст промокода */}
-                        {ticket.promo_code && (
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                             <span className="text-[10px] font-mono bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400
-                                             px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30 font-bold uppercase">
-                              🏷 {ticket.promo_code} (−{ticket.promo_discount_percent}%)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            {pastTickets.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 pt-4">
+                  <div className="h-px flex-1 bg-outline-variant/40"></div>
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60">
+                    {t('tickets_screen.past_section_title')} · {pastTickets.length}
+                  </h3>
+                  <div className="h-px flex-1 bg-outline-variant/40"></div>
                 </div>
-              );
-            })}
+                {pastTickets.map(renderTicketCard)}
+              </>
+            )}
           </div>
         )}
 
