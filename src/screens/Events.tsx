@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Ticket as TicketIcon, Info, MessageCircle } from 'lucide-react';
+import { ChevronRight, Ticket as TicketIcon, Info, MessageCircle, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -65,11 +65,15 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     onNavigate('event-details');
   };
 
-  const openChat = () => {
+    // Ссылки на сообщество (чат) и канал агентства
+  const COMMUNITY_CHAT_URL = 'https://t.me/KYRIOSCommunity';
+  const CHANNEL_URL = 'https://t.me/kyriosagencyevents';
+
+  const openTgLink = (url: string) => {
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink('https://t.me/kyrios_chat');
+      window.Telegram.WebApp.openTelegramLink(url);
     } else {
-      window.open('https://t.me/kyrios_chat', '_blank');
+      window.open(url, '_blank');
     }
   };
 
@@ -100,6 +104,23 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           ))}
         </div>
 
+                {/* Секретный чат + Канал — две красные кнопки в одну полоску, прямо под афишей */}
+        <div className="grid grid-cols-2 gap-3 animate-fade-up">
+          <button
+            onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
+            className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
+          >
+            <MessageCircle className="w-4 h-4 shrink-0" />
+            {t('events_screen.secret_chat')}
+          </button>
+          <button
+            onClick={() => openTgLink(CHANNEL_URL)}
+            className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
+          >
+            <Megaphone className="w-4 h-4 shrink-0" />
+            {t('events_screen.channel')}
+          </button>
+        </div>
 
         {/* Quick Check-in */}
         {false && hasTicket && (
@@ -141,14 +162,6 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
           </div>
         </section>
 
-        {/* Secret Chat — тонкий баннер на всю ширину, прямо над Quick Check-in */}
-        <button
-          onClick={openChat}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-xs uppercase tracking-widest shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all animate-fade-up"
-        >
-          <MessageCircle className="w-4 h-4" />
-          {t('events_screen.secret_chat')}
-        </button>
 
       </main>
     </div>
