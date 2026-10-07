@@ -118,7 +118,7 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
           >
             <Megaphone className="w-4 h-4 shrink-0" />
-            {t('events_screen.channel')}
+            Channel
           </button>
         </div>
 
