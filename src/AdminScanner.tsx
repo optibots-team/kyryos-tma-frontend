@@ -13,7 +13,7 @@ import { supabase } from './lib/supabaseClient'
 
 type UserRole = string | null;
 
-type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event';
+type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event' | 'expired';
 
 interface ScanResult {
   state: ScanState;
@@ -113,7 +113,7 @@ function ScannerView() {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         const errMsg: string = errData.error || errData.message || 'Verification failed on server';
-        setScanResult(buildErrorResult(errMsg));
+        setScanResult(buildErrorResult(errMsg, errData));
         return;
       }
 
@@ -134,7 +134,7 @@ function ScannerView() {
         });
       } else {
         const errMsg: string = result.error || result.message || 'Invalid or inactive ticket';
-        setScanResult(buildErrorResult(errMsg));
+        setScanResult(buildErrorResult(errMsg, result));
       }
 
     } catch (err) {
@@ -176,7 +176,7 @@ function ScannerView() {
 
   // ── Auto-reset: clear success/error messages ──────────────
   useEffect(() => {
-    if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event') {
+    if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event' || scanResult.state === 'expired') {
       const timer = setTimeout(() => {
         setScanResult({ state: 'idle' })
       }, 5000) // Увеличил до 5 секунд, чтобы хостес успела прочитать инфу про стрики и очки
@@ -242,11 +242,14 @@ function ScannerView() {
 
 // ---- Helpers -----------------------------------------
 
-// 🔒 Отдельно распознаём ошибку "не то мероприятие" (бэкенд присылает текст вида
-// `Wrong event: this ticket is for "PADEL BANDA Babylon"`) — она визуально должна
-// отличаться от "уже использован"/обычной ошибки, чтобы охрана сразу понимала:
-// человек перепутал день, а не пытается пройти повторно.
-function buildErrorResult(message: string): ScanResult {
+// 🔒 Отдельно распознаём «особые» ошибки, чтобы охрана сразу понимала причину и не путала их
+// с обычным «уже использован»:
+//  • expired      — билет на прошедшее мероприятие (бэкенд: ticket_expired: true, текст "Event is over…")
+//  • wrong_event  — билет на другое мероприятие (текст вида `Wrong event: this ticket is for "…"`)
+function buildErrorResult(message: string, data?: any): ScanResult {
+  if (data?.ticket_expired === true || /event is over/i.test(message)) {
+    return { state: 'expired', message };
+  }
   if (/wrong event/i.test(message)) {
     return { state: 'wrong_event', message };
   }
@@ -280,6 +283,20 @@ function ResultDisplay({ result }: { result: ScanResult }) {
           <span className="text-white text-3xl font-bold">✓</span>
         </div>
         <p className="text-emerald-400 font-bold text-lg whitespace-pre-line">{result.message}</p>
+      </div>
+    )
+  }
+
+  // 🔒 Фиолетовый стиль для «мероприятие закончилось»: это не повтор и не чужой день,
+  // а билет на уже прошедшее мероприятие — цвет отличается от красного, жёлтого и зелёного
+  if (result.state === 'expired') {
+    return (
+      <div className="w-full px-5 py-6 rounded-2xl text-center bg-violet-500/20 border-2 border-violet-400/60 animate-in zoom-in-95 duration-200">
+        <div className="w-16 h-16 mx-auto bg-violet-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(139,92,246,0.5)]">
+          <span className="text-white text-3xl font-bold">⏱</span>
+        </div>
+        <p className="text-violet-300 font-black text-sm uppercase tracking-widest mb-1">Event Is Over</p>
+        <p className="text-violet-200 font-bold text-base">{result.message}</p>
       </div>
     )
   }
