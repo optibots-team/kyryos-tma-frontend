@@ -87,34 +87,33 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-[calc(1.5rem+var(--safe-top))] pb-2 border-b border-outline-variant/30">
+            <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-end pl-6 pr-[54px] pt-[calc(1.5rem+var(--safe-top))] pb-2 border-b border-outline-variant/30">
         <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
 
-        {/* Чат и Канал — по бокам от логотипа. Размер (36px) и top такие же, как у кнопок темы/языка
-            в TopCurtain, поэтому все четыре кнопки стоят на одной линии. Логотип ~109px шириной,
-            поэтому смещения от центра: -95px (чат) и +58px (канал) оставляют ~4px воздуха до лого. */}
-               {/* Чат и Канал — по бокам от логотипа, овальные кнопки с иконкой и подписью.
-            Высота 40px (у кнопок темы/языка 36px), поэтому top = 28px вместо 30px — центры на одной линии.
-            Логотип ~109px шириной (половина ~54.5px): отступ от лого по 8px в каждую сторону
-            → смещения от центра экрана: -116.5px (чат, ширина 54px) и +62.5px (канал). */}
-        <button
-          onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
-          aria-label={t('events_screen.secret_chat')}
-          title={t('events_screen.secret_chat')}
-          className="absolute top-[calc(28px+var(--safe-top))] left-[calc(50%-116.5px)] w-[54px] h-10 rounded-[18px] bg-[#A50021] text-white flex flex-col items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
-        >
-          <MessageCircle size={16} />
-          <span className="text-[8px] font-black uppercase tracking-wider leading-none">Chat</span>
-        </button>
-        <button
-          onClick={() => openTgLink(CHANNEL_URL)}
-          aria-label="Channel"
-          title="Channel"
-          className="absolute top-[calc(28px+var(--safe-top))] left-[calc(50%+62.5px)] w-[54px] h-10 rounded-[18px] bg-[#A50021] text-white flex flex-col items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
-        >
-          <Megaphone size={16} />
-          <span className="text-[8px] font-black uppercase tracking-wider leading-none">Channel</span>
-        </button>
+        {/* Чат и Канал — слева рядом друг с другом (справа от кнопки темы), вытянутые овалы с иконкой и подписью.
+            Контейнер растянут между кнопкой темы (left-[60px]) и логотипом (right-[167px] = 54px отступ шапки
+            + ~109px ширина лого + 4px воздуха), две кнопки делят место поровну, поэтому сами подстраиваются под ширину экрана.
+            Высота 36px и top 30px — те же, что у кнопок темы/языка, все кнопки на одной линии. */}
+        <div className="absolute top-[calc(30px+var(--safe-top))] left-[60px] right-[167px] flex gap-1.5">
+          <button
+            onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
+            aria-label={t('events_screen.secret_chat')}
+            title={t('events_screen.secret_chat')}
+            className="flex-1 min-w-0 h-9 rounded-full bg-[#A50021] text-white flex items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
+          >
+            <MessageCircle size={14} className="shrink-0" />
+            <span className="text-[9px] font-black uppercase tracking-wide leading-none">Chat</span>
+          </button>
+          <button
+            onClick={() => openTgLink(CHANNEL_URL)}
+            aria-label="Channel"
+            title="Channel"
+            className="flex-1 min-w-0 h-9 rounded-full bg-[#A50021] text-white flex items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
+          >
+            <Megaphone size={14} className="shrink-0" />
+            <span className="text-[9px] font-black uppercase tracking-wide leading-none">Channel</span>
+          </button>
+        </div>
       </header>
 
       <main className="px-6 py-8 space-y-8">
