@@ -206,7 +206,12 @@ function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: strin
           alt={event.title} 
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+
+      {/* Ленточка "Upcoming Event" — диагональная, обрезается по скруглённому углу самой карточки */}
+      <div className="absolute top-[22px] right-[-38px] w-[160px] rotate-45 bg-[#A50021] text-white text-center py-1.5 shadow-md z-20 pointer-events-none">
+        <span className="text-[10px] font-black uppercase tracking-widest">Upcoming Event</span>
+      </div>
       
       <div className="absolute inset-0 p-8 flex flex-col justify-end">
         <h2 className="text-white font-headline font-extrabold text-4xl mb-2 tracking-tight">{event.title}</h2>
