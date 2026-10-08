@@ -92,19 +92,8 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
       </header>
 
       <main className="px-6 py-8 space-y-8">
-        
-        {/* 🎯 РАЗДЕЛ С ГЛАВНЫМИ ИВЕНТАМИ (ПЯТНИЦА + СУББОТА) */}
-        <div className="space-y-6">
-          {events.map((event) => (
-            <EventCard 
-              key={event.id} 
-              event={event} 
-              onCardClick={handleEventClick} 
-            />
-          ))}
-        </div>
 
-                {/* Секретный чат + Канал — две красные кнопки в одну полоску, прямо под афишей */}
+        {/* Секретный чат + Канал — две красные кнопки в одну полоску, над афишей */}
         <div className="grid grid-cols-2 gap-3 animate-fade-up">
           <button
             onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
@@ -120,6 +109,17 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
             <Megaphone className="w-4 h-4 shrink-0" />
             Channel
           </button>
+        </div>
+
+        {/* 🎯 РАЗДЕЛ С ГЛАВНЫМИ ИВЕНТАМИ (ПЯТНИЦА + СУББОТА) */}
+        <div className="space-y-6">
+          {events.map((event) => (
+            <EventCard 
+              key={event.id} 
+              event={event} 
+              onCardClick={handleEventClick} 
+            />
+          ))}
         </div>
 
         {/* Quick Check-in */}
