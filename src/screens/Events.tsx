@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ChevronRight, Ticket as TicketIcon, Info, MessageCircle, Megaphone } from 'lucide-react';
+import { useEffect, useState, useRef, type TouchEvent as ReactTouchEvent } from 'react';
+import { ChevronRight, ChevronDown, Ticket as TicketIcon, Info, MessageCircle, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -75,6 +75,37 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
     } else {
       window.open(url, '_blank');
     }
+    // После перехода по ссылке шторка складывается обратно
+    setDrawerOpen(false);
+  };
+
+  // ── Выдвижная шторка с кнопками Чат/Канал (по умолчанию свёрнута) ──
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerTouchStartY = useRef<number | null>(null);
+  const drawerSwipeHandled = useRef(false);
+
+  const onDrawerTouchStart = (e: ReactTouchEvent) => {
+    drawerTouchStartY.current = e.touches[0].clientY;
+    drawerSwipeHandled.current = false;
+  };
+
+  // Свайп вниз — открыть, вверх — закрыть. Короткий тап обрабатывает onClick
+  const onDrawerTouchEnd = (e: ReactTouchEvent) => {
+    if (drawerTouchStartY.current === null) return;
+    const dy = e.changedTouches[0].clientY - drawerTouchStartY.current;
+    drawerTouchStartY.current = null;
+    if (Math.abs(dy) > 20) {
+      drawerSwipeHandled.current = true;
+      setDrawerOpen(dy > 0);
+    }
+  };
+
+  const onDrawerHandleClick = () => {
+    if (drawerSwipeHandled.current) {
+      drawerSwipeHandled.current = false;
+      return;
+    }
+    setDrawerOpen(o => !o);
   };
 
   if (loading) {
@@ -87,29 +118,69 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="w-full sticky top-0 z-50 bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-[calc(1.5rem+var(--safe-top))] pb-2 border-b border-outline-variant/30">
-        <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
-      </header>
+      {/* Анимация-подсказка: раз в 5 секунд шторка мягко "дёргается", намекая, что её можно потянуть */}
+      <style>{`
+        @keyframes curtain-hint {
+          0%, 68%, 100% { transform: translateY(0); }
+          74% { transform: translateY(5px); }
+          80% { transform: translateY(0); }
+          86% { transform: translateY(3px); }
+          92% { transform: translateY(0); }
+        }
+        .curtain-hint { animation: curtain-hint 5s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .curtain-hint { animation: none; } }
+      `}</style>
+
+      {/* Шапка + выдвижная шторка под ней — вместе прилипают к верху экрана */}
+      <div className="sticky top-0 z-50">
+        <header className="w-full bg-surface-variant/70 backdrop-blur-xl flex items-center justify-center px-6 pt-[calc(1.5rem+var(--safe-top))] pb-2 border-b border-outline-variant/30">
+          <img src="/logo.png" alt="Kyrios Logo" className="h-[55px] w-auto object-contain dark:invert" />
+        </header>
+
+        {/* Шторка накладывается поверх контента (absolute), поэтому страница не "прыгает" при открытии */}
+        <div className="absolute inset-x-0 top-full">
+          <div
+            onTouchStart={onDrawerTouchStart}
+            onTouchEnd={onDrawerTouchEnd}
+            className={`overflow-hidden transition-[max-height] duration-300 ease-out bg-surface-variant/70 backdrop-blur-xl ${
+              drawerOpen ? 'max-h-28 border-b border-outline-variant/30' : 'max-h-0'
+            }`}
+          >
+            <div className="grid grid-cols-2 gap-3 px-6 py-4">
+              <button
+                onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
+                className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
+              >
+                <MessageCircle className="w-4 h-4 shrink-0" />
+                {t('events_screen.secret_chat')}
+              </button>
+              <button
+                onClick={() => openTgLink(CHANNEL_URL)}
+                className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
+              >
+                <Megaphone className="w-4 h-4 shrink-0" />
+                Channel
+              </button>
+            </div>
+          </div>
+
+          {/* Язычок со стрелкой — виден всегда, за него тянут шторку */}
+          <div className="flex justify-center pointer-events-none">
+            <button
+              onClick={onDrawerHandleClick}
+              onTouchStart={onDrawerTouchStart}
+              onTouchEnd={onDrawerTouchEnd}
+              aria-label="Community links"
+              aria-expanded={drawerOpen}
+              className={`pointer-events-auto touch-none flex items-center justify-center w-16 h-5 rounded-b-2xl bg-surface-variant/70 backdrop-blur-xl border border-t-0 border-outline-variant/30 text-on-surface-variant shadow-sm ${drawerOpen ? '' : 'curtain-hint'}`}
+            >
+              <ChevronDown size={16} className={`transition-transform duration-300 ${drawerOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+      </div>
 
       <main className="px-6 py-8 space-y-8">
-
-        {/* Секретный чат + Канал — две красные кнопки в одну полоску, над афишей */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-up">
-          <button
-            onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
-            className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
-          >
-            <MessageCircle className="w-4 h-4 shrink-0" />
-            {t('events_screen.secret_chat')}
-          </button>
-          <button
-            onClick={() => openTgLink(CHANNEL_URL)}
-            className="flex items-center justify-center gap-2 px-2 py-3 rounded-2xl bg-[#A50021] text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap shadow-[0_4px_16px_rgba(165,0,33,0.35)] active:scale-[0.98] transition-all"
-          >
-            <Megaphone className="w-4 h-4 shrink-0" />
-            Channel
-          </button>
-        </div>
 
         {/* 🎯 РАЗДЕЛ С ГЛАВНЫМИ ИВЕНТАМИ (ПЯТНИЦА + СУББОТА) */}
         <div className="space-y-6">
@@ -206,11 +277,12 @@ function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: strin
           alt={event.title} 
         />
       )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
 
-      {/* Ленточка "Upcoming Event" — диагональная, обрезается по скруглённому углу самой карточки */}
-      <div className="absolute top-[22px] right-[-38px] w-[160px] rotate-45 bg-[#A50021] text-white text-center py-1.5 shadow-md z-20 pointer-events-none">
-        <span className="text-[10px] font-black uppercase tracking-widest">Upcoming Event</span>
+
+      {/* Ленточка "Upcoming Event" — тонкая диагональная, фиолетовая; обрезается по скруглённому углу карточки */}
+      <div className="absolute top-[23px] right-[-32px] w-[140px] rotate-45 bg-violet-600 text-white text-center py-1 shadow-md z-20 pointer-events-none">
+        <span className="text-[9px] font-black uppercase tracking-wider">Upcoming Event</span>
       </div>
       
       <div className="absolute inset-0 p-8 flex flex-col justify-end">
