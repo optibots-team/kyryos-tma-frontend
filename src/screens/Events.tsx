@@ -93,21 +93,27 @@ export default function Events({ onNavigate, onEventSelect }: EventsProps) {
         {/* Чат и Канал — по бокам от логотипа. Размер (36px) и top такие же, как у кнопок темы/языка
             в TopCurtain, поэтому все четыре кнопки стоят на одной линии. Логотип ~109px шириной,
             поэтому смещения от центра: -95px (чат) и +58px (канал) оставляют ~4px воздуха до лого. */}
+               {/* Чат и Канал — по бокам от логотипа, овальные кнопки с иконкой и подписью.
+            Высота 40px (у кнопок темы/языка 36px), поэтому top = 28px вместо 30px — центры на одной линии.
+            Логотип ~109px шириной (половина ~54.5px): отступ от лого по 8px в каждую сторону
+            → смещения от центра экрана: -116.5px (чат, ширина 54px) и +62.5px (канал). */}
         <button
           onClick={() => openTgLink(COMMUNITY_CHAT_URL)}
           aria-label={t('events_screen.secret_chat')}
           title={t('events_screen.secret_chat')}
-          className="absolute top-[calc(30px+var(--safe-top))] left-[calc(50%-95px)] w-9 h-9 rounded-full bg-[#A50021] text-white flex items-center justify-center shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
+          className="absolute top-[calc(28px+var(--safe-top))] left-[calc(50%-116.5px)] w-[54px] h-10 rounded-[18px] bg-[#A50021] text-white flex flex-col items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
         >
-          <MessageCircle size={18} />
+          <MessageCircle size={16} />
+          <span className="text-[8px] font-black uppercase tracking-wider leading-none">Chat</span>
         </button>
         <button
           onClick={() => openTgLink(CHANNEL_URL)}
           aria-label="Channel"
           title="Channel"
-          className="absolute top-[calc(30px+var(--safe-top))] left-[calc(50%+58px)] w-9 h-9 rounded-full bg-[#A50021] text-white flex items-center justify-center shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
+          className="absolute top-[calc(28px+var(--safe-top))] left-[calc(50%+62.5px)] w-[54px] h-10 rounded-[18px] bg-[#A50021] text-white flex flex-col items-center justify-center gap-[3px] shadow-[0_2px_10px_rgba(165,0,33,0.45)] active:scale-95 transition-all"
         >
-          <Megaphone size={18} />
+          <Megaphone size={16} />
+          <span className="text-[8px] font-black uppercase tracking-wider leading-none">Channel</span>
         </button>
       </header>
 
