@@ -214,7 +214,7 @@ function EventCard({ event, onCardClick }: { event: any; onCardClick: (id: strin
       </div>
 
       <div className="absolute inset-0 p-8 flex flex-col justify-end">
-        <h2 className="text-white font-headline font-extrabument text-4xl mb-2 tracking-tight">{event.title}</h2>
+               <h2 className="text-white font-headline font-extrabold text-[2rem] mb-2 tracking-tight">{event.title}</h2>
         
         <p className="text-white/70 text-sm mb-6 font-medium">
           {new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
