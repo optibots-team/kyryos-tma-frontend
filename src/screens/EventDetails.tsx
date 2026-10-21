@@ -305,7 +305,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <h3 className="font-headline font-bold text-on-surface-variant/60 uppercase tracking-[0.15em] text-xs text-center">{t('event_details_screen.partners')}</h3>
             <div className="grid grid-cols-2 gap-3">
               
-              {/*
+              {/* 1. SIENNA */}
               <a href="https://www.instagram.com/sienna.warsaw?igsh=MWZ0MWJsbHZhem93ag==" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
                 <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
