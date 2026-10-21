@@ -5,16 +5,32 @@ import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
 // 🎫 Категория доступа на билете (приходит из tickets_full.access_category).
-// FAN — голубой, BACKSTAGE — фуксия: цвета не совпадают с цветами статусов сканера
-// (зелёный/красный/жёлтый/фиолетовый), чтобы охрана и гость сразу видели разницу.
-type AccessCategory = 'FAN' | 'BACKSTAGE';
-const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string }> = {
-  FAN: { bar: 'bg-sky-500', ring: 'ring-sky-400' },
-  BACKSTAGE: { bar: 'bg-fuchsia-500', ring: 'ring-fuchsia-400' },
+// Цвета совпадают с цветами браслетов S.V.E.T: FAN — белый, BACKSTAGE — зелёный, TABLES — розовый.
+// bar/ring — для карточки (тёмный блок), expandedBar/expandedRing — для белого полноэкранного QR.
+type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLES';
+const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expandedBar: string; expandedRing: string }> = {
+  FAN: {
+    bar: 'bg-white text-black border-b-2 border-zinc-300',
+    ring: 'ring-white',
+    expandedBar: 'bg-white text-black border-b-4 border-black',
+    expandedRing: 'ring-black',
+  },
+  BACKSTAGE: {
+    bar: 'bg-[#4CB82B] text-black',
+    ring: 'ring-[#4CB82B]',
+    expandedBar: 'bg-[#4CB82B] text-black',
+    expandedRing: 'ring-[#4CB82B]',
+  },
+  TABLES: {
+    bar: 'bg-[#EC5B9E] text-black',
+    ring: 'ring-[#EC5B9E]',
+    expandedBar: 'bg-[#EC5B9E] text-black',
+    expandedRing: 'ring-[#EC5B9E]',
+  },
 };
 const getAccessCategory = (v: unknown): AccessCategory | null => {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
-  return s === 'FAN' || s === 'BACKSTAGE' ? s : null;
+  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLES' ? s : null;
 };
 
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -105,9 +121,9 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
         className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-outline-variant/40 animate-fade-up ${isExpired ? 'opacity-75' : ''}`}
         style={{ animationDelay: `${index * 100}ms` }}
       >
-        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE) */}
+        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE / TABLES) */}
         {accessCategory && (
-          <div className={`${ACCESS_STYLES[accessCategory].bar} text-white text-center py-3 font-headline font-black text-lg tracking-[0.35em] uppercase`}>
+          <div className={`${ACCESS_STYLES[accessCategory].bar} text-center py-3 font-headline font-black text-lg tracking-[0.35em] uppercase`}>
             {accessCategory}
           </div>
         )}
@@ -334,7 +350,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
           >
             {/* 🎫 Категория доступа крупно сверху развёрнутого билета */}
             {expandedCategory && (
-              <div className={`${ACCESS_STYLES[expandedCategory].bar} text-white text-center pt-[calc(1rem+var(--safe-top))] pb-4 font-headline font-black text-4xl tracking-[0.3em] uppercase`}>
+              <div className={`${ACCESS_STYLES[expandedCategory].expandedBar} text-center pt-[calc(1rem+var(--safe-top))] pb-4 font-headline font-black text-4xl tracking-[0.3em] uppercase`}>
                 {expandedCategory}
               </div>
             )}
@@ -343,7 +359,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
                 {t('tickets_screen.expanded_hint')}<br/>{t('tickets_screen.expanded_hint_swipe')}
               </p>
               
-              <div className={`w-full max-w-sm aspect-square bg-white rounded-3xl p-4 ${expandedCategory ? `ring-8 ${ACCESS_STYLES[expandedCategory].ring}` : ''}`}>
+              <div className={`w-full max-w-sm aspect-square bg-white rounded-3xl p-4 ${expandedCategory ? `ring-8 ${ACCESS_STYLES[expandedCategory].expandedRing}` : ''}`}>
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${expandedQr}&color=000000&bgcolor=ffffff`}
                   alt="Expanded QR Code" 
