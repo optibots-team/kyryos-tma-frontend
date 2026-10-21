@@ -23,6 +23,8 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState({ percent: 0, amount: 0 });
   const [promoStatus, setPromoStatus] = useState<'none' | 'validating' | 'success' | 'error'>('none');
+    // validate_promo теперь может вернуть access_category ('FAN' | 'BACKSTAGE' | null)
+  const [promoAccess, setPromoAccess] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchEvent() {
@@ -78,8 +80,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
       if (error || !data?.valid) {
         setPromoStatus('error');
         setPromoDiscount({ percent: 0, amount: 0 });
+        setPromoAccess(null);
       } else {
         setPromoStatus('success');
+        setPromoAccess(data.access_category || null);
         setPromoDiscount({
           percent: data.discount_percent || 0,
           amount: data.discount_amount || 0
@@ -92,6 +96,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     } catch (err) {
       setPromoStatus('error');
       setPromoDiscount({ percent: 0, amount: 0 });
+      setPromoAccess(null);
     }
   };
 
@@ -378,6 +383,25 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </button>
               </div>
             )}
+                        )}
+
+            {/* 🪑 Кнопка «Купить стол» — только если у ивента есть table_booking_url */}
+            {event.table_booking_url && (
+              <button
+                onClick={() => {
+                  const tg = window.Telegram?.WebApp;
+                  if (tg?.openTelegramLink) tg.openTelegramLink(event.table_booking_url);
+                  else window.open(event.table_booking_url, '_blank');
+                }}
+                className="mt-3 w-full py-4 rounded-[1.5rem] border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
+              >
+                {t('event_details_screen.buy_table')}
+              </button>
+            )}
+          </div>
+
+        </div>
+      </main>
           </div>
 
         </div>
@@ -434,6 +458,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                         setPromoCode(e.target.value.toUpperCase());
                         setPromoStatus('none');
                         setPromoDiscount({ percent: 0, amount: 0 });
+                        setPromoAccess(null);
                       }}
                       placeholder={t('event_details_screen.enter_code')}
                       className="flex-1 bg-surface-container border border-outline-variant/40 rounded-xl px-4 py-3 text-sm font-bold text-on-surface focus:outline-none focus:border-zinc-400 transition-colors uppercase"
@@ -447,6 +472,11 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                     </button>
                   </div>
                   {promoStatus === 'error' && <p className="text-red-500 dark:text-red-400 text-xs font-bold ml-1">{t('event_details_screen.invalid_code')}</p>}
+                  {promoStatus === 'success' && promoAccess && (
+                    <p className="text-fuchsia-500 dark:text-fuchsia-400 text-xs font-black uppercase tracking-widest ml-1">
+                      {t('event_details_screen.access')}: {promoAccess}
+                    </p>
+                  )}
                   {promoStatus === 'success' && !isGuestlist && (
                     <p className="text-emerald-500 dark:text-emerald-400 text-xs font-bold ml-1">
                       {promoDiscount.amount > 0 
