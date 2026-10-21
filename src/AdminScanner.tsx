@@ -15,9 +15,18 @@ type UserRole = string | null;
 
 type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event' | 'expired';
 
+// 🎫 Категория доступа из ответа scan-ticket: охрана по ней понимает, какую ленточку надеть
+type AccessCategory = 'FAN' | 'BACKSTAGE';
+
 interface ScanResult {
   state: ScanState;
   message?: string;
+  accessCategory?: AccessCategory | null;
+}
+
+function parseAccessCategory(v: unknown): AccessCategory | null {
+  const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
+  return s === 'FAN' || s === 'BACKSTAGE' ? s : null;
 }
 
 interface EventOption {
@@ -121,7 +130,10 @@ function ScannerView() {
 
       if (result.success) {
         // Формируем красивое сообщение об успехе с инфой про поинты и стрик
-        let successMessage = `✓ Admitted. Earned: +${result.points_earned} pts`;
+        const category = parseAccessCategory(result.access_category);
+        let successMessage = category
+          ? `✓ Admitted — ${category}\nEarned: +${result.points_earned} pts`
+          : `✓ Admitted. Earned: +${result.points_earned} pts`;
         if (result.streak_bonus) {
           successMessage += ' 🔥 STREAK BONUS!';
         } else if (result.streak_count > 1) {
@@ -130,7 +142,8 @@ function ScannerView() {
 
         setScanResult({ 
           state: 'success', 
-          message: successMessage 
+          message: successMessage,
+          accessCategory: category
         });
       } else {
         const errMsg: string = result.error || result.message || 'Invalid or inactive ticket';
@@ -179,7 +192,7 @@ function ScannerView() {
     if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event' || scanResult.state === 'expired') {
       const timer = setTimeout(() => {
         setScanResult({ state: 'idle' })
-      }, 5000) // Увеличил до 5 секунд, чтобы хостес успела прочитать инфу про стрики и очки
+      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE) и надеть нужную ленточку
       return () => clearTimeout(timer)
     }
   }, [scanResult.state])
@@ -247,16 +260,32 @@ function ScannerView() {
 //  • expired      — билет на прошедшее мероприятие (бэкенд: ticket_expired: true, текст "Event is over…")
 //  • wrong_event  — билет на другое мероприятие (текст вида `Wrong event: this ticket is for "…"`)
 function buildErrorResult(message: string, data?: any): ScanResult {
+  // Категория приходит и в ошибке «Ticket already used» — показываем её тоже
+  const accessCategory = parseAccessCategory(data?.access_category);
   if (data?.ticket_expired === true || /event is over/i.test(message)) {
-    return { state: 'expired', message };
+    return { state: 'expired', message, accessCategory };
   }
   if (/wrong event/i.test(message)) {
-    return { state: 'wrong_event', message };
+    return { state: 'wrong_event', message, accessCategory };
   }
-  return { state: 'error', message };
+  return { state: 'error', message, accessCategory };
 }
 
 // ---- Sub-components -----------------------------------------
+
+// 🎫 Огромная плашка категории: FAN — голубая, BACKSTAGE — фуксия
+// (цвета не пересекаются с зелёным/красным/жёлтым/фиолетовым статусами сканера)
+function CategoryBanner({ category }: { category?: AccessCategory | null }) {
+  if (!category) return null
+  const style = category === 'BACKSTAGE'
+    ? 'bg-fuchsia-500 shadow-[0_0_30px_rgba(217,70,239,0.6)]'
+    : 'bg-sky-500 shadow-[0_0_30px_rgba(14,165,233,0.6)]'
+  return (
+    <div className={`${style} w-full rounded-2xl py-4 mb-4 text-white text-center font-black text-4xl tracking-[0.2em] uppercase`}>
+      {category}
+    </div>
+  )
+}
 
 function ResultDisplay({ result }: { result: ScanResult }) {
   if (result.state === 'idle') {
@@ -279,6 +308,7 @@ function ResultDisplay({ result }: { result: ScanResult }) {
   if (result.state === 'success') {
     return (
       <div className="w-full px-5 py-6 rounded-2xl text-center bg-emerald-500/20 border border-emerald-500/40 animate-in zoom-in-95 duration-200">
+        <CategoryBanner category={result.accessCategory} />
         <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
           <span className="text-white text-3xl font-bold">✓</span>
         </div>
@@ -292,6 +322,7 @@ function ResultDisplay({ result }: { result: ScanResult }) {
   if (result.state === 'expired') {
     return (
       <div className="w-full px-5 py-6 rounded-2xl text-center bg-violet-500/20 border-2 border-violet-400/60 animate-in zoom-in-95 duration-200">
+        <CategoryBanner category={result.accessCategory} />
         <div className="w-16 h-16 mx-auto bg-violet-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(139,92,246,0.5)]">
           <span className="text-white text-3xl font-bold">⏱</span>
         </div>
@@ -306,6 +337,7 @@ function ResultDisplay({ result }: { result: ScanResult }) {
   if (result.state === 'wrong_event') {
     return (
       <div className="w-full px-5 py-6 rounded-2xl text-center bg-amber-500/20 border-2 border-amber-400/60 animate-in zoom-in-95 duration-200">
+        <CategoryBanner category={result.accessCategory} />
         <div className="w-16 h-16 mx-auto bg-amber-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(245,158,11,0.5)]">
           <span className="text-white text-3xl font-bold">⚠</span>
         </div>
@@ -317,6 +349,7 @@ function ResultDisplay({ result }: { result: ScanResult }) {
 
   return (
     <div className="w-full px-5 py-6 rounded-2xl text-center bg-red-500/20 border border-red-500/40 animate-in zoom-in-95 duration-200">
+      <CategoryBanner category={result.accessCategory} />
       <div className="w-16 h-16 mx-auto bg-red-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
         <span className="text-white text-3xl font-bold">✕</span>
       </div>
