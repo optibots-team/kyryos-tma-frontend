@@ -4,6 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
+// 🎫 Категория доступа на билете (приходит из tickets_full.access_category).
+// FAN — голубой, BACKSTAGE — фуксия: цвета не совпадают с цветами статусов сканера
+// (зелёный/красный/жёлтый/фиолетовый), чтобы охрана и гость сразу видели разницу.
+type AccessCategory = 'FAN' | 'BACKSTAGE';
+const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string }> = {
+  FAN: { bar: 'bg-sky-500', ring: 'ring-sky-400' },
+  BACKSTAGE: { bar: 'bg-fuchsia-500', ring: 'ring-fuchsia-400' },
+};
+const getAccessCategory = (v: unknown): AccessCategory | null => {
+  const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
+  return s === 'FAN' || s === 'BACKSTAGE' ? s : null;
+};
+
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { t } = useTranslation();
   const [tickets, setTickets] = useState<any[]>([]);
@@ -70,6 +83,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
   // Использованные и прошедшие (is_expired) билеты выносим в отдельный блок «Прошедшие»
   const isTicketPast = (tk: any) => tk.status === 'used' || tk.is_expired === true;
   const activeTickets = tickets.filter(tk => !isTicketPast(tk));
+  const expandedCategory = getAccessCategory(tickets.find(tk => tk.ticket_code === expandedQr)?.access_category);
   const pastTickets = tickets
     .filter(isTicketPast)
     .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
@@ -83,6 +97,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     // is_expired приходит из tickets_full: мероприятие прошло, а человек не пришёл
     const isExpired = !isUsed && ticket.is_expired === true;
     const isActive = !isUsed && !isExpired;
+    const accessCategory = getAccessCategory(ticket.access_category);
 
     return (
       <div 
@@ -90,6 +105,13 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
         className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-outline-variant/40 animate-fade-up ${isExpired ? 'opacity-75' : ''}`}
         style={{ animationDelay: `${index * 100}ms` }}
       >
+        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE) */}
+        {accessCategory && (
+          <div className={`${ACCESS_STYLES[accessCategory].bar} text-white text-center py-3 font-headline font-black text-lg tracking-[0.35em] uppercase`}>
+            {accessCategory}
+          </div>
+        )}
+
         {/* Тёмная "билетная" секция с QR — намеренно всегда тёмная в обеих темах,
             т.к. QR-код должен оставаться чёрным на белом для надёжного сканирования */}
         <div className="relative p-8 text-center bg-zinc-900 overflow-hidden">
@@ -110,7 +132,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
             {isActive ? (
               <div
                 onClick={() => setExpandedQr(ticket.ticket_code)}
-                className="relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] cursor-pointer active:scale-95"
+                className={`relative w-48 h-48 bg-white rounded-3xl p-4 mb-6 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] cursor-pointer active:scale-95 ${accessCategory ? `ring-4 ${ACCESS_STYLES[accessCategory].ring}` : ''}`}
               >
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}&color=000000&bgcolor=ffffff`}
@@ -310,12 +332,18 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
+            {/* 🎫 Категория доступа крупно сверху развёрнутого билета */}
+            {expandedCategory && (
+              <div className={`${ACCESS_STYLES[expandedCategory].bar} text-white text-center pt-[calc(1rem+var(--safe-top))] pb-4 font-headline font-black text-4xl tracking-[0.3em] uppercase`}>
+                {expandedCategory}
+              </div>
+            )}
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs mb-8 text-center">
                 {t('tickets_screen.expanded_hint')}<br/>{t('tickets_screen.expanded_hint_swipe')}
               </p>
               
-              <div className="w-full max-w-sm aspect-square bg-white rounded-3xl p-4">
+              <div className={`w-full max-w-sm aspect-square bg-white rounded-3xl p-4 ${expandedCategory ? `ring-8 ${ACCESS_STYLES[expandedCategory].ring}` : ''}`}>
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${expandedQr}&color=000000&bgcolor=ffffff`}
                   alt="Expanded QR Code" 
