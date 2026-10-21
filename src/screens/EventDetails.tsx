@@ -401,10 +401,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
         </div>
       </main>
-          </div>
-
-        </div>
-      </main>
 
       {/* МОДАЛКА ВЫБОРА КОЛИЧЕСТВА БИЛЕТОВ / ВВОДА ПРОМОКОДА */}
       {showModal && (
