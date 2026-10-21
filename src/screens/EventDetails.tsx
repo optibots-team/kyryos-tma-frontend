@@ -394,7 +394,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 }}
                 className="mt-3 w-full py-4 rounded-[1.5rem] border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
               >
-                {t('event_details_screen.buy_table')}
+                {t('BOOK  TABLE')}
               </button>
             )}
           </div>
