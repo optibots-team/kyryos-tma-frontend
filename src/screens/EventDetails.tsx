@@ -383,7 +383,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </button>
               </div>
             )}
-                        )}
 
             {/* 🪑 Кнопка «Купить стол» — только если у ивента есть table_booking_url */}
             {event.table_booking_url && (
