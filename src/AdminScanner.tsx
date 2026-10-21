@@ -16,7 +16,7 @@ type UserRole = string | null;
 type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event' | 'expired';
 
 // 🎫 Категория доступа из ответа scan-ticket: охрана по ней понимает, какую ленточку надеть
-type AccessCategory = 'FAN' | 'BACKSTAGE';
+type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLES';
 
 interface ScanResult {
   state: ScanState;
@@ -26,7 +26,7 @@ interface ScanResult {
 
 function parseAccessCategory(v: unknown): AccessCategory | null {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
-  return s === 'FAN' || s === 'BACKSTAGE' ? s : null;
+  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLES' ? s : null;
 }
 
 interface EventOption {
@@ -192,7 +192,7 @@ function ScannerView() {
     if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event' || scanResult.state === 'expired') {
       const timer = setTimeout(() => {
         setScanResult({ state: 'idle' })
-      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE) и надеть нужную ленточку
+      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE / TABLES) и надеть нужную ленточку
       return () => clearTimeout(timer)
     }
   }, [scanResult.state])
@@ -273,15 +273,18 @@ function buildErrorResult(message: string, data?: any): ScanResult {
 
 // ---- Sub-components -----------------------------------------
 
-// 🎫 Огромная плашка категории: FAN — голубая, BACKSTAGE — фуксия
-// (цвета не пересекаются с зелёным/красным/жёлтым/фиолетовым статусами сканера)
+// 🎫 Огромная плашка категории — цвета как у браслетов S.V.E.T:
+// FAN — белый, BACKSTAGE — зелёный, TABLES — розовый. Белая рамка отделяет плашку от цвета статуса.
+const CATEGORY_BANNER_STYLES: Record<AccessCategory, string> = {
+  FAN: 'bg-white',
+  BACKSTAGE: 'bg-[#4CB82B]',
+  TABLES: 'bg-[#EC5B9E]',
+}
+
 function CategoryBanner({ category }: { category?: AccessCategory | null }) {
   if (!category) return null
-  const style = category === 'BACKSTAGE'
-    ? 'bg-fuchsia-500 shadow-[0_0_30px_rgba(217,70,239,0.6)]'
-    : 'bg-sky-500 shadow-[0_0_30px_rgba(14,165,233,0.6)]'
   return (
-    <div className={`${style} w-full rounded-2xl py-4 mb-4 text-white text-center font-black text-4xl tracking-[0.2em] uppercase`}>
+    <div className={`${CATEGORY_BANNER_STYLES[category]} w-full rounded-2xl py-5 mb-4 text-black text-center font-black text-4xl tracking-[0.2em] uppercase ring-4 ring-white/80 shadow-[0_0_30px_rgba(255,255,255,0.25)]`}>
       {category}
     </div>
   )
