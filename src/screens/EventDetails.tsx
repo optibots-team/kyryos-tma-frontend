@@ -120,6 +120,19 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   }
 
   const isGuestlist = event.ticket_mode === 'guestlist';
+    // 🤝 Партнёры мероприятия. На S.V.E.T — только KYRIOS и SVET, на остальных ивентах — полный список
+  const isSvetEvent = /\bS\.?V\.?E\.?T\b/i.test(event.title || '');
+  const allPartners = [
+    { name: 'SIENNA', sub: 'Restauracja & Lounge', url: 'https://www.instagram.com/sienna.warsaw?igsh=MWZ0MWJsbHZhem93ag==' },
+    { name: 'BOHEMIAN OKO', sub: 'Music events', url: 'https://www.instagram.com/bohemianoko?igsh=MXY3ajh3Ymg0OWl2eA==' },
+    { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
+    { name: 'JUSTCARS', sub: '@justcars_sng', url: 'https://www.instagram.com/justcars_sng' },
+  ];
+  const svetPartners = [
+    { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
+    { name: 'SVET', sub: '@letunasvet.ua', url: 'https://www.instagram.com/letunasvet.ua/' },
+  ];
+  const partners = isSvetEvent ? svetPartners : allPartners;
   const mainButtonText = isGuestlist ? t('event_details_screen.get_ticket') : t('event_details_screen.buy_ticket');
 
   const maxCapacity = event.capacity || 400;
@@ -306,46 +319,24 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             </div>
           )}
 
-          <div className="space-y-4 pt-4 animate-fade-up">
+                   <div className="space-y-4 pt-4 animate-fade-up">
             <h3 className="font-headline font-bold text-on-surface-variant/60 uppercase tracking-[0.15em] text-xs text-center">{t('event_details_screen.partners')}</h3>
             <div className="grid grid-cols-2 gap-3">
-              
-              {/* 1. SIENNA */}
-              <a href="https://www.instagram.com/sienna.warsaw?igsh=MWZ0MWJsbHZhem93ag==" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-on-surface group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">SIENNA</span>
-                  <span className="text-[9px] text-on-surface-variant/60 font-semibold mt-0.5 block truncate w-full">Restauracja & Lounge</span>
-                </div>
-              </a>
-
-              {/* 2. BOHEMIAN OKO */}
-              <a href="https://www.instagram.com/bohemianoko?igsh=MXY3ajh3Ymg0OWl2eA==" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-on-surface group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">BOHEMIAN OKO</span>
-                  <span className="text-[9px] text-on-surface-variant/60 font-semibold mt-0.5 block truncate w-full">Music events</span>
-                </div>
-              </a>
-
-              {/* 3. KYRIOS */}
-              <a href="https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-on-surface group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">KYRIOS</span>
-                  <span className="text-[9px] text-on-surface-variant/60 font-semibold mt-0.5 block truncate w-full">Event agency</span>
-                </div>
-              </a>
-
-              {/* 4. JUSTCARS */}
-              <a href="https://www.instagram.com/justcars_sng" target="_blank" rel="noopener noreferrer" className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-                <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-on-surface group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">JUSTCARS</span>
-                  <span className="text-[9px] text-on-surface-variant/60 font-semibold mt-0.5 block truncate w-full">@justcars_sng</span>
-                </div>
-              </a>
-
+              {partners.map((p) => (
+                <a
+                  key={p.name}
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#A50021]/20 via-transparent to-[#A50021]/10 group-hover:from-[#A50021]/50 group-hover:to-[#A50021]/30 rounded-2xl transition-all duration-300 pointer-events-none"></div>
+                  <div className="w-full h-full bg-surface rounded-2xl flex flex-col items-center justify-center p-3 relative z-10 text-center">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-on-surface group-hover:text-[#A50021] transition-colors duration-300 block truncate w-full">{p.name}</span>
+                    <span className="text-[9px] text-on-surface-variant/60 font-semibold mt-0.5 block truncate w-full">{p.sub}</span>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
 
