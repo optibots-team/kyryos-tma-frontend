@@ -16,7 +16,7 @@ type UserRole = string | null;
 type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event' | 'expired';
 
 // 🎫 Категория доступа из ответа scan-ticket: охрана по ней понимает, какую ленточку надеть
-type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLES';
+type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLE';
 
 interface ScanResult {
   state: ScanState;
@@ -26,7 +26,8 @@ interface ScanResult {
 
 function parseAccessCategory(v: unknown): AccessCategory | null {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
-  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLES' ? s : null;
+  if (s === 'TABLES') return 'TABLE'; // на всякий случай
+  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLE' ? s : null;
 }
 
 interface EventOption {
@@ -39,7 +40,7 @@ interface AdminScannerProps {
   userRole: UserRole
 }
 
-const CODE_REGEX = /^(KYR-[A-Z0-9]{6,15}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+const CODE_REGEX = /^((KYR|TABLE)-[A-Z0-9]{6,15}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 
 const SELECTED_EVENT_STORAGE_KEY = 'kyrios_scanner_event_id';
 
@@ -192,7 +193,7 @@ function ScannerView() {
     if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event' || scanResult.state === 'expired') {
       const timer = setTimeout(() => {
         setScanResult({ state: 'idle' })
-      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE / TABLES) и надеть нужную ленточку
+      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE / TABLE) и надеть нужную ленточку
       return () => clearTimeout(timer)
     }
   }, [scanResult.state])
@@ -274,11 +275,11 @@ function buildErrorResult(message: string, data?: any): ScanResult {
 // ---- Sub-components -----------------------------------------
 
 // 🎫 Огромная плашка категории — цвета как у браслетов S.V.E.T:
-// FAN — белый, BACKSTAGE — зелёный, TABLES — розовый. Белая рамка отделяет плашку от цвета статуса.
+// FAN — белый, BACKSTAGE — зелёный, TABLE — розовый. Белая рамка отделяет плашку от цвета статуса.
 const CATEGORY_BANNER_STYLES: Record<AccessCategory, string> = {
   FAN: 'bg-white',
   BACKSTAGE: 'bg-[#4CB82B]',
-  TABLES: 'bg-[#EC5B9E]',
+  TABLE: 'bg-[#EC5B9E]',
 }
 
 function CategoryBanner({ category }: { category?: AccessCategory | null }) {
@@ -309,13 +310,15 @@ function ResultDisplay({ result }: { result: ScanResult }) {
   }
 
   if (result.state === 'success') {
+    // 🪑 TABLE — весь экран розовый (как браслет); остальные категории — зелёный экран + цветная плашка
+    const isTable = result.accessCategory === 'TABLE'
     return (
-      <div className="w-full px-5 py-6 rounded-2xl text-center bg-emerald-500/20 border border-emerald-500/40 animate-in zoom-in-95 duration-200">
+      <div className={`w-full px-5 py-6 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${isTable ? 'bg-[#EC5B9E]/25 border-2 border-[#EC5B9E]' : 'bg-emerald-500/20 border border-emerald-500/40'}`}>
         <CategoryBanner category={result.accessCategory} />
-        <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 ${isTable ? 'bg-[#EC5B9E] shadow-[0_0_20px_rgba(236,91,158,0.5)]' : 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'}`}>
           <span className="text-white text-3xl font-bold">✓</span>
         </div>
-        <p className="text-emerald-400 font-bold text-lg whitespace-pre-line">{result.message}</p>
+        <p className={`font-bold text-lg whitespace-pre-line ${isTable ? 'text-pink-300' : 'text-emerald-400'}`}>{result.message}</p>
       </div>
     )
   }
