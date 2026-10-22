@@ -5,9 +5,9 @@ import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
 // 🎫 Категория доступа на билете (приходит из tickets_full.access_category).
-// Цвета совпадают с цветами браслетов S.V.E.T: FAN — белый, BACKSTAGE — зелёный, TABLES — розовый.
+// Цвета совпадают с цветами браслетов S.V.E.T: FAN — белый, BACKSTAGE — зелёный, TABLE — розовый.
 // bar/ring — для карточки (тёмный блок), expandedBar/expandedRing — для белого полноэкранного QR.
-type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLES';
+type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLE';
 const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expandedBar: string; expandedRing: string }> = {
   FAN: {
     bar: 'bg-white text-black border-b-2 border-zinc-300',
@@ -21,7 +21,7 @@ const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expande
     expandedBar: 'bg-[#4CB82B] text-black',
     expandedRing: 'ring-[#4CB82B]',
   },
-  TABLES: {
+  TABLE: {
     bar: 'bg-[#EC5B9E] text-black',
     ring: 'ring-[#EC5B9E]',
     expandedBar: 'bg-[#EC5B9E] text-black',
@@ -30,7 +30,8 @@ const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expande
 };
 const getAccessCategory = (v: unknown): AccessCategory | null => {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
-  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLES' ? s : null;
+  if (s === 'TABLES') return 'TABLE'; // на всякий случай, если бэкенд пришлёт во множественном числе
+  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLE' ? s : null;
 };
 
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -118,10 +119,10 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     return (
       <div 
         key={ticket.id}
-        className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-outline-variant/40 animate-fade-up ${isExpired ? 'opacity-75' : ''}`}
+        className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up ${accessCategory === 'TABLE' ? 'border-2 border-[#EC5B9E]' : 'border border-outline-variant/40'} ${isExpired ? 'opacity-75' : ''}`}
         style={{ animationDelay: `${index * 100}ms` }}
       >
-        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE / TABLES) */}
+        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE / TABLE) */}
         {accessCategory && (
           <div className={`${ACCESS_STYLES[accessCategory].bar} text-center py-3 font-headline font-black text-lg tracking-[0.35em] uppercase`}>
             {accessCategory}
