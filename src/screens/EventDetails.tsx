@@ -11,7 +11,7 @@ interface EventDetailsProps {
 }
 
 export default function EventDetails({ onNavigate, eventId }: EventDetailsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { purchaseTicket, loading: purchaseLoading, error: purchaseError } = usePurchaseTicket();
   
   const [event, setEvent] = useState<any>(null);
@@ -25,6 +25,9 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const [promoStatus, setPromoStatus] = useState<'none' | 'validating' | 'success' | 'error'>('none');
     // validate_promo теперь может вернуть access_category ('FAN' | 'BACKSTAGE' | null)
   const [promoAccess, setPromoAccess] = useState<string | null>(null);
+  // Режим «У меня есть код»: модалка только с вводом кода, билет выдаётся по коду без ticket_type_id (работает и при sold out)
+  const [codeMode, setCodeMode] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false); // окно стола: чат менеджера / код стола
 
   useEffect(() => {
     async function fetchEvent() {
@@ -73,6 +76,13 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim() || event?.sales_paused) return;
+
+    // «У меня есть код»: тип билета берётся из кода на бэкенде — сразу отправляем код в smart-function
+    if (codeMode) {
+      await executeGuestlistPurchase(promoCode.trim().toUpperCase());
+      return;
+    }
+
     setPromoStatus('validating');
     
     try {
@@ -104,10 +114,21 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     if (window.Telegram?.WebApp?.BackButton) {
       window.Telegram.WebApp.BackButton.hide();
     }
-    const data = await purchaseTicket(event.ticket_type_id, 1, validCode);
+    // В режиме «У меня есть код» ticket_type_id не передаём — бэкенд определяет тип билета по коду
+    const data = await purchaseTicket(codeMode ? null : event.ticket_type_id, 1, validCode, { eventId: event.id });
     if (data) {
       setShowModal(false);
-      onNavigate('tickets');
+      if (data.checkout_url && !data.is_free) {
+        // Код со скидкой, но не 100%: нужна оплата
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.openLink(data.checkout_url);
+        } else {
+          window.open(data.checkout_url, '_blank');
+        }
+      } else {
+        // is_free: true — билеты уже выданы
+        onNavigate('tickets');
+      }
     }
   };
 
@@ -132,17 +153,63 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
     { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
     { name: 'SVET', sub: '@letunasvet.ua', url: 'https://www.instagram.com/letunasvet.ua/' },
   ];
-  const partners = isSvetEvent ? svetPartners : allPartners;
+  // BAL DE ROÁR (12.12): только KYRIOS и ROAR
+  const isRoarEvent = event.id === '0889b3f6-cebd-4362-ade3-4e2dcace764e' || /BAL\s+DE\s+RO/i.test(event.title || '');
+  const ROAR_URL = 'https://www.instagram.com/roar.poland?lqvp=MW14aW4zbHFsaGo5cg=='; // ⚠️ вставьте ссылку на Instagram ROAR — пока пусто, карточка не кликабельна
+  const roarPartners = [
+    { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
+    { name: 'ROAR', sub: 'Event series', url: ROAR_URL },
+  ];
+  const partners = isSvetEvent ? svetPartners : isRoarEvent ? roarPartners : allPartners;
+  const codeOnly = isGuestlist || codeMode; // модалка только с вводом кода
+  const lang = (i18n.language || 'ru').slice(0, 2).toLowerCase();
+  const L = ({
+    ru: { card: 'Карта', bookTable: 'Забронировать стол', tableCode: 'У меня есть код стола', close: 'Закрыть' },
+    en: { card: 'Card', bookTable: 'Book a table', tableCode: 'I have a table code', close: 'Close' },
+    ua: { card: 'Картка', bookTable: 'Забронювати стіл', tableCode: 'У мене є код столу', close: 'Закрити' },
+  } as any)[lang === 'uk' ? 'ua' : lang] || { card: 'Card', bookTable: 'Book a table', tableCode: 'I have a table code', close: 'Close' };
+
+  // 💳 Покупка: method = 'card' | 'blik' (передаётся в smart-function как payment_method)
+  const handlePurchase = async (method?: 'card' | 'blik') => {
+    const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
+    if (window.Telegram?.WebApp?.BackButton) {
+      window.Telegram.WebApp.BackButton.hide();
+    }
+    const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend, { paymentMethod: method });
+    if (data) {
+      setShowModal(false);
+      if (data.is_free) {
+        onNavigate('tickets');
+      } else if (data.checkout_url) {
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.openLink(data.checkout_url);
+        } else {
+          window.open(data.checkout_url, '_blank');
+        }
+      }
+    }
+  };
   const mainButtonText = isGuestlist ? t('event_details_screen.get_ticket') : t('event_details_screen.buy_ticket');
 
-  const maxCapacity = event.capacity || 400;
-  const placesLeft = event.available !== null && event.available !== undefined ? event.available : maxCapacity;
-  const fillPercentage = Math.min(100, (placesLeft / maxCapacity) * 100);
+  // 📊 Шкала остатка строится по event.scale (пулы), а не по event.capacity / event.available (там только текущий пул)
+  const scalePools: any[] = Array.isArray(event.scale)
+    ? [...event.scale].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    : [];
+  const hasScale = scalePools.some((pl: any) => (pl.capacity || 0) > 0);
+  const scaleCapacity = scalePools.reduce((sum: number, pl: any) => sum + (pl.capacity || 0), 0);
+  const scaleAvailable = scalePools.reduce((sum: number, pl: any) => sum + (pl.available || 0), 0);
+  const maxCapacity = event.total_capacity ?? (hasScale ? scaleCapacity : (event.capacity || 400));
+  const placesLeft = event.total_available ?? (hasScale ? scaleAvailable : (event.available ?? maxCapacity));
+  // Если шкалы нет (например, гостевой список) — рисуем один сегмент по общим цифрам
+  const barPools: any[] = hasScale ? scalePools : [{ name: '', capacity: maxCapacity, available: placesLeft }];
+  const POOL_COLORS = ['#22c55e', '#06b6d4', '#8b5cf6', '#f59e0b', '#f97316', '#A50021'];
   
   const currentBatchName = event.ticket_type_name || 'Standard Ticket';
   const batchAvailable = event.available || 0;
   
-  const basePrice = event.current_price || 200;
+  // Цену показываем как есть: current_price активного пула (без запасных значений)
+  const hasPrice = event.current_price !== null && event.current_price !== undefined;
+  const basePrice = hasPrice ? event.current_price : 0;
 
   let finalTotal = basePrice * quantity;
   if (promoDiscount.percent > 0) {
@@ -242,10 +309,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
             <div className="relative z-10 flex flex-col gap-4">
               <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-xs font-label uppercase tracking-wider text-[#A50021] font-bold block mb-1">{t('event_details_screen.total_capacity')}</span>
-                  <span className="text-sm font-bold text-on-surface">{placesLeft}/{maxCapacity} <span className="text-on-surface-variant font-normal">{t('event_details_screen.places_left')}</span></span>
-                </div>
                 
                 <div className="text-right flex items-center">
                   <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 px-3 py-1 rounded-full border border-purple-100 dark:border-purple-500/30">
@@ -255,11 +318,26 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </div>
               </div>
 
-              <div className="w-full h-2.5 bg-zinc-200/50 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#A50021] rounded-full shadow-[0_4px_16px_rgba(239,68,68,0.5)] transition-all duration-1000 ease-out"
-                  style={{ width: `${fillPercentage}%` }}
-                ></div>
+              {/* Шкала остатка: сегмент = пул, ширина ∝ capacity, у каждого свой цвет.
+                  Заполненная часть = available / capacity и тает по мере продаж. Цифр нет, границы пулов — зазоры между сегментами. */}
+              <div className="w-full flex gap-[3px]" aria-hidden="true">
+                {barPools.map((pool: any, i: number) => {
+                  const cap = pool.capacity || 0;
+                  const pct = cap > 0 ? Math.max(0, Math.min(100, ((pool.available || 0) / cap) * 100)) : 0;
+                  return (
+                    <div
+                      key={pool.name || i}
+                      className="h-2.5 rounded-full overflow-hidden bg-zinc-200/60 dark:bg-zinc-700/50"
+                      style={{ flex: `${cap || 1} 1 0%`, minWidth: 6 }}
+                      title={pool.name || undefined}
+                    >
+                      <div
+                        className="h-full rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${pct}%`, backgroundColor: POOL_COLORS[i % POOL_COLORS.length] }}
+                      ></div>
+                    </div>
+                  );
+                })}
               </div>
 
               {!isGuestlist && event.batches && event.batches.length > 0 && (
@@ -276,7 +354,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                         </span>
                       ) : (
                         <span className={`text-xs ${batch.id === event.ticket_type_id ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-on-surface-variant'}`}>
-                          {batch.available} left · <span className="font-headline">{batch.price} PLN</span>
+                          <span className="font-headline">{batch.price} PLN</span>
                           {batch.id === event.ticket_type_id && ' 🔥'}
                         </span>
                       )}
@@ -325,7 +403,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               {partners.map((p) => (
                 <a
                   key={p.name}
-                  href={p.url}
+                  href={p.url || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="h-20 rounded-2xl bg-surface p-0.5 shadow-sm transition-all active:scale-[0.98] block relative group overflow-hidden"
@@ -358,12 +436,16 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                     {isGuestlist ? t('event_details_screen.access') : t('event_details_screen.entry_from')}
                   </span>
                   <span className="font-headline font-extrabold text-lg text-white">
-                    {isGuestlist ? t('event_details_screen.free_promo') : `${basePrice} PLN`}
+                    {isGuestlist ? t('event_details_screen.free_promo') : (hasPrice ? `${event.current_price} PLN` : '—')}
                   </span>
+                  {!isGuestlist && hasPrice && (
+                    <span className="text-[9px] text-zinc-500 font-semibold mt-0.5">{t('event_details_screen.service_fee_note')}</span>
+                  )}
                 </div>
                 <button 
                   onClick={() => {
                     if (batchAvailable > 0 || isGuestlist) {
+                      setCodeMode(false);
                       setShowModal(true);
                     }
                   }}
@@ -375,17 +457,28 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
             )}
 
+            {/* 🔑 «У меня есть код» — работает всегда, в том числе когда все пулы проданы. Для гостевого списка основная кнопка и так открывает ввод кода */}
+            {!isGuestlist && !event.sales_paused && (
+              <button
+                onClick={() => {
+                  setCodeMode(true);
+                  setPromoCode('');
+                  setPromoStatus('none');
+                  setShowModal(true);
+                }}
+                className="mt-3 w-full py-3.5 rounded-[1.5rem] bg-surface border border-outline-variant/50 text-on-surface font-headline font-black text-xs tracking-widest uppercase active:scale-95 transition-all"
+              >
+                {t('event_details_screen.have_code')}
+              </button>
+            )}
+
             {/* 🪑 Кнопка «Купить стол» — только если у ивента есть table_booking_url */}
             {event.table_booking_url && (
               <button
-                onClick={() => {
-                  const tg = window.Telegram?.WebApp;
-                  if (tg?.openTelegramLink) tg.openTelegramLink(event.table_booking_url);
-                  else window.open(event.table_booking_url, '_blank');
-                }}
+                onClick={() => setShowTableModal(true)}
                 className="mt-3 w-full py-4 rounded-[1.5rem] border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
               >
-                {t('BOOK  TABLE')}
+                BOOK TABLE
               </button>
             )}
           </div>
@@ -403,10 +496,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
             <div className="flex justify-between items-center mb-6">
               <div className="flex flex-col">
                 <h3 className="font-headline font-bold text-xl text-on-surface">
-                  {isGuestlist ? t('event_details_screen.guestlist_invitation') : t('event_details_screen.select_tickets')}
+                  {codeMode ? t('event_details_screen.have_code') : isGuestlist ? t('event_details_screen.guestlist_invitation') : t('event_details_screen.select_tickets')}
                 </h3>
                 <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest">
-                  {isGuestlist ? t('event_details_screen.promo_code_required') : t('event_details_screen.batch_active_modal', { batch: currentBatchName })}
+                  {codeMode ? t('event_details_screen.promo_code') : isGuestlist ? t('event_details_screen.promo_code_required') : t('event_details_screen.batch_active_modal', { batch: currentBatchName })}
                 </span>
               </div>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-on-surface-variant active:scale-95">✕</button>
@@ -418,7 +511,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
             ) : (
               <>
-                {!isGuestlist && (
+                {!codeOnly && (
                   <div className="flex items-center justify-between bg-surface-container border border-outline-variant/40 p-4 rounded-2xl mb-4">
                     <span className="font-bold text-on-surface">{t('event_details_screen.quantity')}</span>
                     <div className="flex items-center gap-6">
@@ -433,7 +526,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-on-surface-variant/60" />
                     <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                      {isGuestlist ? t('event_details_screen.enter_guestlist_promo') : t('event_details_screen.promo_code')}
+                      {isGuestlist && !codeMode ? t('event_details_screen.enter_guestlist_promo') : t('event_details_screen.promo_code')}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -463,7 +556,10 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                       {t('event_details_screen.access')}: {promoAccess}
                     </p>
                   )}
-                  {promoStatus === 'success' && !isGuestlist && (
+                  {codeMode && purchaseError && (
+                    <p className="text-red-500 dark:text-red-400 text-xs font-bold ml-1">{purchaseError}</p>
+                  )}
+                  {promoStatus === 'success' && !codeOnly && (
                     <p className="text-emerald-500 dark:text-emerald-400 text-xs font-bold ml-1">
                       {promoDiscount.amount > 0 
                         ? t('event_details_screen.promo_applied_amount', { amount: promoDiscount.amount })
@@ -473,40 +569,77 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                   )}
                 </div>
 
-                {!isGuestlist && (
-                  <button 
-                    onClick={async () => {
-                      const codeToSend = promoCode.trim() !== '' ? promoCode.trim() : undefined;
-                      if (window.Telegram?.WebApp?.BackButton) {
-                        window.Telegram.WebApp.BackButton.hide();
-                      }
-
-                      const data = await purchaseTicket(event.ticket_type_id, quantity, codeToSend);
-                      if (data) {
-                        setShowModal(false);
-                        if (data.is_free) {
-                          onNavigate('tickets');
-                        } else if (data.checkout_url) {
-                          if (window.Telegram?.WebApp) {
-                            window.Telegram.WebApp.openLink(data.checkout_url);
-                          } else {
-                            window.open(data.checkout_url, '_blank');
-                          }
-                        }
-                      }
-                    }}
+                {!codeOnly && (finalTotal === 0 ? (
+                  <button
+                    onClick={() => handlePurchase()}
                     disabled={purchaseLoading}
-                    className={`w-full py-4 text-white font-headline font-black text-sm rounded-xl transition-all disabled:opacity-50 ${finalTotal === 0 ? 'bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.5)]' : 'bg-[#A50021] shadow-[0_4px_16px_rgba(239,68,68,0.5)]'}`}
+                    className="w-full py-4 text-white font-headline font-black text-sm rounded-xl transition-all disabled:opacity-50 bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.3)] active:scale-95"
                   >
-                    {purchaseLoading ? t('event_details_screen.processing') : (
-                      finalTotal === 0 
-                        ? t('event_details_screen.claim_free_ticket')
-                        : t('event_details_screen.proceed_to_payment', { total: finalTotal })
-                    )}
+                    {purchaseLoading ? t('event_details_screen.processing') : t('event_details_screen.claim_free_ticket')}
                   </button>
-                )}
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-center text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                      {t('event_details_screen.proceed_to_payment', { total: finalTotal })}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handlePurchase('card')}
+                        disabled={purchaseLoading}
+                        className="py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {purchaseLoading ? '...' : L.card}
+                      </button>
+                      <button
+                        onClick={() => handlePurchase('blik')}
+                        disabled={purchaseLoading}
+                        className="py-4 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-headline font-black text-sm rounded-xl active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {purchaseLoading ? '...' : 'BLIK'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 🪑 Окно стола: чат менеджера или ввод кода стола */}
+      {showTableModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowTableModal(false)}>
+          <div
+            className="bg-surface border-t border-outline-variant/40 w-full max-w-md rounded-t-[2rem] p-6 pb-12 space-y-3 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                const tg = window.Telegram?.WebApp;
+                if (tg?.openTelegramLink) tg.openTelegramLink(event.table_booking_url);
+                else window.open(event.table_booking_url, '_blank');
+                setShowTableModal(false);
+              }}
+              className="w-full py-4 bg-[#A50021] text-white font-headline font-black text-sm rounded-xl shadow-[0_4px_16px_rgba(165,0,33,0.3)] active:scale-95 transition-all uppercase tracking-widest"
+            >
+              {L.bookTable}
+            </button>
+            <button
+              onClick={() => {
+                // Код стола вводится так же, как «У меня есть код»: бэкенд сам различает «оплачено» и «оплатить в приложении»
+                setShowTableModal(false);
+                setCodeMode(true);
+                setPromoCode('');
+                setPromoStatus('none');
+                setShowModal(true);
+              }}
+              className="w-full py-4 border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-sm rounded-xl active:scale-95 transition-all uppercase tracking-widest"
+            >
+              {L.tableCode}
+            </button>
+            <button onClick={() => setShowTableModal(false)} className="w-full py-2 text-on-surface-variant font-bold text-xs uppercase tracking-widest">
+              {L.close}
+            </button>
           </div>
         </div>
       )}
