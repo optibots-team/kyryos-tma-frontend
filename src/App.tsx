@@ -10,6 +10,7 @@ import { AdminScanner } from './AdminScanner';
 import BottomNav from './components/BottomNav';
 import TopCurtain from './components/TopCurtain'; // 🌟 Импортируем верхнюю шторку Этапа 4
 import { supabase } from './lib/supabaseClient';
+import TicketTransferAccept from './components/TicketTransferAccept';
 
 export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'admin-panel' | 'gallery';
 
@@ -17,6 +18,8 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('events');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  // 🎁 Код передачи билета из ссылки startapp=tr_<код>
+  const [transferCode, setTransferCode] = useState<string | null>(null);
 
   // 0. Разворачиваем приложение на весь экран и отключаем свайп-вниз для сворачивания —
   // иначе скролл длинных списков (юзеры, коды в админке и т.д.) закрывает Mini App
@@ -56,6 +59,11 @@ export default function App() {
       // Моментально перенаправляем на детальный экран ивента
       setSelectedEventId(eventId);
       setCurrentScreen('event-details');
+    }
+
+    // Ссылка «Вам передали билет»: показываем окно с предложением принять
+    if (startParam && startParam.startsWith('tr_')) {
+      setTransferCode(startParam.slice(3));
     }
   }, []);
 
@@ -165,6 +173,17 @@ export default function App() {
         <AdminPanel onNavigate={setCurrentScreen} userRole={userRole} />
       )}
       
+      {transferCode && (
+        <TicketTransferAccept
+          code={transferCode}
+          onClose={() => setTransferCode(null)}
+          onAccepted={() => {
+            setTransferCode(null);
+            setCurrentScreen('tickets');
+          }}
+        />
+      )}
+
       {!hideBottomNav && (
         <BottomNav 
           currentScreen={currentScreen} 
