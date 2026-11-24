@@ -3,6 +3,8 @@ import { Ticket as TicketIcon, MapPin, Calendar, Clock, User, Tag, CheckCircle2,
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
+import { Send } from 'lucide-react';
+import { TRANSFER_ENABLED, createTransfer, cancelTransfer, shareTransferLink, transferTexts, notify } from '../lib/ticketTransfer';
 
 // 🎫 Категория доступа на билете (приходит из tickets_full.access_category).
 // Цвета совпадают с цветами браслетов S.V.E.T: FAN — белый, BACKSTAGE — зелёный, TABLE — розовый.
@@ -35,7 +37,9 @@ const getAccessCategory = (v: unknown): AccessCategory | null => {
 };
 
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const tx = transferTexts(i18n.language);
+  const [transferBusy, setTransferBusy] = useState<string | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -80,6 +84,32 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
 
     fetchTickets();
   }, [tgUser?.id]);
+
+  // 🎁 Передача билета: создаём код → открываем стандартное окно Telegram «Поделиться» (друзья, поиск по нику, «Отправить»)
+  const handleTransfer = async (ticket: any) => {
+    setTransferBusy(ticket.id);
+    const r = await createTransfer(ticket.id);
+    setTransferBusy(null);
+    if (!r.ok || !r.transfer_code) {
+      notify(r.error || 'Transfer failed');
+      return;
+    }
+    const eventTitle = ticket.event_title || t('tickets_screen.default_event_title');
+    const text = getAccessCategory(ticket.access_category) === 'TABLE' ? tx.shareTable(eventTitle) : tx.share(eventTitle);
+    shareTransferLink(r.transfer_code, text);
+    setTickets(prev => prev.map(tk => (tk.id === ticket.id ? { ...tk, transfer_pending: true } : tk)));
+  };
+
+  const handleCancelTransfer = async (ticket: any) => {
+    setTransferBusy(ticket.id);
+    const r = await cancelTransfer(ticket.id);
+    setTransferBusy(null);
+    if (!r.ok) {
+      notify(r.error || 'Transfer failed');
+      return;
+    }
+    setTickets(prev => prev.map(tk => (tk.id === ticket.id ? { ...tk, transfer_pending: false } : tk)));
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
@@ -281,6 +311,32 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
               )}
             </div>
           </div>
+
+          {/* 🎁 Передать билет другу — только для актуальных (не посещённых и не прошедших) билетов */}
+          {TRANSFER_ENABLED && isActive && (
+            <div className="pt-2 space-y-2">
+              {ticket.transfer_pending && (
+                <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 text-center">{tx.pending}</p>
+              )}
+              <button
+                onClick={() => handleTransfer(ticket)}
+                disabled={transferBusy === ticket.id}
+                className="w-full py-3.5 rounded-2xl border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-xs tracking-widest uppercase flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                {tx.btn}
+              </button>
+              {ticket.transfer_pending && (
+                <button
+                  onClick={() => handleCancelTransfer(ticket)}
+                  disabled={transferBusy === ticket.id}
+                  className="w-full py-2 text-on-surface-variant font-bold text-[11px] uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {tx.cancel}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
