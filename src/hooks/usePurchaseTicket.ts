@@ -10,7 +10,9 @@ export function usePurchaseTicket() {
   const [error,   setError]   = useState<string | null>(null)
 
   // Изменили eventId на ticketTypeId
-  const purchaseTicket = async (ticketTypeId: string, quantity: number = 1, promoCode?: string) => {
+  // ticketTypeId = null → режим «У меня есть код»: тип билета бэкенд берёт из кода
+  // opts.paymentMethod → payment_method ('card' | 'blik'); opts.eventId → tier_id (только в режиме «по коду», когда ticketTypeId = null)
+  const purchaseTicket = async (ticketTypeId: string | null, quantity: number = 1, promoCode?: string, opts?: { paymentMethod?: 'card' | 'blik'; eventId?: string }) => {
     setLoading(true)
     setError(null)
 
@@ -32,8 +34,9 @@ export function usePurchaseTicket() {
         },
         body: JSON.stringify({
           telegram_id:    user.id,
-          ticket_type_id: ticketTypeId, // Передаем новый ID партии/стола
-          quantity:       quantity,
+          // Только по коду: ticket_type_id не нужен, тип берётся из кода; id события идёт в поле tier_id
+          ...(ticketTypeId ? { ticket_type_id: ticketTypeId, quantity } : { tier_id: opts?.eventId }),
+          ...(opts?.paymentMethod ? { payment_method: opts.paymentMethod } : {}),
           promo_code:     promoCode || null,
           user_data: {
             username:   user.username || '',
