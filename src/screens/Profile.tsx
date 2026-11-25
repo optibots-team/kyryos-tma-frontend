@@ -6,6 +6,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
+import PhoneField from '../components/PhoneField';
+import {
+  regTexts, getStatus, setMarketing, updateContact, splitPhone, validNational, fullPhone, EMAIL_RE, isoToBirth,
+} from '../lib/registration';
 
 interface ProfileProps {
   onNavigate: (screen: Screen) => void;
@@ -13,7 +17,8 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, userRole }: ProfileProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const rx = regTexts(i18n.language);
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const photoUrl = tgUser?.photo_url;
 
@@ -26,6 +31,51 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   const [isInstaFilled, setIsInstaFilled] = useState(false);
   
   const [saveLoading, setSaveLoading] = useState(false);
+
+  // 📝 Контакты и уведомления (данные из update-profile → status)
+  const [marketing, setMarketingValue] = useState(false);
+  const [contactIso, setContactIso] = useState('PL');
+  const [contactNational, setContactNational] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [contactBusy, setContactBusy] = useState(false);
+  const [contactMsg, setContactMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    getStatus().then(({ ok, data }) => {
+      if (!ok) return;
+      setMarketingValue(!!data.marketing_consent);
+      if (data.phone) {
+        const p = splitPhone(data.phone);
+        setContactIso(p.iso);
+        setContactNational(p.national);
+      }
+      setContactEmail(data.email || '');
+      setBirthDate(isoToBirth(data.birth_date));
+    }).catch(() => {});
+  }, []);
+
+  const handleToggleMarketing = async () => {
+    const next = !marketing;
+    setMarketingValue(next); // оптимистично, при ошибке откатываем
+    const { ok } = await setMarketing(next).catch(() => ({ ok: false }));
+    if (!ok) setMarketingValue(!next);
+  };
+
+  const handleSaveContact = async () => {
+    if (!validNational(contactNational, contactIso)) return setContactMsg({ ok: false, text: rx.badPhone });
+    if (!EMAIL_RE.test(contactEmail.trim())) return setContactMsg({ ok: false, text: rx.badEmail });
+    setContactBusy(true);
+    setContactMsg(null);
+    try {
+      const { ok, data } = await updateContact(fullPhone(contactIso, contactNational), contactEmail.trim());
+      setContactMsg(ok ? { ok: true, text: rx.saved } : { ok: false, text: data?.error || rx.netError });
+    } catch {
+      setContactMsg({ ok: false, text: rx.netError });
+    } finally {
+      setContactBusy(false);
+    }
+  };
   const [xpNotify, setXpNotify] = useState<{show: boolean, msg: string}>({show: false, msg: ''});
 
   useEffect(() => {
@@ -68,7 +118,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         },
         body: JSON.stringify({
           telegram_id: tgUser.id,
-          full_name: fullName.trim(),
           instagram: cleanInsta
         })
       });
@@ -81,7 +130,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
         setTimeout(() => setXpNotify({ show: false, msg: '' }), 4000);
       }
 
-      if (fullName.trim()) setIsNameFilled(true);
       if (cleanInsta) setIsInstaFilled(true);
 
     } catch (err) {
@@ -118,7 +166,7 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   };
 
   const displayName = fullName || tgUser?.first_name || tgUser?.username || 'Guest';
-  const isProfileComplete = isNameFilled && isInstaFilled;
+  const isProfileComplete = isInstaFilled; // имя теперь собирается при регистрации, баллы за него не начисляются
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -175,23 +223,6 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
             </div>
 
             <div className="space-y-3">
-              {!isNameFilled && (
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder={t('profile_screen.name_placeholder')}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-5 py-3.5 text-sm font-bold text-on-surface focus:outline-none focus:border-[#A50021]/30 transition-all pr-24"
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <span className="text-[9px] font-black bg-zinc-900 text-[#A50021] px-2 py-1 rounded-lg border border-[#A50021]/30 animate-pulse">
-                      +500 XP ✨
-                    </span>
-                  </div>
-                </div>
-              )}
-
               {!isInstaFilled && (
                 <div className="relative">
                   <input 
@@ -211,6 +242,53 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
             </div>
           </section>
         )}
+
+        {/* 📝 КОНТАКТЫ И УВЕДОМЛЕНИЯ */}
+        <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4 animate-fade-up delay-75">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{rx.contactTitle}</h3>
+
+          <button onClick={handleToggleMarketing} className="w-full flex items-center justify-between gap-4 text-left">
+            <span className="text-sm font-bold text-on-surface">{rx.marketing}</span>
+            <span className={`relative w-12 h-7 rounded-full shrink-0 transition-colors ${marketing ? 'bg-[#A50021]' : 'bg-zinc-300 dark:bg-zinc-700'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${marketing ? 'translate-x-5' : ''}`}></span>
+            </span>
+          </button>
+
+          <div className="space-y-3 pt-2 border-t border-outline-variant/30">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.phone}</label>
+              <PhoneField iso={contactIso} national={contactNational} onChange={(i, n) => { setContactIso(i); setContactNational(n); }} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.email}</label>
+              <input
+                type="email"
+                inputMode="email"
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-4 py-3.5 text-base font-bold text-on-surface focus:outline-none focus:border-[#A50021]"
+              />
+            </div>
+            <button
+              onClick={handleSaveContact}
+              disabled={contactBusy}
+              className="w-full py-3.5 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+            >
+              {contactBusy ? '...' : rx.save}
+            </button>
+            {contactMsg && (
+              <p className={`text-xs font-bold ml-1 ${contactMsg.ok ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{contactMsg.text}</p>
+            )}
+          </div>
+
+          {birthDate && (
+            <div className="pt-2 border-t border-outline-variant/30">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1 ml-1">{rx.birthLabel}</span>
+              <span className="block text-sm font-bold text-on-surface ml-1">{birthDate}</span>
+              <span className="block text-[11px] text-on-surface-variant/60 ml-1 mt-0.5">{rx.birthHint}</span>
+            </div>
+          )}
+        </section>
 
         {/* ✅ 3. КНОПКА ВХОДА В НОВУЮ АДМИН-ПАНЕЛЬ — светлая карточка с фирменным красным акцентом */}
        {(userRole === 'admin' || userRole === 'promoter') && (
