@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 import { Send } from 'lucide-react';
-import { TRANSFER_ENABLED, createTransfer, cancelTransfer, shareTransferLink, transferTexts, notify } from '../lib/ticketTransfer';
+import { TRANSFER_ENABLED, createTransfer, cancelTransfer, openShare, transferTexts, notify } from '../lib/ticketTransfer';
 
 // 🎫 Категория доступа на билете (приходит из tickets_full.access_category).
-// Цвета совпадают с цветами браслетов S.V.E.T: FAN — белый, BACKSTAGE — зелёный, TABLE — розовый.
+// BAL DE ROÁR: FAN — белый, YBC — красный, TABLE — зелёный со свечением.
 // bar/ring — для карточки (тёмный блок), expandedBar/expandedRing — для белого полноэкранного QR.
-type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLE';
+type AccessCategory = 'FAN' | 'YBC' | 'TABLE';
 const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expandedBar: string; expandedRing: string }> = {
   FAN: {
     bar: 'bg-white text-black border-b-2 border-zinc-300',
@@ -17,23 +17,23 @@ const ACCESS_STYLES: Record<AccessCategory, { bar: string; ring: string; expande
     expandedBar: 'bg-white text-black border-b-4 border-black',
     expandedRing: 'ring-black',
   },
-  BACKSTAGE: {
-    bar: 'bg-[#4CB82B] text-black',
-    ring: 'ring-[#4CB82B]',
-    expandedBar: 'bg-[#4CB82B] text-black',
-    expandedRing: 'ring-[#4CB82B]',
+  YBC: {
+    bar: 'bg-[#E11D2E] text-white',
+    ring: 'ring-[#E11D2E]',
+    expandedBar: 'bg-[#E11D2E] text-white',
+    expandedRing: 'ring-[#E11D2E]',
   },
   TABLE: {
-    bar: 'bg-[#EC5B9E] text-black',
-    ring: 'ring-[#EC5B9E]',
-    expandedBar: 'bg-[#EC5B9E] text-black',
-    expandedRing: 'ring-[#EC5B9E]',
+    bar: 'bg-[#22E26B] text-black shadow-[0_0_28px_rgba(34,226,107,0.75)]',
+    ring: 'ring-[#22E26B] shadow-[0_0_30px_rgba(34,226,107,0.7)]',
+    expandedBar: 'bg-[#22E26B] text-black shadow-[0_0_36px_rgba(34,226,107,0.8)]',
+    expandedRing: 'ring-[#22E26B] shadow-[0_0_40px_rgba(34,226,107,0.7)]',
   },
 };
 const getAccessCategory = (v: unknown): AccessCategory | null => {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   if (s === 'TABLES') return 'TABLE'; // на всякий случай, если бэкенд пришлёт во множественном числе
-  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLE' ? s : null;
+  return s === 'FAN' || s === 'YBC' || s === 'TABLE' ? s : null;
 };
 
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -90,13 +90,11 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     setTransferBusy(ticket.id);
     const r = await createTransfer(ticket.id);
     setTransferBusy(null);
-    if (!r.ok || !r.transfer_code) {
+    if (!r.ok || !r.share_url) {
       notify(r.error || 'Transfer failed');
       return;
     }
-    const eventTitle = ticket.event_title || t('tickets_screen.default_event_title');
-    const text = getAccessCategory(ticket.access_category) === 'TABLE' ? tx.shareTable(eventTitle) : tx.share(eventTitle);
-    shareTransferLink(r.transfer_code, text);
+    openShare(r.share_url);
     setTickets(prev => prev.map(tk => (tk.id === ticket.id ? { ...tk, transfer_pending: true } : tk)));
   };
 
@@ -149,10 +147,10 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
     return (
       <div 
         key={ticket.id}
-        className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up ${accessCategory === 'TABLE' ? 'border-2 border-[#EC5B9E]' : 'border border-outline-variant/40'} ${isExpired ? 'opacity-75' : ''}`}
+        className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up ${accessCategory === 'TABLE' ? 'border-2 border-[#22E26B] shadow-[0_0_28px_rgba(34,226,107,0.45)]' : 'border border-outline-variant/40'} ${isExpired ? 'opacity-75' : ''}`}
         style={{ animationDelay: `${index * 100}ms` }}
       >
-        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / BACKSTAGE / TABLE) */}
+        {/* 🎫 Заметная цветная полоса с категорией доступа (FAN / YBC / TABLE) */}
         {accessCategory && (
           <div className={`${ACCESS_STYLES[accessCategory].bar} text-center py-3 font-headline font-black text-lg tracking-[0.35em] uppercase`}>
             {accessCategory}
@@ -313,7 +311,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
           </div>
 
           {/* 🎁 Передать билет другу — только для актуальных (не посещённых и не прошедших) билетов */}
-          {TRANSFER_ENABLED && isActive && (
+          {TRANSFER_ENABLED && isActive && ticket.status === 'paid' && (
             <div className="pt-2 space-y-2">
               {ticket.transfer_pending && (
                 <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 text-center">{tx.pending}</p>
