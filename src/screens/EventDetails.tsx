@@ -464,20 +464,6 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
               </div>
             )}
 
-            {/* 🔑 «У меня есть код» — работает всегда, в том числе когда все пулы проданы. Для гостевого списка основная кнопка и так открывает ввод кода */}
-            {!isGuestlist && !event.sales_paused && (
-              <button
-                onClick={() => {
-                  setCodeMode(true);
-                  setPromoCode('');
-                  setPromoStatus('none');
-                  setShowModal(true);
-                }}
-                className="mt-3 w-full py-3.5 rounded-[1.5rem] bg-surface border border-outline-variant/50 text-on-surface font-headline font-black text-xs tracking-widest uppercase active:scale-95 transition-all"
-              >
-                {t('event_details_screen.have_code')}
-              </button>
-            )}
 
             {/* 🪑 Кнопка «Купить стол» — только если у ивента есть table_booking_url */}
             {event.table_booking_url && (
