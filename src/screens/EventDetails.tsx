@@ -158,7 +158,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const ROAR_URL = 'https://www.instagram.com/roar.poland?lqvp=MW14aW4zbHFsaGo5cg=='; // ⚠️ вставьте ссылку на Instagram ROAR — пока пусто, карточка не кликабельна
   const roarPartners = [
     { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
-    { name: 'ROAR', sub: 'Event series', url: ROAR_URL },
+    { name: 'ROAR', sub: 'Fashion Brand', url: ROAR_URL },
     { name: 'YBC WARSAW', sub: 'Young Business Club', url: 'https://www.instagram.com/ybc.warsaw?fqnt=MXdmb2xxZ3JvOGVmag==' },
     { name: 'NICE GUYS', sub: '@itsniceguys__', url: 'https://www.instagram.com/itsniceguys__?knvt=MXFjeWIxdzNtY2p5cQ==' },
   ];
@@ -222,7 +222,12 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
 
   const eventDate = new Date(event.event_date);
   const dateString = eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const timeString = eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const timeFmt: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Warsaw' };
+  const timeString = eventDate.toLocaleTimeString('en-GB', timeFmt);
+  // Время окончания (по Варшаве). Если event_end_date нет — показываем «till late» как раньше
+  const endTimeString = event.event_end_date
+    ? new Date(event.event_end_date).toLocaleTimeString('en-GB', timeFmt)
+    : null;
 
   // 🎯 Проверка: видео или изображение в обложке
   const isVideo = event.image_url?.match(/\.(mp4|webm)$/i);
@@ -276,7 +281,7 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
                 </div>
                 <div>
                   <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant/70 font-semibold">{t('event_details_screen.time')}</p>
-                  <p className="text-sm font-bold text-on-surface">{timeString} - {t('event_details_screen.till_late')}</p>
+                  <p className="text-sm font-bold text-on-surface">{timeString} - {endTimeString || t('event_details_screen.till_late')}</p>
                 </div>
               </div>
 
