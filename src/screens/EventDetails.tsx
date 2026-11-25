@@ -159,6 +159,8 @@ export default function EventDetails({ onNavigate, eventId }: EventDetailsProps)
   const roarPartners = [
     { name: 'KYRIOS', sub: 'Event agency', url: 'https://www.instagram.com/kyrioseventagency?igsh=YWplZ2RvenozN2Vj' },
     { name: 'ROAR', sub: 'Event series', url: ROAR_URL },
+    { name: 'YBC WARSAW', sub: 'Young Business Club', url: 'https://www.instagram.com/ybc.warsaw?fqnt=MXdmb2xxZ3JvOGVmag==' },
+    { name: 'NICE GUYS', sub: '@itsniceguys__', url: 'https://www.instagram.com/itsniceguys__?knvt=MXFjeWIxdzNtY2p5cQ==' },
   ];
   const partners = isSvetEvent ? svetPartners : isRoarEvent ? roarPartners : allPartners;
   const codeOnly = isGuestlist || codeMode; // модалка только с вводом кода
