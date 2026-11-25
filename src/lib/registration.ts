@@ -120,7 +120,7 @@ const TEXTS = {
     required: 'Обязательное поле', badPhone: 'Проверьте номер телефона', badEmail: 'Проверьте email', badBirth: 'Введите корректную дату рождения',
     netError: 'Не удалось связаться с сервером, попробуйте ещё раз',
     contactTitle: 'Контакты и уведомления', marketing: 'Хочу получать анонсы и новости', birthLabel: 'Дата рождения',
-    birthHint: 'Изменить можно только через администратора', save: 'Сохранить', saved: 'Сохранено',
+    birthHint: 'Изменить можно только через администратора', save: 'Сохранить', saved: 'Сохранено', edit: 'Редактировать', cancel: 'Отмена',
   },
   en: {
     title: 'Before we start', subtitle: 'A few details to create your account',
@@ -129,7 +129,7 @@ const TEXTS = {
     required: 'Required field', badPhone: 'Check the phone number', badEmail: 'Check the email', badBirth: 'Enter a valid date of birth',
     netError: 'Could not reach the server, please try again',
     contactTitle: 'Contacts & notifications', marketing: 'I want to receive announcements and news', birthLabel: 'Date of birth',
-    birthHint: 'Can only be changed by an administrator', save: 'Save', saved: 'Saved',
+    birthHint: 'Can only be changed by an administrator', save: 'Save', saved: 'Saved', edit: 'Edit', cancel: 'Cancel',
   },
   ua: {
     title: 'Перш ніж почнемо', subtitle: 'Кілька даних, щоб створити ваш акаунт',
@@ -138,7 +138,7 @@ const TEXTS = {
     required: "Обов'язкове поле", badPhone: 'Перевірте номер телефону', badEmail: 'Перевірте email', badBirth: 'Введіть коректну дату народження',
     netError: "Не вдалося зв'язатися із сервером, спробуйте ще раз",
     contactTitle: 'Контакти та сповіщення', marketing: 'Хочу отримувати анонси та новини', birthLabel: 'Дата народження',
-    birthHint: 'Змінити можна лише через адміністратора', save: 'Зберегти', saved: 'Збережено',
+    birthHint: 'Змінити можна лише через адміністратора', save: 'Зберегти', saved: 'Збережено', edit: 'Редагувати', cancel: 'Скасувати',
   },
 } as const;
 
