@@ -16,7 +16,7 @@ type UserRole = string | null;
 type ScanState = 'idle' | 'loading' | 'success' | 'error' | 'wrong_event' | 'expired';
 
 // 🎫 Категория доступа из ответа scan-ticket: охрана по ней понимает, какую ленточку надеть
-type AccessCategory = 'FAN' | 'BACKSTAGE' | 'TABLE';
+type AccessCategory = 'FAN' | 'YBC' | 'TABLE';
 
 interface ScanResult {
   state: ScanState;
@@ -27,7 +27,7 @@ interface ScanResult {
 function parseAccessCategory(v: unknown): AccessCategory | null {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   if (s === 'TABLES') return 'TABLE'; // на всякий случай
-  return s === 'FAN' || s === 'BACKSTAGE' || s === 'TABLE' ? s : null;
+  return s === 'FAN' || s === 'YBC' || s === 'TABLE' ? s : null;
 }
 
 interface EventOption {
@@ -193,7 +193,7 @@ function ScannerView() {
     if (scanResult.state === 'success' || scanResult.state === 'error' || scanResult.state === 'wrong_event' || scanResult.state === 'expired') {
       const timer = setTimeout(() => {
         setScanResult({ state: 'idle' })
-      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / BACKSTAGE / TABLE) и надеть нужную ленточку
+      }, 6000) // 6 секунд, чтобы охрана успела увидеть категорию (FAN / YBC / TABLE) и надеть нужную ленточку
       return () => clearTimeout(timer)
     }
   }, [scanResult.state])
@@ -275,17 +275,17 @@ function buildErrorResult(message: string, data?: any): ScanResult {
 // ---- Sub-components -----------------------------------------
 
 // 🎫 Огромная плашка категории — цвета как у браслетов S.V.E.T:
-// FAN — белый, BACKSTAGE — зелёный, TABLE — розовый. Белая рамка отделяет плашку от цвета статуса.
+// FAN — белый, YBC — красный, TABLE — зелёный со свечением. Белая рамка отделяет плашку от цвета статуса.
 const CATEGORY_BANNER_STYLES: Record<AccessCategory, string> = {
-  FAN: 'bg-white',
-  BACKSTAGE: 'bg-[#4CB82B]',
-  TABLE: 'bg-[#EC5B9E]',
+  FAN: 'bg-white text-black',
+  YBC: 'bg-[#E11D2E] text-white',
+  TABLE: 'bg-[#22E26B] text-black shadow-[0_0_45px_rgba(34,226,107,0.85)]',
 }
 
 function CategoryBanner({ category }: { category?: AccessCategory | null }) {
   if (!category) return null
   return (
-    <div className={`${CATEGORY_BANNER_STYLES[category]} w-full rounded-2xl py-5 mb-4 text-black text-center font-black text-4xl tracking-[0.2em] uppercase ring-4 ring-white/80 shadow-[0_0_30px_rgba(255,255,255,0.25)]`}>
+    <div className={`${CATEGORY_BANNER_STYLES[category]} w-full rounded-2xl py-5 mb-4 text-center font-black text-4xl tracking-[0.2em] uppercase ring-4 ring-white/80 shadow-[0_0_30px_rgba(255,255,255,0.25)]`}>
       {category}
     </div>
   )
@@ -310,15 +310,15 @@ function ResultDisplay({ result }: { result: ScanResult }) {
   }
 
   if (result.state === 'success') {
-    // 🪑 TABLE — весь экран розовый (как браслет); остальные категории — зелёный экран + цветная плашка
+    // 🪑 TABLE — весь экран ярко-зелёный со свечением; остальные категории — обычный зелёный экран + цветная плашка
     const isTable = result.accessCategory === 'TABLE'
     return (
-      <div className={`w-full px-5 py-6 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${isTable ? 'bg-[#EC5B9E]/25 border-2 border-[#EC5B9E]' : 'bg-emerald-500/20 border border-emerald-500/40'}`}>
+      <div className={`w-full px-5 py-6 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${isTable ? 'bg-[#22E26B]/25 border-2 border-[#22E26B] shadow-[0_0_40px_rgba(34,226,107,0.5)]' : 'bg-emerald-500/20 border border-emerald-500/40'}`}>
         <CategoryBanner category={result.accessCategory} />
-        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 ${isTable ? 'bg-[#EC5B9E] shadow-[0_0_20px_rgba(236,91,158,0.5)]' : 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'}`}>
+        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3 ${isTable ? 'bg-[#22E26B] shadow-[0_0_24px_rgba(34,226,107,0.8)]' : 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'}`}>
           <span className="text-white text-3xl font-bold">✓</span>
         </div>
-        <p className={`font-bold text-lg whitespace-pre-line ${isTable ? 'text-pink-300' : 'text-emerald-400'}`}>{result.message}</p>
+        <p className={`font-bold text-lg whitespace-pre-line ${isTable ? 'text-[#7CFFAA]' : 'text-emerald-400'}`}>{result.message}</p>
       </div>
     )
   }
