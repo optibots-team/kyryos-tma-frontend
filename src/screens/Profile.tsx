@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { 
   Share2, Trophy, User, ShieldCheck, QrCode,
-  Flame, Lock, CreditCard, Crown, Instagram 
+  Flame, Lock, CreditCard, Crown, Instagram, ChevronDown 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../App';
 import { supabase } from '../lib/supabaseClient';
 import PhoneField from '../components/PhoneField';
 import {
-  regTexts, getStatus, setMarketing, updateContact, splitPhone, validNational, fullPhone, EMAIL_RE, isoToBirth,
+  regTexts, getStatus, setMarketing, updateContact, splitPhone, validNational, fullPhone, formatNational, EMAIL_RE, isoToBirth, COUNTRIES,
 } from '../lib/registration';
 
 interface ProfileProps {
@@ -39,18 +39,20 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
   const [contactEmail, setContactEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [contactBusy, setContactBusy] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);   // «шторка» раскрыта
+  const [contactEditing, setContactEditing] = useState(false); // режим редактирования телефона/почты
+  const [savedContact, setSavedContact] = useState({ iso: 'PL', national: '', email: '' }); // последние сохранённые значения
   const [contactMsg, setContactMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     getStatus().then(({ ok, data }) => {
       if (!ok) return;
       setMarketingValue(!!data.marketing_consent);
-      if (data.phone) {
-        const p = splitPhone(data.phone);
-        setContactIso(p.iso);
-        setContactNational(p.national);
-      }
+      const p = data.phone ? splitPhone(data.phone) : { iso: 'PL', national: '' };
+      setContactIso(p.iso);
+      setContactNational(p.national);
       setContactEmail(data.email || '');
+      setSavedContact({ iso: p.iso, national: p.national, email: data.email || '' });
       setBirthDate(isoToBirth(data.birth_date));
     }).catch(() => {});
   }, []);
@@ -62,6 +64,19 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     if (!ok) setMarketingValue(!next);
   };
 
+  const startEditContact = () => {
+    setContactIso(savedContact.iso);
+    setContactNational(savedContact.national);
+    setContactEmail(savedContact.email);
+    setContactMsg(null);
+    setContactEditing(true);
+  };
+
+  const cancelEditContact = () => {
+    setContactEditing(false);
+    setContactMsg(null);
+  };
+
   const handleSaveContact = async () => {
     if (!validNational(contactNational, contactIso)) return setContactMsg({ ok: false, text: rx.badPhone });
     if (!EMAIL_RE.test(contactEmail.trim())) return setContactMsg({ ok: false, text: rx.badEmail });
@@ -69,7 +84,13 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
     setContactMsg(null);
     try {
       const { ok, data } = await updateContact(fullPhone(contactIso, contactNational), contactEmail.trim());
-      setContactMsg(ok ? { ok: true, text: rx.saved } : { ok: false, text: data?.error || rx.netError });
+      if (ok) {
+        setSavedContact({ iso: contactIso, national: contactNational, email: contactEmail.trim() });
+        setContactMsg({ ok: true, text: rx.saved });
+        setContactEditing(false);
+      } else {
+        setContactMsg({ ok: false, text: data?.error || rx.netError });
+      }
     } catch {
       setContactMsg({ ok: false, text: rx.netError });
     } finally {
@@ -243,49 +264,92 @@ export default function Profile({ onNavigate, userRole }: ProfileProps) {
           </section>
         )}
 
-        {/* 📝 КОНТАКТЫ И УВЕДОМЛЕНИЯ */}
-        <section className="bg-surface rounded-[2rem] p-6 border border-outline-variant/40 shadow-sm space-y-4 animate-fade-up delay-75">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{rx.contactTitle}</h3>
-
-          <button onClick={handleToggleMarketing} className="w-full flex items-center justify-between gap-4 text-left">
-            <span className="text-sm font-bold text-on-surface">{rx.marketing}</span>
-            <span className={`relative w-12 h-7 rounded-full shrink-0 transition-colors ${marketing ? 'bg-[#A50021]' : 'bg-zinc-300 dark:bg-zinc-700'}`}>
-              <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${marketing ? 'translate-x-5' : ''}`}></span>
-            </span>
+        {/* 📝 КОНТАКТЫ И УВЕДОМЛЕНИЯ — свёрнуты под «шторкой», телефон и почта редактируются по кнопке */}
+        <section className="bg-surface rounded-[2rem] border border-outline-variant/40 shadow-sm animate-fade-up delay-75 overflow-hidden">
+          <button
+            onClick={() => setContactOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-4 p-6 text-left"
+            aria-expanded={contactOpen}
+          >
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{rx.contactTitle}</h3>
+            <ChevronDown size={18} className={`text-on-surface-variant transition-transform ${contactOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          <div className="space-y-3 pt-2 border-t border-outline-variant/30">
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.phone}</label>
-              <PhoneField iso={contactIso} national={contactNational} onChange={(i, n) => { setContactIso(i); setContactNational(n); }} />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.email}</label>
-              <input
-                type="email"
-                inputMode="email"
-                value={contactEmail}
-                onChange={e => setContactEmail(e.target.value)}
-                className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-4 py-3.5 text-base font-bold text-on-surface focus:outline-none focus:border-[#A50021]"
-              />
-            </div>
-            <button
-              onClick={handleSaveContact}
-              disabled={contactBusy}
-              className="w-full py-3.5 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
-            >
-              {contactBusy ? '...' : rx.save}
-            </button>
-            {contactMsg && (
-              <p className={`text-xs font-bold ml-1 ${contactMsg.ok ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{contactMsg.text}</p>
-            )}
-          </div>
+          {contactOpen && (
+            <div className="px-6 pb-6 space-y-4">
+              <button onClick={handleToggleMarketing} className="w-full flex items-center justify-between gap-4 text-left">
+                <span className="text-sm font-bold text-on-surface">{rx.marketing}</span>
+                <span className={`relative w-12 h-7 rounded-full shrink-0 transition-colors ${marketing ? 'bg-[#A50021]' : 'bg-zinc-300 dark:bg-zinc-700'}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${marketing ? 'translate-x-5' : ''}`}></span>
+                </span>
+              </button>
 
-          {birthDate && (
-            <div className="pt-2 border-t border-outline-variant/30">
-              <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1 ml-1">{rx.birthLabel}</span>
-              <span className="block text-sm font-bold text-on-surface ml-1">{birthDate}</span>
-              <span className="block text-[11px] text-on-surface-variant/60 ml-1 mt-0.5">{rx.birthHint}</span>
+              <div className="space-y-3 pt-4 border-t border-outline-variant/30">
+                {!contactEditing ? (
+                  <>
+                    <div>
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1 ml-1">{rx.phone}</span>
+                      <span className="block text-sm font-bold text-on-surface ml-1">
+                        {savedContact.national ? `+${(COUNTRIES.find(c => c.iso === savedContact.iso) || COUNTRIES[0]).dial} ${formatNational(savedContact.national, savedContact.iso)}` : '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1 ml-1">{rx.email}</span>
+                      <span className="block text-sm font-bold text-on-surface ml-1 break-all">{savedContact.email || '—'}</span>
+                    </div>
+                    <button
+                      onClick={startEditContact}
+                      className="w-full py-3 border-2 border-outline-variant/50 text-on-surface rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all"
+                    >
+                      {rx.edit}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.phone}</label>
+                      <PhoneField iso={contactIso} national={contactNational} onChange={(i, n) => { setContactIso(i); setContactNational(n); }} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1.5 ml-1">{rx.email}</label>
+                      <input
+                        type="email"
+                        inputMode="email"
+                        value={contactEmail}
+                        onChange={e => setContactEmail(e.target.value)}
+                        className="w-full bg-surface-container border border-outline-variant/40 rounded-2xl px-4 py-3.5 text-base font-bold text-on-surface focus:outline-none focus:border-[#A50021]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={cancelEditContact}
+                        disabled={contactBusy}
+                        className="py-3.5 border-2 border-outline-variant/50 text-on-surface rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {rx.cancel}
+                      </button>
+                      <button
+                        onClick={handleSaveContact}
+                        disabled={contactBusy}
+                        className="py-3.5 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {contactBusy ? '...' : rx.save}
+                      </button>
+                    </div>
+                  </>
+                )}
+                {contactMsg && (
+                  <p className={`text-xs font-bold ml-1 ${contactMsg.ok ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{contactMsg.text}</p>
+                )}
+              </div>
+
+              {birthDate && (
+                <div className="pt-4 border-t border-outline-variant/30">
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-1 ml-1">{rx.birthLabel}</span>
+                  <span className="block text-sm font-bold text-on-surface ml-1">{birthDate}</span>
+                  <span className="block text-[11px] text-on-surface-variant/60 ml-1 mt-0.5">{rx.birthHint}</span>
+                </div>
+              )}
             </div>
           )}
         </section>
