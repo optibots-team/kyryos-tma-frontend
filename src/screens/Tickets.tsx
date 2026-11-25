@@ -36,6 +36,9 @@ const getAccessCategory = (v: unknown): AccessCategory | null => {
   return s === 'FAN' || s === 'YBC' || s === 'TABLE' ? s : null;
 };
 
+// UUID билета: в tickets_full поле называется ticket_id (запасные варианты — id / ticketId)
+const tid = (tk: any): string => tk?.ticket_id ?? tk?.id ?? tk?.ticketId;
+
 export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { t, i18n } = useTranslation();
   const tx = transferTexts(i18n.language);
@@ -87,26 +90,26 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
 
   // 🎁 Передача билета: создаём код → открываем стандартное окно Telegram «Поделиться» (друзья, поиск по нику, «Отправить»)
   const handleTransfer = async (ticket: any) => {
-    setTransferBusy(ticket.id);
-    const r = await createTransfer(ticket.id);
+    setTransferBusy(tid(ticket));
+    const r = await createTransfer(tid(ticket));
     setTransferBusy(null);
     if (!r.ok || !r.share_url) {
       notify(r.error || 'Transfer failed');
       return;
     }
     openShare(r.share_url);
-    setTickets(prev => prev.map(tk => (tk.id === ticket.id ? { ...tk, transfer_pending: true } : tk)));
+    setTickets(prev => prev.map(tk => (tid(tk) === tid(ticket) ? { ...tk, transfer_pending: true } : tk)));
   };
 
   const handleCancelTransfer = async (ticket: any) => {
-    setTransferBusy(ticket.id);
-    const r = await cancelTransfer(ticket.id);
+    setTransferBusy(tid(ticket));
+    const r = await cancelTransfer(tid(ticket));
     setTransferBusy(null);
     if (!r.ok) {
       notify(r.error || 'Transfer failed');
       return;
     }
-    setTickets(prev => prev.map(tk => (tk.id === ticket.id ? { ...tk, transfer_pending: false } : tk)));
+    setTickets(prev => prev.map(tk => (tid(tk) === tid(ticket) ? { ...tk, transfer_pending: false } : tk)));
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -146,7 +149,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
 
     return (
       <div 
-        key={ticket.id}
+        key={tid(ticket)}
         className={`bg-surface rounded-[2rem] overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-black/50 animate-fade-up ${accessCategory === 'TABLE' ? 'border-2 border-[#22E26B] shadow-[0_0_28px_rgba(34,226,107,0.45)]' : 'border border-outline-variant/40'} ${isExpired ? 'opacity-75' : ''}`}
         style={{ animationDelay: `${index * 100}ms` }}
       >
@@ -318,7 +321,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
               )}
               <button
                 onClick={() => handleTransfer(ticket)}
-                disabled={transferBusy === ticket.id}
+                disabled={transferBusy === tid(ticket)}
                 className="w-full py-3.5 rounded-2xl border-2 border-[#A50021] text-[#A50021] dark:text-white dark:border-white/40 font-headline font-black text-xs tracking-widest uppercase flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
@@ -327,7 +330,7 @@ export default function Tickets({ onNavigate }: { onNavigate: (s: Screen) => voi
               {ticket.transfer_pending && (
                 <button
                   onClick={() => handleCancelTransfer(ticket)}
-                  disabled={transferBusy === ticket.id}
+                  disabled={transferBusy === tid(ticket)}
                   className="w-full py-2 text-on-surface-variant font-bold text-[11px] uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
                 >
                   {tx.cancel}
