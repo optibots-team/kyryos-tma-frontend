@@ -11,6 +11,8 @@ import BottomNav from './components/BottomNav';
 import TopCurtain from './components/TopCurtain'; // 🌟 Импортируем верхнюю шторку Этапа 4
 import { supabase } from './lib/supabaseClient';
 import TicketTransferAccept from './components/TicketTransferAccept';
+import Registration from './screens/Registration';
+import { getStatus } from './lib/registration';
 
 export type Screen = 'events' | 'event-details' | 'about' | 'tickets' | 'profile' | 'admin' | 'admin-panel' | 'gallery';
 
@@ -20,6 +22,20 @@ export default function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   // 🎁 Код передачи билета из ссылки startapp=tr_<код>
   const [transferCode, setTransferCode] = useState<string | null>(null);
+  // 📝 Регистрация при первом входе: null — проверяем статус, false — показать экран «Прежде чем начнём», true — всё ок
+  const [registered, setRegistered] = useState<boolean | null>(null);
+
+  // Статус регистрации проверяем при каждом старте. Если сервер не ответил — не блокируем вход
+  useEffect(() => {
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser?.id) {
+      setRegistered(true);
+      return;
+    }
+    getStatus()
+      .then(({ ok, data }) => setRegistered(ok && data?.registered === false ? false : true))
+      .catch(() => setRegistered(true));
+  }, []);
 
   // 0. Разворачиваем приложение на весь экран и отключаем свайп-вниз для сворачивания —
   // иначе скролл длинных списков (юзеры, коды в админке и т.д.) закрывает Mini App
@@ -136,6 +152,18 @@ export default function App() {
   const hideBottomNav = ['event-details', 'about'].includes(currentScreen);
   // Шторка (тема/язык) видна только на 4 основных вкладках — не на AdminPanel, AboutKyrios, EventDetails, сканере
   const showTopCurtain = ['events', 'gallery', 'tickets', 'profile'].includes(currentScreen);
+
+  if (registered === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#A50021]/20 border-t-[#A50021] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (registered === false) {
+    return <Registration onDone={() => setRegistered(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface">
